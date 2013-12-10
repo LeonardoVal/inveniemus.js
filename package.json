@@ -1,0 +1,30 @@
+﻿{
+	"name": "inveniemus",
+	"description": "A search and optimization library, focusing on metaheuristics.",
+	"keywords": [],
+	"version": "0.1.0",
+	"author": "Leonardo Val <leonardo.val@creatartis.com>",
+	"homepage": "http://creatartis.com",
+	"contributors": [
+		{ "name": "Andrés Zeballos Juanicó", "email": "andreszeballosjuanico@gmail.com" },
+		{ "name": "Gonzalo Martínez", "email": "gonzalo.martinez@live.com" },
+		{ "name": "Mathías Lepratte", "email": "mlepratte3108@hotmail.com" }
+	],
+	"keywords": [ "search", "optimization", "metaheuristic", 
+		"hill climbing", "evolutionary computing", "genetic algorithm"
+	],
+	"licence": "MIT",
+	"repository": {
+		"type": "git", "url": "http://github.com/LeonardoVal/inveniemus"
+	},
+	"dependencies": {},
+	"devDependencies": {
+		"requirejs": "~2.1.9",
+		"grunt": "~0.4.2",
+		"grunt-contrib-concat": "~0.3.0",
+		"grunt-contrib-uglify": "~0.2.7"
+	},
+	"bin": {},
+	"scripts": {},
+	"engines": {}
+}

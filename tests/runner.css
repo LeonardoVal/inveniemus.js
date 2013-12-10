@@ -1,0 +1,36 @@
+﻿/** runner.css:
+	Stylesheet for runner.html.
+
+	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
+	@licence MIT Licence
+*/
+ul {
+	list-style-type: none;
+	padding: 0px;
+	margin: 0px;
+}
+
+#header {
+	width: 98%;
+	padding: 0.5em;
+}
+#header button {
+	background-color: black;
+	color: white;
+	border: 1px solid black;
+	border-radius: 4px;
+}
+
+#code {
+	width: 100%;
+	height: 15em;
+	padding: 0.5em;
+	border: 1px solid black;
+}
+
+#chart {
+	width: 100%;
+}
+
+
+
