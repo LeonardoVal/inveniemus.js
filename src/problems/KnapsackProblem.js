@@ -27,7 +27,7 @@ problems.KnapsackProblem = basis.declare(Problem, { ////////////////////////////
 		items, each with a cost and a worth. The solution is a subset of items
 		with maximum worth sum that does not exceed a cost limit.
 	*/	
-	constructor: function NQueensPuzzle(params){
+	constructor: function KnapsackProblem(params){
 		Problem.call(this, params);
 		basis.initialize(this, params)
 			/** problems.KnapsackProblem.limit=15:
