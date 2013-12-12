@@ -7,13 +7,14 @@
 define(['basis', 'inveniemus'], function (basis, inveniemus) {
 	var verifier = new basis.Verifier(); // Module object.
 
-// Testing problems. ///////////////////////////////////////////////////////////
-	
-	/* Returns a Metaheuristic.onStep event that performs basic checks.
-	*/
-	verifier.stepTest = function stepTest(size, steps) {
-		var runBest, stepBest;
-		return function (mh){
+	function stepTest(metaheuristic, problem, size, steps) {
+		var mh = new metaheuristic({
+			problem: new problem(),
+			size: size,
+			steps: steps, 
+			logger: null
+		}), runBest, stepBest;
+		mh.events.on('onStep', function () {
 			verifier.assertEqual(size, mh.state.length, "State size should be ", size, " but it is ", mh.state.length);
 			var stepBest = mh.state[0];
 			verifier.assertDefined(stepBest, 
@@ -36,51 +37,35 @@ define(['basis', 'inveniemus'], function (basis, inveniemus) {
 			} else {
 				runBest = null; // Clean because the metaheuristic has been reset.
 			}
-		};
+		});
+		return mh.run();
 	}
 	
-// Sum optmization. ////////////////////////////////////////////////////////
+	var metaheuristics = basis.iterable(inveniemus.metaheuristics)
+			.filter(function (pair) {
+				return typeof pair[1] === 'function' && pair[1].prototype instanceof inveniemus.Metaheuristic;
+			}, function (pair) {
+				return pair[1];
+			}).toArray(),
+		problems = basis.iterable(inveniemus.problems)
+			.filter(function (pair) {
+				return typeof pair[1] === 'function' && pair[1].prototype instanceof inveniemus.Problem;
+			}, function (pair) {
+				return pair[1];
+			}).toArray();
+	metaheuristics.unshift(inveniemus.Metaheuristic); // Base class implements a random search.
 
-	verifier.test("Sum optimization with random search", function () {
-		var mhs = [], mh;
-		[1,2,10,100].forEach(function (size){
-			[1,10,50].forEach(function (steps) {
-				[-Infinity, 0, Infinity].forEach(function (target){
-					mh = new inveniemus.Metaheuristic({
-						problem: new inveniemus.problems.SumOptimization({ target: target }),
-						size: size, steps: steps, logger: null
+	metaheuristics.forEach(function (metaheuristic) {
+		problems.forEach(function (problem) {
+			verifier.test(metaheuristic.name +"() against "+ problem.name +"()", function () {
+				return basis.Future.sequence([1, 10, 50], function (size){
+					return basis.Future.sequence([1, 10, 50], function (steps) {
+						return stepTest(metaheuristic, problem, size, steps);
 					});
-					mh.events.on('onStep', verifier.stepTest(size, steps));
-					mhs.push(mh);
+				}).then(function (best) {
+					return "Last run's best evaluated to "+ best.evaluation +".";
 				});
 			});
-		});
-		return basis.Future.all(basis.iterable(mhs).map(function (mh){
-			return mh.run();
-		})).then(function (results) {
-			return "Ran "+ results.length +" searches.";
-		});
-	});
-	
-	// Hello world. ////////////////////////////////////////////////////////////
-
-	verifier.test("HelloWorld problem with random search", function () {
-		var problem = new inveniemus.problems.HelloWorld({ target: "Hello world!" }),
-			mhs = [], mh;
-		[1,2,10,100].forEach(function (size){
-			[1,10,100].forEach(function (steps) {
-				mh = new inveniemus.Metaheuristic({
-					problem: problem,
-					size: size, steps: steps, logger: null
-				});
-				mh.events.on('onStep', verifier.stepTest(size, steps));
-				mhs.push(mh);
-			});
-		});
-		return basis.Future.all(basis.iterable(mhs).map(function (mh){
-			return mh.run();
-		})).then(function (results) {
-			return "Ran "+ results.length +" searches.";
 		});
 	});
 	
