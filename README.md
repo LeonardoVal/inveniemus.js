@@ -5,7 +5,7 @@ Currently includes implementations for:
 * [Hill climbing search](http://en.wikipedia.org/wiki/Hill_climbing).
 * [Genetic algorithms](http://en.wikipedia.org/wiki/Genetic_algorithm).
 
-In order to work requires another library of mine called [basis](https://github.com/LeonardoVal/basis). It supports loading with AMD (with [RequireJS](http://requirejs.org/)) or a script tag (sets 'inveniemus' in the global namespace).
+It supports loading with AMD (with [RequireJS](http://requirejs.org/)) or a script tag (sets 'inveniemus' in the global namespace). In order to work requires another library of mine called [basis](https://github.com/LeonardoVal/basis.js). 
 
 ## License
 
