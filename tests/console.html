@@ -1,0 +1,27 @@
+﻿<!DOCTYPE html>
+<html><head>
+	<title>Inveniemus console.</title>
+	<meta charset="UTF-8"/>
+	<script src="lib/require.js"></script>
+</head><body onload="main();">
+	<script type="text/javascript"> "use strict";
+function main() {
+	require.config({ 
+		paths: {
+			"basis": "lib/basis",
+			"inveniemus": "../inveniemus"
+		},
+	});
+	require(['basis', 'inveniemus'], function (basis, inveniemus) {
+		window.basis = basis;
+		window.inveniemus = inveniemus;
+		(function (s){ // See: <http://jsconsole.com>.
+			s.src = 'lib/jsconsole/inject.js';
+			document.body.appendChild(s);
+		})(document.createElement('script'));
+	}, function (error) {
+		throw error;
+	});
+}
+	</script>
+</body></html>
