@@ -12,7 +12,7 @@
 	<script type="text/javascript" src="lib/jquery.js"></script>
 	<script type="text/javascript" src="lib/dygraph.js"></script>
 </head><body onload="main();">
-<h1>Metaheuristic runner for the Inveniemus framework.</h1> 
+<h3>Inveniemus runner.</h3> 
 <div id="header">
 	<textarea id="code"></textarea><br/>
 	<button id="run">Run</button> - Examples: 
@@ -21,6 +21,7 @@
 	<button id="exampleGeneticAlgorithm">Genetic algorithm</button>
 </div>
 <div id="chart"></div>
+<div id="chart_legend"></div>
 <script type="text/javascript">
 function main() {
 	require.config({
@@ -39,7 +40,8 @@ function main() {
 			drawPoints: true,
 			customBars: true,
 			showRoller: false,
-			showRangeSelector: true, rangeSelectorHeight: 30		
+			showRangeSelector: true, rangeSelectorHeight: 30,
+			labelsDiv: "chart_legend", legend: "always"
 		});
 	// Example buttons.
 		$('#exampleRandom').click(function () {

@@ -9,8 +9,6 @@
 var __DEFAULT_RANDOM__ = basis.Randomness.DEFAULT,
 	iterable = basis.iterable;
 
-// Element base constructor. ///////////////////////////////////////////////////
-
 var Element = exports.Element = basis.declare({
 	/** Element.length=10:
 		Size of the element's values array.
@@ -171,27 +169,34 @@ var Element = exports.Element = basis.declare({
 
 	// Expansion utilities. ////////////////////////////////////////////////////
 	
-	/** Element.neighbourhood(delta=0.01):
+	/** Element.successors():
+		Returns an array with new elements that can be considered adjacent of 
+		this element. By default returns the element's neighbourhood with the
+		default radius.
+	*/
+	successors: function successors(element) {
+		return this.neighbourhood();
+	},
+	
+	/** Element.neighbourhood(radius=1%):
 		Returns an array of new elements, with values belonging to the n 
 		dimensional ball around this element's values. 
 	*/
-	neighbourhood: function neighbourhood(delta) {
-		delta = isNaN(delta) ? 0.01 : +delta;
+	neighbourhood: function neighbourhood(radius) {
+		radius = isNaN(radius) ? (this.maximumValue - this.minimumValue) / 100 : +radius;
 		var elems = [], 
 			values = this.values,
 			i, value;
 		for (i = 0; i < values.length; i++) {
-			value = values[i] + delta;
+			value = values[i] + radius;
 			if (value <= this.maximumValue) {
 				elems.push(this.modification(i, value));
 			}
-			value = values[i] - delta;
+			value = values[i] - radius;
 			if (value >= this.minimumValue) {
 				elems.push(this.modification(i, value));
 			}
 		}
-		console.log(delta);//FIXME
-		console.log(elems);//FIXME
 		return elems;
 	},
 	

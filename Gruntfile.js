@@ -25,16 +25,11 @@ module.exports = function(grunt) {
 				footer: '\nreturn exports;\n});'
 			},
 			build: {
-				src: [
-					'src/Element.js', 
-					'src/Problem.js', 
-					'src/Metaheuristic.js',
-					'src/metaheuristics/HillClimbing.js', 
-					'src/metaheuristics/GeneticAlgorithm.js',
-					'src/problems/SumOptimization.js',
-					'src/problems/HelloWorld.js',
-					'src/problems/NQueensPuzzle.js',
-					'src/problems/KnapsackProblem.js'
+				src: [ 'src/Element.js', 'src/Problem.js', 'src/Metaheuristic.js',
+					'src/metaheuristics/HillClimbing.js', 'src/metaheuristics/BeamSearch.js', 
+						'src/metaheuristics/GeneticAlgorithm.js',
+					'src/problems/SumOptimization.js', 'src/problems/HelloWorld.js',
+						'src/problems/NQueensPuzzle.js', 'src/problems/KnapsackProblem.js'
 				],
 				dest: './<%= pkg.name %>.js',
 			},

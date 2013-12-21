@@ -31,6 +31,8 @@ ul {
 #chart {
 	width: 100%;
 }
-
+#chart_legend {
+	float: right;
+}
 
 

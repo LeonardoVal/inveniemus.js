@@ -5,8 +5,6 @@
 	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
 	@licence MIT Licence
 */
-// Problem base class. /////////////////////////////////////////////////////////
-
 var Problem = exports.Problem = basis.declare({
 	/** Problem.title='<no title>':
 		Title of the problem to be displayed to the user.
@@ -62,7 +60,7 @@ var Problem = exports.Problem = basis.declare({
 	suffices: function suffices(elements) {
 		return elements[0].suffices();
 	},
-		
+	
 	// Optimization modes. /////////////////////////////////////////////////////
 		
 	/** Problem.maximization(element1, element2):

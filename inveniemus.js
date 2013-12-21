@@ -19,8 +19,6 @@
 var __DEFAULT_RANDOM__ = basis.Randomness.DEFAULT,
 	iterable = basis.iterable;
 
-// Element base constructor. ///////////////////////////////////////////////////
-
 var Element = exports.Element = basis.declare({
 	/** Element.length=10:
 		Size of the element's values array.
@@ -181,27 +179,34 @@ var Element = exports.Element = basis.declare({
 
 	// Expansion utilities. ////////////////////////////////////////////////////
 	
-	/** Element.neighbourhood(delta=0.01):
+	/** Element.successors():
+		Returns an array with new elements that can be considered adjacent of 
+		this element. By default returns the element's neighbourhood with the
+		default radius.
+	*/
+	successors: function successors(element) {
+		return this.neighbourhood();
+	},
+	
+	/** Element.neighbourhood(radius=1%):
 		Returns an array of new elements, with values belonging to the n 
 		dimensional ball around this element's values. 
 	*/
-	neighbourhood: function neighbourhood(delta) {
-		delta = isNaN(delta) ? 0.01 : +delta;
+	neighbourhood: function neighbourhood(radius) {
+		radius = isNaN(radius) ? (this.maximumValue - this.minimumValue) / 100 : +radius;
 		var elems = [], 
 			values = this.values,
 			i, value;
 		for (i = 0; i < values.length; i++) {
-			value = values[i] + delta;
+			value = values[i] + radius;
 			if (value <= this.maximumValue) {
 				elems.push(this.modification(i, value));
 			}
-			value = values[i] - delta;
+			value = values[i] - radius;
 			if (value >= this.minimumValue) {
 				elems.push(this.modification(i, value));
 			}
 		}
-		console.log(delta);//FIXME
-		console.log(elems);//FIXME
 		return elems;
 	},
 	
@@ -287,8 +292,6 @@ var Element = exports.Element = basis.declare({
 	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
 	@licence MIT Licence
 */
-// Problem base class. /////////////////////////////////////////////////////////
-
 var Problem = exports.Problem = basis.declare({
 	/** Problem.title='<no title>':
 		Title of the problem to be displayed to the user.
@@ -344,7 +347,7 @@ var Problem = exports.Problem = basis.declare({
 	suffices: function suffices(elements) {
 		return elements[0].suffices();
 	},
-		
+	
 	// Optimization modes. /////////////////////////////////////////////////////
 		
 	/** Problem.maximization(element1, element2):
@@ -697,6 +700,52 @@ var HillClimbing = metaheuristics.HillClimbing = basis.declare(Metaheuristic, {
 		return (this.constructor.name || 'HillClimbing') +'('+ JSON.stringify(this) +')';
 	}
 }); // declare HillClimbing.
+
+
+/** inveniemus/src/metaheuristics/BeamSearch.js
+	Beam search implementation for the Inveniemus library. It is a form of 
+	parallel best-first search with limited memory.
+	See <http://en.wikipedia.org/wiki/Beam_search>.
+	
+	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
+	@licence MIT Licence
+*/
+var BeamSearch = metaheuristics.BeamSearch = basis.declare(Metaheuristic, {
+	/** new BeamSearch(params):
+		Builds a beam search. The problem should have the successors method
+		implemented.
+	*/
+	constructor: function BeamSearch(params) {
+		Metaheuristic.call(this, params);
+	},
+	
+	/** BeamSearch.successors(element):
+		Returns the elements' successors. By default returns 
+		element.successors().
+	*/
+	successors: function successors(element) {
+		return element.successors();
+	},
+	
+	/** BeamSearch.expansion():
+		Successors to all elements are calculated by calling the problem's
+		successors method.
+	*/
+	expansion: function expansion() {
+		var allSuccessors = [],
+			successors = this.successors.bind(this);
+		this.state.forEach(function (element) {
+			allSuccessors = allSuccessors.concat(successors(element));
+		});
+		return allSuccessors;
+	},
+		
+	// Utility methods. ////////////////////////////////////////////////////////
+		
+	toString: function toString() {
+		return (this.constructor.name || 'BeamSearch') +'('+ JSON.stringify(this) +')';
+	}
+}); // declare BeamSearch.
 
 
 /** inveniemus/src/metaheuristics/GeneticAlgorithm.js
