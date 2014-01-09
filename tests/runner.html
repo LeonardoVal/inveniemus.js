@@ -19,6 +19,7 @@
 	<button id="exampleRandom">Random search</button>
 	<button id="exampleHillClimbing">Hill climbing</button>
 	<button id="exampleGeneticAlgorithm">Genetic algorithm</button>
+	<button id="exampleBeamSearch">Beam search</button>
 </div>
 <div id="chart"></div>
 <div id="chart_legend"></div>
@@ -68,6 +69,15 @@ function main() {
 					problem: new inveniemus.problems.SumOptimization(),
 					mutationRate: 0.4,
 					size: 100, 
+					steps: 50
+				});
+			}).replace(/\t{3}/g, ''));
+		});
+		$('#exampleBeamSearch').click(function () {
+			$('#code').val((''+ function () {
+				return new inveniemus.metaheuristics.BeamSearch({ 
+					problem: new inveniemus.problems.SumOptimization(),
+					size: 20,
 					steps: 50
 				});
 			}).replace(/\t{3}/g, ''));

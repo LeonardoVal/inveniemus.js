@@ -1,16 +1,10 @@
-﻿/** inveniemus/src/metaheuristics/HillClimbing.js
-	Hill Climbing implementation for the Inveniemus library.
-	See <http://en.wikipedia.org/wiki/Hill_climbing>.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+﻿/** [Hill Climbing](http://en.wikipedia.org/wiki/Hill_climbing) implementation 
+	for the Inveniemus library.
 */
-// HillClimbing metaheuristic. /////////////////////////////////////////////////
-
 var HillClimbing = metaheuristics.HillClimbing = basis.declare(Metaheuristic, {
 	/** new HillClimbing(params):
-		Builds a hill climbing search.
-		See <http://en.wikipedia.org/wiki/Hill_climbing>.
+		Builds a [hill climbing](http://en.wikipedia.org/wiki/Hill_climbing) 
+		search.
 	*/
 	constructor: function HillClimbing(params) {
 		Metaheuristic.call(this, params);
@@ -26,27 +20,36 @@ var HillClimbing = metaheuristics.HillClimbing = basis.declare(Metaheuristic, {
 			.integer('size', { defaultValue: 1,	coerce: true });
 	},
 	
-	/** HillClimbing.expansion():
-		New elements are calculated by adding all variation of existing elements
-		in the state. Each variation is either an increment or decrement in one
-		(and only one) of the element's dimensions.
+	/** HillClimbing.update():
+		Each element in the state is replaced by the best element in its 
+		neighbourhood, if there is any. The surroundings have all possible 
+		elements resulting from either an increment or decrement (of the given
+		delta) in each of the centre element's dimensions.
 	*/
-	expansion: function expansion() {
-		var delta = this.delta,
-			elems = [];
-		this.__previous__ = this.state[0]; // This is for local optimum detection.
-		this.state.forEach(function (element) {
-			elems = elems.concat(element.neighbourhood(delta));
+	update: function update() {
+		var mh = this, 
+			localOptima = 0;
+		return basis.Future.all(this.state.map(function (elem) {
+			var range = elem.neighbourhood(mh.delta);
+			range.push(elem);
+			return mh.evaluate(range).then(function (range) {
+				var best = range[0];
+				if (elem === best) {
+					localOptima++;
+				}
+				return best;
+			});			
+		})).then(function (elems) {
+			mh.state = elems;
+			mh.__localOptima__ = localOptima;
 		});
-		basis.raiseIf(elems.length < 1, "Expansion failed to produce any new elements.");
-		return elems;
 	},
 		
-	/** HillClimbing.atLocalOptimum():
-		Checks if the search is currently at a local optimum.
+	/** HillClimbing.atLocalOptima():
+		Checks if the search is currently stuck at local optima.
 	*/
-	atLocalOptimum: function atLocalOptimum() {
-		return this.__previous__ === this.state[0];
+	atLocalOptima: function atLocalOptima() {
+		return this.__localOptima__ >= this.state.length;
 	},
 		
 	/** HillClimbing.finished():
@@ -54,7 +57,7 @@ var HillClimbing = metaheuristics.HillClimbing = basis.declare(Metaheuristic, {
 		criteria is tested together with all others.
 	*/
 	finished: function finished() {
-		return Metaheuristic.prototype.finished.call(this) || this.atLocalOptimum();
+		return Metaheuristic.prototype.finished.call(this) || this.atLocalOptima();
 	},
 		
 	// Utility methods. ////////////////////////////////////////////////////////

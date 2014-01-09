@@ -1,8 +1,8 @@
-﻿/** inveniemus/src/problems/KnapsackProblem.js
-	Many reference problems and related utilities are provided in this file.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+﻿/** The [Knapsack problem](http://en.wikipedia.org/wiki/Knapsack_problem) is a
+	classic combinatorial optimization problem. Given a set of items, each with 
+	cost and worth, a selection must be obtained (to go into the knapsack) so
+	that the total cost does not exceed a certain limit, while maximizing the 
+	total worth.
 */
 problems.KnapsackProblem = basis.declare(Problem, { ////////////////////////////
 	title: "Knapsack problem",

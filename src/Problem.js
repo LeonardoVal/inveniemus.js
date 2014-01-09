@@ -1,9 +1,5 @@
-﻿/** inveniemus/src/Problem.js
-	The Problem type represents a search or optimization problem in the 
+﻿/**	The Problem type represents a search or optimization problem in the 
 	Inveniemus library.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
 */
 var Problem = exports.Problem = basis.declare({
 	/** Problem.title='<no title>':
@@ -19,7 +15,7 @@ var Problem = exports.Problem = basis.declare({
 	/** Problem.random=Randomness.DEFAULT:
 		Pseudorandom number generator used by the problem.
 	*/
-	random: __DEFAULT_RANDOM__,
+	random: basis.Randomness.DEFAULT,
 	
 	/** Problem.representation=Element:
 		Element constructor used for this problem's candidate solutions.
@@ -28,7 +24,8 @@ var Problem = exports.Problem = basis.declare({
 	
 	/** new Problem(params):
 		A search/optimization problem definition, holding the representation of
-		the elements (as an Element constructor).
+		the elements (as an Element constructor), with the comparison and 
+		sufficiency criteria.
 	*/
 	constructor: function Problem(params) {
 		basis.initialize(this, params)
@@ -43,8 +40,8 @@ var Problem = exports.Problem = basis.declare({
 		
 	/** Problem.compare(element1, element2):
 		Standard comparison function between two elements. Returns a positive
-		number if element1 is better than element2, a negative number if 
-		element1 is worse then element2, or zero otherwise.
+		number if element2 is better than element1, a negative number if 
+		element2 is worse then element1, or zero otherwise.
 		Implements a minimization by default.
 	*/
 	compare: function compare(element1, element2) {

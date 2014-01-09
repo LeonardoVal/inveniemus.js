@@ -1,0 +1,482 @@
+<!DOCTYPE  html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>doc</title>
+    <style>
+      /*github.com style (c) Vasily Polovnyov <vast@whiteants.net>*/
+      pre code {
+        display: block; padding: 0.5em;
+        color: #333;
+        background: #f8f8ff
+      }
+      pre .comment,
+      pre .template_comment,
+      pre .diff .header,
+      pre .javadoc {
+        color: #998;
+        font-style: italic
+      }
+      pre .keyword,
+      pre .css .rule .keyword,
+      pre .winutils,
+      pre .javascript .title,
+      pre .nginx .title,
+      pre .subst,
+      pre .request,
+      pre .status {
+        color: #333;
+        font-weight: bold
+      }
+      pre .number,
+      pre .hexcolor,
+      pre .ruby .constant {
+        color: #099;
+      }
+      pre .string,
+      pre .tag .value,
+      pre .phpdoc,
+      pre .tex .formula {
+        color: #d14
+      }
+      pre .title,
+      pre .id {
+        color: #900;
+        font-weight: bold
+      }
+      pre .javascript .title,
+      pre .lisp .title,
+      pre .clojure .title,
+      pre .subst {
+        font-weight: normal
+      }
+      pre .class .title,
+      pre .haskell .type,
+      pre .vhdl .literal,
+      pre .tex .command {
+        color: #458;
+        font-weight: bold
+      }
+      pre .tag,
+      pre .tag .title,
+      pre .rules .property,
+      pre .django .tag .keyword {
+        color: #000080;
+        font-weight: normal
+      }
+      pre .attribute,
+      pre .variable,
+      pre .lisp .body {
+        color: #008080
+      }
+      pre .regexp {
+        color: #009926
+      }
+      pre .class {
+        color: #458;
+        font-weight: bold
+      }
+      pre .symbol,
+      pre .ruby .symbol .string,
+      pre .lisp .keyword,
+      pre .tex .special,
+      pre .prompt {
+        color: #990073
+      }
+      pre .built_in,
+      pre .lisp .title,
+      pre .clojure .built_in {
+        color: #0086b3
+      }
+      pre .preprocessor,
+      pre .pi,
+      pre .doctype,
+      pre .shebang,
+      pre .cdata {
+        color: #999;
+        font-weight: bold
+      }
+      pre .deletion {
+        background: #fdd
+      }
+      pre .addition {
+        background: #dfd
+      }
+      pre .diff .change {
+        background: #0086b3
+      }
+      pre .chunk {
+        color: #aaa
+      }
+    </style>
+  </head>
+  <body>  
+    <h1 id="source-documentation-for-inveniemus-http-github-com-leonardoval-inveniemus-">Source documentation for <a href="http://github.com/LeonardoVal/inveniemus">inveniemus</a></h1>
+<p>A search and optimization library, focusing on metaheuristics.</p>
+<h2 id="-src-element-js-"><code>src/Element.js</code></h2>
+<p>Element is the term used in the Inveniemus library for representations of
+<a href="http://en.wikipedia.org/wiki/Feasible_region">candidate solutions</a> in a
+search or optimization problem.</p>
+<h3 id="-element-length-10-"><code>Element.length=10</code>:</h3>
+<p>Size of the element&#39;s values array.</p>
+<h3 id="-element-minimumvalue-0-"><code>Element.minimumValue=0</code>:</h3>
+<p>Minimum value a number in this element can have.</p>
+<h3 id="-element-maximumvalue-1-"><code>Element.maximumValue=1</code>:</h3>
+<p>Maximum value a number in this element can have.</p>
+<h3 id="-element-random-randomness-default-"><code>Element.random=Randomness.DEFAULT</code>:</h3>
+<p>Pseudorandom number generator used by the element.</p>
+<h3 id="-new-element-values-random-values-evaluation-nan-"><code>new Element(values=&lt;random values&gt;, evaluation=NaN)</code>:</h3>
+<p>An element represents a candidate solution. It is defined by the values
+array of numbers, between minimumValue and maximumValue (by default 0
+and 1).</p>
+<h3 id="-element-values-"><code>Element.values</code>:</h3>
+<p>An array of numbers that represents a candidate solution.</p>
+<h3 id="-element-evaluation-nan-"><code>Element.evaluation=NaN</code>:</h3>
+<p>The element&#39;s evaluation is a measure of its fitness to solve a
+problem. It guides almost all of the metaheuristics.</p>
+<h3 id="-element-randomvalue-"><code>Element.randomValue()</code>:</h3>
+<p>Returns a random value between this.minimumValue and this.maximumValue.</p>
+<h3 id="-element-randomvalues-"><code>Element.randomValues()</code>:</h3>
+<p>Returns an array with random numbers.</p>
+<h3 id="-element-evaluate-"><code>Element.evaluate()</code>:</h3>
+<p>Evaluates this element, assigning its evaluation and returning it. It
+can return a Future if the evaluation has to be done asynchronously.</p>
+<p>This can be interpreted as the solutions cost in a search problem or the
+target function of an optimization problem. The default behaviour is
+adding up this element&#39;s values, useful only for testing.</p>
+<h3 id="-element-suffices-"><code>Element.suffices()</code>:</h3>
+<p>Returns true if this element is an actual solution to the problem. It
+holds the implementation of the goal test in search problems. More
+complex criteria may be implemented in Problem.suffices.</p>
+<p>By default it checks if the values add up to zero.</p>
+<h3 id="-element-mapping-"><code>Element.mapping()</code>:</h3>
+<p>Returns an alternate representation of this element that may be fitter
+for evaluation or showing it to the user. By default it just returns the
+values array.</p>
+<h3 id="-element-emblem-"><code>Element.emblem()</code>:</h3>
+<p>The emblem of an element is a string that represents it and can    be
+displayed to the user. By default returns the string conversion.</p>
+<h3 id="-element-resolution-number-epsilon-"><code>Element.resolution=Number.EPSILON</code>:</h3>
+<p>Minimum difference between two evaluation to consider them different.</p>
+<h3 id="-element-hammingdistance-array1-array2-"><code>Element.hammingDistance(array1, array2)</code>:</h3>
+<p>The <a href="http://en.wikipedia.org/wiki/Hamming_distance">Hamming distance</a>
+between two arrays is the number of positions at which corresponding
+components are different. Arrays are assumed to be of the same
+length. If they are not, only the common parts are considered.</p>
+<h3 id="-element-manhattandistance-array1-array2-"><code>Element.manhattanDistance(array1, array2)</code>:</h3>
+<p>The <a href="http://en.wikipedia.org/wiki/Manhattan_distance">Manhattan distance</a>
+between two arrays is the sum of the absolute differences of
+corresponding positions. Arrays are assumed to be of the same length. If
+they are not, only the common parts are considered.</p>
+<h3 id="-element-euclideandistance-array1-array2-"><code>Element.euclideanDistance(array1, array2)</code>:</h3>
+<p>Calculates the <a href="http://en.wikipedia.org/wiki/Euclidean_distance">euclidean distance</a>
+between two arrays. Arrays are assumed to be of the same length. If they
+are not, only the common parts are considered.</p>
+<h3 id="-element-rootmeansquarederror-f-data-"><code>Element.rootMeanSquaredError(f, data)</code>:</h3>
+<p>Returns the <a href="http://en.wikipedia.org/wiki/Root_mean_squared_error">root mean squared error</a>
+of the function f on the given data. The data must be an iterable of
+arrays, in which the first element is the expected result and the rest
+are the arguments for the function.</p>
+<h3 id="-element-successors-"><code>Element.successors()</code>:</h3>
+<p>Returns an array with new elements that can be considered adjacent of
+this element. By default returns the element&#39;s neighbourhood with the
+default radius.</p>
+<h3 id="-element-neighbourhood-radius-1-"><code>Element.neighbourhood(radius=1%)</code>:</h3>
+<p>Returns an array of new elements, with values belonging to the n
+dimensional ball around this element&#39;s values.</p>
+<h3 id="-element-modification-index-value-"><code>Element.modification(index, value, ...)</code>:</h3>
+<p>Returns a new and unevaluated copy of this element, with its values
+modified as specified.</p>
+<h3 id="-element-arraymapping-items-"><code>Element.arrayMapping(items...)</code>:</h3>
+<p>Builds an array of equal length of this element&#39;s values. Each value is
+used to index the corresponding items argument. If there are less
+arguments than the element&#39;s length, the last one is used for the rest
+of the values.</p>
+<h3 id="-element-setmapping-items-"><code>Element.setMapping(items)</code>:</h3>
+<p>Builds an array of equal length of this element&#39;s values. Each value is
+used to select one item. Items are not selected more than once.</p>
+<h3 id="-element-clone-"><code>Element.clone()</code>:</h3>
+<p>Returns a copy of this element.</p>
+<h3 id="-element-equals-other-"><code>Element.equals(other)</code>:</h3>
+<p>Checks if the other element has the same values and constructor than
+this one.</p>
+<h2 id="-src-problem-js-"><code>src/Problem.js</code></h2>
+<p>The Problem type represents a search or optimization problem in the
+Inveniemus library.</p>
+<h3 id="-problem-title-no-title-"><code>Problem.title=&#39;&lt;no title&gt;&#39;</code>:</h3>
+<p>Title of the problem to be displayed to the user.</p>
+<h3 id="-problem-description-no-description-"><code>Problem.description=&#39;&lt;no description&gt;&#39;</code>:</h3>
+<p>Description of the problem to be displayed to the user.</p>
+<h3 id="-problem-random-randomness-default-"><code>Problem.random=Randomness.DEFAULT</code>:</h3>
+<p>Pseudorandom number generator used by the problem.</p>
+<h3 id="-problem-representation-element-"><code>Problem.representation=Element</code>:</h3>
+<p>Element constructor used for this problem&#39;s candidate solutions.</p>
+<h3 id="-new-problem-params-"><code>new Problem(params)</code>:</h3>
+<p>A search/optimization problem definition, holding the representation of
+the elements (as an Element constructor), with the comparison and
+sufficiency criteria.</p>
+<h3 id="-problem-compare-element1-element2-"><code>Problem.compare(element1, element2)</code>:</h3>
+<p>Standard comparison function between two elements. Returns a positive
+number if element2 is better than element1, a negative number if
+element2 is worse then element1, or zero otherwise.</p>
+<p>Implements a minimization by default.</p>
+<h3 id="-problem-suffices-elements-"><code>Problem.suffices(elements)</code>:</h3>
+<p>Returns true if inside the elements array there is an actual solution to
+the problem. It holds the implementation of the goal test in search
+problems.</p>
+<p>By default checks if the first element by calling its suffice method.</p>
+<h3 id="-problem-maximization-element1-element2-"><code>Problem.maximization(element1, element2)</code>:</h3>
+<p>Compares two elements by evaluation in descending order.</p>
+<h3 id="-problem-minimization-element1-element2-"><code>Problem.minimization(element1, element2)</code>:</h3>
+<p>Compares two elements by evaluation in ascending order.</p>
+<h3 id="-problem-approximation-target-element1-element2-"><code>Problem.approximation(target, element1, element2)</code>:</h3>
+<p>Compares two elements by distance of its evaluation to the given target
+value in ascending order.</p>
+<h3 id="-problems-"><code>problems</code>:</h3>
+<p>Bundle of classic and reference problems.</p>
+<h2 id="-src-metaheuristic-js-"><code>src/Metaheuristic.js</code></h2>
+<p>A <a href="http://en.wikipedia.org/wiki/Metaheuristic">Metaheuristic</a> is an
+optimization algorithm (which can also be used for searching).</p>
+<h3 id="-metaheuristic-logger-"><code>Metaheuristic.logger</code>:</h3>
+<p>Logger used by the metaheuristic.</p>
+<h3 id="-new-metaheuristic-params-"><code>new Metaheuristic(params)</code>:</h3>
+<p>Base class of all metaheuristic algorithms, and hence of all
+metaheuristic runs.</p>
+<h3 id="-metaheuristic-problem-"><code>Metaheuristic.problem</code>:</h3>
+<p>Definition of the problem this metaheuristic will try to solve.</p>
+<h3 id="-metaheuristic-size-100-"><code>Metaheuristic.size=100</code>:</h3>
+<p>Amount of candidate solutions the metaheuristic treats at each step.</p>
+<h3 id="-metaheuristic-state-"><code>Metaheuristic.state=[]</code>:</h3>
+<p>An array holding the elements this metaheuristic handles at each
+step.</p>
+<h3 id="-metaheuristic-steps-100-"><code>Metaheuristic.steps=100</code>:</h3>
+<p>Number of steps this metaheuristic must perform.</p>
+<h3 id="-metaheuristic-step-1-"><code>Metaheuristic.step=-1</code>:</h3>
+<p>Current iteration of this metaheuristic, or a negative number if
+it has not started yet.</p>
+<h3 id="-metaheuristic-random-randomness-default-"><code>Metaheuristic.random=Randomness.DEFAULT</code>:</h3>
+<p>This metaheuristic&#39;s pseudorandom number generator. It is strongly
+advised to have only one for the whole process.</p>
+<h3 id="-metaheuristic-statistics-"><code>Metaheuristic.statistics</code>:</h3>
+<p>The statistic gatherer for this metaheuristic.</p>
+<h3 id="-metaheuristic-events-"><code>Metaheuristic.events</code>:</h3>
+<p>Event handler for this metaheuristic. The emitted events by default
+are: initiated, updated, expanded, evaluated, sieved, advanced,
+analyzed &amp; finished.</p>
+<h3 id="-metaheuristic-initiate-size-this-size-"><code>Metaheuristic.initiate(size=this.size)</code>:</h3>
+<p>Builds and initiates this metaheuristic state with size new cursors. The
+elements are build using the initial() function.</p>
+<h3 id="-metaheuristic-update-"><code>Metaheuristic.update()</code>:</h3>
+<p>Updates this metaheuristic&#39;s state. It assumes the state has been
+initialized. The process may be asynchronous, so it returns a Future.</p>
+<p>The default implementation first expands the state by calling
+this.expand(), then evaluates the added elements by calling
+this.evaluate(), and finally removes the worst elements with
+this.sieve().</p>
+<h3 id="-metaheuristic-expand-expansion-"><code>Metaheuristic.expand(expansion=[])</code>:</h3>
+<p>Adds to this metaheuristic&#39;s state the given expansion. If none is given,
+this.expansion() is called to get new expansion.</p>
+<h3 id="-metaheuristic-expansion-size-"><code>Metaheuristic.expansion(size)</code>:</h3>
+<p>Returns an array of new elements to add to the current state. The
+default implementation generates new random elements.</p>
+<h3 id="-metaheuristic-evaluate-elements-"><code>Metaheuristic.evaluate(elements)</code>:</h3>
+<p>Evaluates all the elements in this.state with no evaluation, using its
+evaluation method. After that sorts the state with the compare method
+of the problem.</p>
+<p>Returns a Future, regardless of the evaluation being asynchronous or
+not.</p>
+<h3 id="-metaheuristic-prototype-sieve-size-this-size-"><code>Metaheuristic.prototype.sieve(size=this.size)</code>:</h3>
+<p>Cuts the current state down to the given size (or this.size by default).</p>
+<p>This is usually used after expanding and evaluating the state. The
+statistics of this metaheuristic are calculated here, right after the
+state is sieved.</p>
+<h3 id="-metaheuristic-finished-"><code>Metaheuristic.finished()</code>:</h3>
+<p>Termination criteria for this metaheuristic. By default it checks if the
+number of passed iterations is not greater than this.steps.</p>
+<h3 id="-metaheuristic-analyze-"><code>Metaheuristic.analyze()</code>:</h3>
+<p>Updates the process&#39; statistics.</p>
+<h3 id="-metaheuristic-advance-"><code>Metaheuristic.advance()</code>:</h3>
+<p>Performs one step of the optimization. If the process has not been
+initialized, it does so. Returns a Future if the run has not finished or
+null otherwise.</p>
+<h3 id="-metaheuristic-run-"><code>Metaheuristic.run()</code>:</h3>
+<p>Returns a Future that is resolved when the whole search process is
+finished. The value is the best cursor after the last step.</p>
+<h3 id="-metaheuristic-reset-"><code>Metaheuristic.reset()</code>:</h3>
+<p>Reset the process to start over again. Basically cleans the stats and
+sets the current step to -1.</p>
+<h3 id="-metaheuristics-"><code>metaheuristics</code>:</h3>
+<p>Bundle of metaheuristics available.</p>
+<h2 id="-src-metaheuristics-hillclimbing-js-"><code>src/metaheuristics/HillClimbing.js</code></h2>
+<p><a href="http://en.wikipedia.org/wiki/Hill_climbing">Hill Climbing</a> implementation
+for the Inveniemus library.</p>
+<h3 id="-new-hillclimbing-params-"><code>new HillClimbing(params)</code>:</h3>
+<p>Builds a <a href="http://en.wikipedia.org/wiki/Hill_climbing">hill climbing</a>
+search.</p>
+<h3 id="-hillclimbing-delta-0-01-"><code>HillClimbing.delta=0.01</code>:</h3>
+<p>The radius of the elements surroundings in every dimension, that is
+checked by this algorithm.</p>
+<h3 id="-hillclimbing-size-1-"><code>HillClimbing.size=1</code>:</h3>
+<p>Default value for size is 1.</p>
+<h3 id="-hillclimbing-update-"><code>HillClimbing.update()</code>:</h3>
+<p>Each element in the state is replaced by the best element in its
+neighbourhood, if there is any. The surroundings have all possible
+elements resulting from either an increment or decrement (of the given
+delta) in each of the centre element&#39;s dimensions.</p>
+<h3 id="-hillclimbing-atlocaloptima-"><code>HillClimbing.atLocalOptima()</code>:</h3>
+<p>Checks if the search is currently stuck at local optima.</p>
+<h3 id="-hillclimbing-finished-"><code>HillClimbing.finished()</code>:</h3>
+<p>Hill climbing search must finish when a local optimum is reached. This
+criteria is tested together with all others.</p>
+<h2 id="-src-metaheuristics-geneticalgorithm-js-"><code>src/metaheuristics/GeneticAlgorithm.js</code></h2>
+<p>Classic Holland&#39;s-style <a href="http://en.wikipedia.org/wiki/Genetic_algorithm">genetic algorithms</a>
+for the Inveniemus library.</p>
+<h3 id="-new-geneticalgorithm-params-"><code>new GeneticAlgorithm(params)</code>:</h3>
+<p>Builds a genetic algorithm, the base for many evolutionary computing
+variants.</p>
+<h3 id="-geneticalgorithm-expansionrate-0-5-"><code>GeneticAlgorithm.expansionRate=0.5</code>:</h3>
+<p>The amount of new elements generated by crossover, as a ratio of the
+population size.</p>
+<h3 id="-geneticalgorithm-mutationrate-0-2-"><code>GeneticAlgorithm.mutationRate=0.2</code>:</h3>
+<p>The chance of a new element (resulting from crossover) mutating.</p>
+<h3 id="-geneticalgorithm-selection-count-"><code>GeneticAlgorithm.selection(count)</code>:</h3>
+<p>Selects count elements from the current population. These will be
+the parents of the new elements in the next generation.</p>
+<p>By default rank selection is used, a.k.a. fitness proportional
+to position in the state.</p>
+<h3 id="-geneticalgorithm-crossover-parents-"><code>GeneticAlgorithm.crossover(parents)</code>:</h3>
+<p>Genetic operator that simulates reproduction with inheritance. The
+parents argument must be an array of elements. The result is an
+array of elements.</p>
+<p>By default the single point crossover is used.</p>
+<h3 id="-geneticalgorithm-mutation-element-"><code>GeneticAlgorithm.mutation(element)</code>:</h3>
+<p>Genetic operator that simulates biological mutation, making a random
+change in the chromosome.</p>
+<p>By default a single point uniform mutation is used.</p>
+<h3 id="-geneticalgorithm-expansion-"><code>GeneticAlgorithm.expansion()</code>:</h3>
+<p>Returns the possibly mutated crossovers of selected elements. How many
+is determined by this.expansionRate.</p>
+<h3 id="-static-geneticalgorithm-selections-"><code>static GeneticAlgorithm.selections</code>:</h3>
+<p>Bundle of standard selection methods. A selection function takes the
+amount of elements to be selected and returns an array of selected
+elements.</p>
+<h3 id="-geneticalgorithm-selection-rankselection-count-2-"><code>GeneticAlgorithm.selection.rankSelection(count=2)</code>:</h3>
+<p>Makes a selection where each element&#39;s probability of being selected is
+proportional to its position in the state.</p>
+<h3 id="-geneticalgorithm-selections-rouletteselection-count-2-"><code>GeneticAlgorithm.selections.rouletteSelection(count=2)</code>:</h3>
+<p>Makes a selection where each element&#39;s probability of being selected is
+proportional to its evaluation.</p>
+<p>Warning! This selection assumes the evaluation is being maximized.</p>
+<h3 id="-geneticalgorithm-crossovers-"><code>GeneticAlgorithm.crossovers</code>:</h3>
+<p>Bundle of standard crossover methods. A crossover function takes an
+array of parent elements and returns an array of sibling elements.</p>
+<h3 id="-geneticalgorithm-crossovers-singlepointcrossover-parents-"><code>GeneticAlgorithm.crossovers.singlepointCrossover(parents)</code>:</h3>
+<p>Given two parents, returns an array of two new elements built with one
+half of each parent. The cutpoint is chosen randomly.</p>
+<h3 id="-geneticalgorithm-mutations-"><code>GeneticAlgorithm.mutations</code>:</h3>
+<p>Bundle of standard mutation methods.</p>
+<h3 id="-geneticalgorithm-mutations-singlepointuniformmutation-element-"><code>GeneticAlgorithm.mutations.singlepointUniformMutation(element)</code>:</h3>
+<p>Sets a randomly selected gene to a uniform random value.</p>
+<h3 id="-geneticalgorithm-mutations-uniformmutation-maxpoints-infinity-"><code>GeneticAlgorithm.mutations.uniformMutation(maxPoints=Infinity)</code>:</h3>
+<p>Builds a mutation function that makes at least one and up to maxPoints
+mutations, changing a randomly selected gene to a uniform random value.</p>
+<h3 id="-geneticalgorithm-mutations-singlepointbiasedmutation-element-"><code>GeneticAlgorithm.mutations.singlepointBiasedMutation(element)</code>:</h3>
+<p>Sets a randomly selected gene to random deviation of its value, with a
+triangular distribution.</p>
+<h2 id="-src-metaheuristics-beamsearch-js-"><code>src/metaheuristics/BeamSearch.js</code></h2>
+<p><a href="http://en.wikipedia.org/wiki/Beam_search">Beam search</a> implementation for
+the Inveniemus library. It is a form of parallel best-first search with
+limited memory.</p>
+<h3 id="-new-beamsearch-params-"><code>new BeamSearch(params)</code>:</h3>
+<p>Builds a beam search. The problem&#39;s element must have its successors
+method implemented.</p>
+<h3 id="-beamsearch-successors-element-"><code>BeamSearch.successors(element)</code>:</h3>
+<p>Returns the elements&#39; successors. By default returns
+element.successors().</p>
+<h3 id="-beamsearch-expansion-"><code>BeamSearch.expansion()</code>:</h3>
+<p>Successors to all elements are calculated by calling the problem&#39;s
+successors method.</p>
+<h2 id="-src-metaheuristics-simulatedannealing-js-"><code>src/metaheuristics/SimulatedAnnealing.js</code></h2>
+<p><a href="http://en.wikipedia.org/wiki/Simulated_annealing">Simulated annealing</a>
+implementation for the Inveniemus library.</p>
+<h3 id="-new-simulatedannealing-params-"><code>new SimulatedAnnealing(params)</code>:</h3>
+<p>Builds a simulated annealing search.</p>
+<p>See <a href="http://en.wikipedia.org/wiki/Simulated_annealing">http://en.wikipedia.org/wiki/Simulated_annealing</a>.</p>
+<h3 id="-simulatedannealing-maximumtemperature-1-"><code>SimulatedAnnealing.maximumTemperature=1</code>:</h3>
+<p>The temperature at the start of the run.</p>
+<h3 id="-simulatedannealing-minimumtemperature-1-"><code>SimulatedAnnealing.minimumTemperature=1</code>:</h3>
+<p>The temperature at the end of the run.</p>
+<h3 id="-simulatedannealing-delta-0-01-"><code>SimulatedAnnealing.delta=0.01</code>:</h3>
+<p>The radius of the elements surroundings in every dimension, that is
+checked by this algorithm.</p>
+<h3 id="-simulatedannealing-size-1-"><code>SimulatedAnnealing.size=1</code>:</h3>
+<p>Default value for size is 1.</p>
+<h3 id="-simulatedannealing-randomneighbour-element-radius-this-delta-"><code>SimulatedAnnealing.randomNeighbour(element, radius=this.delta)</code>:</h3>
+<p>Returns one neighbour of the given element chosen at random.</p>
+<h3 id="-simulatedannealing-acceptance-current-neighbour-temp-this-temperature-"><code>SimulatedAnnealing.acceptance(current, neighbour, temp=this.temperature())</code>:</h3>
+<p>Returns the probability of accepting the new element. Uses the original
+definitions from Kirkpatrick&#39;s paper.</p>
+<h3 id="-simulatedannealing-temperature-"><code>SimulatedAnnealing.temperature()</code>:</h3>
+<p>Returns the current temperature of the annealing.</p>
+<h3 id="-simulatedannealing-update-"><code>SimulatedAnnealing.update()</code>:</h3>
+<p>For each element in the state one of its neighbours is chosen randomly. If
+the neighbour is better, it replaces the corresponding element. Else it
+may still do so, but with a probability calculated by this.acceptance().</p>
+<h2 id="-src-problems-sumoptimization-js-"><code>src/problems/SumOptimization.js</code></h2>
+<p>A class of very simple problems that deal with optimizing the sum of the
+elements&#39; values. Probably the simplest optimization problem that can be
+defined, included here for testing purposes.</p>
+<h3 id="-new-problems-sumoptimization-params-"><code>new problems.SumOptimization(params)</code>:</h3>
+<p>Very simple problem based on optimizing the elements&#39; values sum. The
+params argument should include the &#39;target&#39; number.</p>
+<h3 id="-problems-sumoptimization-suffices-elements-"><code>problems.SumOptimization.suffices(elements)</code>:</h3>
+<p>Checks if the best element&#39;s values add up to the target value.</p>
+<h3 id="-problems-sumoptimization-compare-element1-element2-"><code>problems.SumOptimization.compare(element1, element2)</code>:</h3>
+<p>The comparison between elements depends on this problem&#39;s target. For
+a Infinity maximization is applied, for -Infinity minimization, and
+for every other number approximation.</p>
+<h2 id="-src-problems-helloworld-js-"><code>src/problems/HelloWorld.js</code></h2>
+<p>As it sounds, HelloWorld is a simple problem class, probably only useful for
+testing purposes.</p>
+<h3 id="-new-problems-helloworld-params-"><code>new problems.HelloWorld(params)</code>:</h3>
+<p>Simple problem where each element is a string, and the optimization
+goes towards the target string. The string to match is specified by the
+&#39;target&#39; parameter.</p>
+<h2 id="-src-problems-nqueenspuzzle-js-"><code>src/problems/NQueensPuzzle.js</code></h2>
+<p>A generalized version of the classic <a href="http://en.wikipedia.org/wiki/Eight_queens_puzzle">8 queens puzzle</a>.</p>
+<h3 id="-new-problems-nqueenspuzzle-params-"><code>new problems.NQueensPuzzle(params)</code>:</h3>
+<p>Generalized version of the classic problem of placing 8 chess queens on
+an 8x8 chessboard so that no two queens attack each other. The amount
+of queens and board dimensions is specified by the N parameter.</p>
+<h3 id="-problems-nqueenspuzzle-representation-"><code>problems.NQueensPuzzle.representation</code>:</h3>
+<p>The representation is an array of N positions, indicating the row of
+the queen for each column. Its evaluation is the count of diagonals
+shared by queens pairwise.</p>
+<h2 id="-src-problems-knapsackproblem-js-"><code>src/problems/KnapsackProblem.js</code></h2>
+<p>The <a href="http://en.wikipedia.org/wiki/Knapsack_problem">Knapsack problem</a> is a
+classic combinatorial optimization problem. Given a set of items, each with
+cost and worth, a selection must be obtained (to go into the knapsack) so
+that the total cost does not exceed a certain limit, while maximizing the
+total worth.</p>
+<h3 id="-problems-knapsackproblem-items-"><code>problems.KnapsackProblem.items</code>:</h3>
+<p>The superset of all candidate solutions. Must be an object with each
+item by name. Each item must have a cost and a worth, and may have an
+amount (1 by default).</p>
+<h3 id="-new-problems-knapsackproblem-params-"><code>new problems.KnapsackProblem(params)</code>:</h3>
+<p>Classic combinatorial optimization problem, based on a given a set of
+items, each with a cost and a worth. The solution is a subset of items
+with maximum worth sum that does not exceed a cost limit.</p>
+<h3 id="-problems-knapsackproblem-limit-15-"><code>problems.KnapsackProblem.limit=15</code>:</h3>
+<p>Cost limit that candidate solution should not exceed.</p>
+<h3 id="-problems-knapsackproblem-defaultamount-1-"><code>problems.KnapsackProblem.defaultAmount=1</code>:</h3>
+<p>Amount available for each item by default.</p>
+<h3 id="-problems-knapsackproblem-representation-"><code>problems.KnapsackProblem.representation</code>:</h3>
+<p>The representation is an array with a number for each item. This
+number holds the selected amount for each item (from 0 up to the
+item&#39;s amount).</p>
+<hr>
+<p>By <a href="leonardo.val@creatartis.com">Leonardo Val</a>. Generated 2014-01-09 16:31:24.</p>
+
+  </body>
+</html>

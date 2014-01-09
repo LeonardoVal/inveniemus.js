@@ -1,10 +1,7 @@
-﻿/** inveniemus/src/problems/SumOptimization.js
-	Many reference problems and related utilities are provided in this file.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+﻿/** A class of very simple problems that deal with optimizing the sum of the
+	elements' values. Probably the simplest optimization problem that can be 
+	defined, included here for testing purposes.
 */
-
 problems.SumOptimization = basis.declare(Problem, { ////////////////////////////
 	title: "Sum optimization",
 	description: "Very simple problem based on optimizing the elements' values sum.",

@@ -1,0 +1,125 @@
+<!DOCTYPE  html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>doc</title>
+    <style>
+      /*github.com style (c) Vasily Polovnyov <vast@whiteants.net>*/
+      pre code {
+        display: block; padding: 0.5em;
+        color: #333;
+        background: #f8f8ff
+      }
+      pre .comment,
+      pre .template_comment,
+      pre .diff .header,
+      pre .javadoc {
+        color: #998;
+        font-style: italic
+      }
+      pre .keyword,
+      pre .css .rule .keyword,
+      pre .winutils,
+      pre .javascript .title,
+      pre .nginx .title,
+      pre .subst,
+      pre .request,
+      pre .status {
+        color: #333;
+        font-weight: bold
+      }
+      pre .number,
+      pre .hexcolor,
+      pre .ruby .constant {
+        color: #099;
+      }
+      pre .string,
+      pre .tag .value,
+      pre .phpdoc,
+      pre .tex .formula {
+        color: #d14
+      }
+      pre .title,
+      pre .id {
+        color: #900;
+        font-weight: bold
+      }
+      pre .javascript .title,
+      pre .lisp .title,
+      pre .clojure .title,
+      pre .subst {
+        font-weight: normal
+      }
+      pre .class .title,
+      pre .haskell .type,
+      pre .vhdl .literal,
+      pre .tex .command {
+        color: #458;
+        font-weight: bold
+      }
+      pre .tag,
+      pre .tag .title,
+      pre .rules .property,
+      pre .django .tag .keyword {
+        color: #000080;
+        font-weight: normal
+      }
+      pre .attribute,
+      pre .variable,
+      pre .lisp .body {
+        color: #008080
+      }
+      pre .regexp {
+        color: #009926
+      }
+      pre .class {
+        color: #458;
+        font-weight: bold
+      }
+      pre .symbol,
+      pre .ruby .symbol .string,
+      pre .lisp .keyword,
+      pre .tex .special,
+      pre .prompt {
+        color: #990073
+      }
+      pre .built_in,
+      pre .lisp .title,
+      pre .clojure .built_in {
+        color: #0086b3
+      }
+      pre .preprocessor,
+      pre .pi,
+      pre .doctype,
+      pre .shebang,
+      pre .cdata {
+        color: #999;
+        font-weight: bold
+      }
+      pre .deletion {
+        background: #fdd
+      }
+      pre .addition {
+        background: #dfd
+      }
+      pre .diff .change {
+        background: #0086b3
+      }
+      pre .chunk {
+        color: #aaa
+      }
+    </style>
+  </head>
+  <body>  
+    <h1 id="inveniemus">Inveniemus</h1>
+<p>Inveniemus is a search and optimization library for Javascript. It focuses on a particular class of optimization techniques, called <a href="http://en.wikipedia.org/wiki/Metaheuristic">metaheuristics</a>, which include algorithms like <a href="http://en.wikipedia.org/wiki/Hill_climbing">Hill climbing search</a> and <a href="http://en.wikipedia.org/wiki/Genetic_algorithm">Genetic algorithms</a>. The name means <em>&quot;(we) will find (it)&quot;</em>, as in the classical quote from Hannibal <em>&quot;inveniemus viam aut faciemus&quot;</em>, which means <em>&quot;we will find a way or we will make it&quot;</em>. Released under an MIT license, it has been developed since 2012 by <a href="https://github.com/LeonardoVal">Leonardo Val</a>, with contributions by: <a href="mailto:andreszeballosjuanico@gmail.com">Andrés Zeballos</a>, <a href="gonzalo.martinez@live.com">Gonzalo Martínez</a> and <a href="mlepratte3108@hotmail.com">Mathías Lepratte</a>. It is aimed to the big three environments of Javascript (as of 2013): in a standard browser both embedded inside an HTML page or inside a web worker, or server side with <a href="http://nodejs.org/">NodeJS</a>. </p>
+<h2 id="core-concepts">Core concepts</h2>
+<p>Inveniemus splits searches and optimizations in three core concepts: elements, problems and metaheuristics. An <em>element</em> is a representation of a member of the search space, hence a candidate solution. All such representations in Inveniemus are based on arrays of numbers, with a fixed length and values between a given range (0 and 1 by default). This arrays may be converted to another data structure closer to the problem&#39;s domain. Still the optimizations shall only deal with the raw numbers. Element types are responsible for their initialization, assessment and mapping to another data types.</p>
+<p>A <em>problem</em> in Inveniemus specifies what the search is about. First it contains the element type used as a representation for candidate solutions. Secondly it defines how this solutions are compared to each other to find which is the better one. Usually it implies the maximization or minimization of the elements&#39; evaluation, treating that number as a measure of the candidate solutions&#39; quality or errors. Finally it decide when an element is sufficient and can be considered a feasible solution. Using this framework usually involves defining a new problem object, which implies declaring a new element type.</p>
+<p>Inveniemus&#39; <em>metaheuristics</em> are the implementation of several optimization algorithms, that can be used also for searching. Though the methods are quite different, all implementations share some common features. All methods are iterative, going through a number of steps before meeting a certain finish criteria (at least a maximum number of steps). As it runs the metaheuristic carries a set of elements called <em>state</em>, usually initialized at random. With each iteration the algorithm tries to improve its state, by modifying or discarding elements or adding new ones. After every step all elements in the state should be evaluated, and sorted in decreasing order of fitness.</p>
+<h2 id="example">Example</h2>
+<p><strong>TODO</strong>.</p>
+
+  </body>
+</html>

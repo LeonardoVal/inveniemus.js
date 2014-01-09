@@ -1,15 +1,11 @@
-﻿/** inveniemus/src/metaheuristics/BeamSearch.js
-	Beam search implementation for the Inveniemus library. It is a form of 
-	parallel best-first search with limited memory.
-	See <http://en.wikipedia.org/wiki/Beam_search>.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+﻿/** [Beam search](http://en.wikipedia.org/wiki/Beam_search) implementation for 
+	the Inveniemus library. It is a form of parallel best-first search with 
+	limited memory.
 */
 var BeamSearch = metaheuristics.BeamSearch = basis.declare(Metaheuristic, {
 	/** new BeamSearch(params):
-		Builds a beam search. The problem should have the successors method
-		implemented.
+		Builds a beam search. The problem's element must have its successors 
+		method implemented.
 	*/
 	constructor: function BeamSearch(params) {
 		Metaheuristic.call(this, params);

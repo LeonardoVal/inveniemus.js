@@ -1,8 +1,4 @@
-﻿/** inveniemus/src/problems/NQueensPuzzle.js
-	Many reference problems and related utilities are provided in this file.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+﻿/** A generalized version of the classic [8 queens puzzle](http://en.wikipedia.org/wiki/Eight_queens_puzzle).
 */
 problems.NQueensPuzzle = basis.declare(Problem, { ////////////////////////////
 	title: "N-queens puzzle",

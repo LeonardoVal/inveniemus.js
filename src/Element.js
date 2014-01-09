@@ -1,13 +1,8 @@
-﻿/** inveniemus/src/Element.js
-	Element is the term used in the Inveniemus library for representations of
-	candidate solutions in a search or optimization problem.
-	See <http://en.wikipedia.org/wiki/Metaheuristic>.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+﻿/**	Element is the term used in the Inveniemus library for representations of
+	[candidate solutions](http://en.wikipedia.org/wiki/Feasible_region) in a 
+	search or optimization problem.
 */
-var __DEFAULT_RANDOM__ = basis.Randomness.DEFAULT,
-	iterable = basis.iterable;
+var iterable = basis.iterable;
 
 var Element = exports.Element = basis.declare({
 	/** Element.length=10:
@@ -28,7 +23,7 @@ var Element = exports.Element = basis.declare({
 	/** Element.random=Randomness.DEFAULT:
 		Pseudorandom number generator used by the element.
 	*/
-	random: __DEFAULT_RANDOM__,
+	random: basis.Randomness.DEFAULT,
 	
 	/** new Element(values=<random values>, evaluation=NaN):
 		An element represents a candidate solution. It is defined by the values
@@ -49,7 +44,7 @@ var Element = exports.Element = basis.declare({
 		*/
 		this.evaluation = +evaluation;
 	},
-
+	
 	/** Element.randomValue():
 		Returns a random value between this.minimumValue and this.maximumValue.
 	*/
@@ -116,11 +111,10 @@ var Element = exports.Element = basis.declare({
 	resolution: Number.EPSILON || 2.220446049250313e-16,
 	
 	/** Element.hammingDistance(array1, array2):
-		The Hamming distance between two arrays is the number of positions at 
-		which corresponding components are different. Arrays are assumed to be
-		of the same length. If they are not, only the common parts are 
-		considered.
-		See <http://en.wikipedia.org/wiki/Hamming_distance>.
+		The [Hamming distance](http://en.wikipedia.org/wiki/Hamming_distance) 
+		between two arrays is the number of positions at which corresponding 
+		components are different. Arrays are assumed to be of the same 
+		length. If they are not, only the common parts are considered.
 	*/
 	hammingDistance: function hammingDistance(array1, array2) {
 		return iterable(array1).zip(array2).filter(function (pair) {
@@ -129,10 +123,10 @@ var Element = exports.Element = basis.declare({
 	},
 
 	/** Element.manhattanDistance(array1, array2):
-		The Manhattan distance between two arrays is the sum of the absolute 
-		differences of corresponding positions. Arrays are assumed to be of the 
-		same length. If they are not, only the common parts are considered.
-		See <http://en.wikipedia.org/wiki/Manhattan_distance>.
+		The [Manhattan distance](http://en.wikipedia.org/wiki/Manhattan_distance) 
+		between two arrays is the sum of the absolute differences of 
+		corresponding positions. Arrays are assumed to be of the same length. If 
+		they are not, only the common parts are considered.
 	*/
 	manhattanDistance: function manhattanDistance(array1, array2) {
 		return iterable(array1).zip(array2).map(function (pair) {
@@ -141,10 +135,9 @@ var Element = exports.Element = basis.declare({
 	},
 
 	/** Element.euclideanDistance(array1, array2):
-		Calculates the euclidean distance between two arrays. Arrays are assumed
-		to be of the same length. If they are not, only the common parts are 
-		considered.
-		See <http://en.wikipedia.org/wiki/Euclidean_distance>.
+		Calculates the [euclidean distance](http://en.wikipedia.org/wiki/Euclidean_distance) 
+		between two arrays. Arrays are assumed to be of the same length. If they 
+		are not, only the common parts are considered.
 	*/
 	euclideanDistance: function euclideanDistance(array1, array2) {
 		return Math.sqrt(iterable(array1).zip(array2).map(function (pair) {
@@ -153,10 +146,10 @@ var Element = exports.Element = basis.declare({
 	},
 
 	/** Element.rootMeanSquaredError(f, data):
-		Returns the root mean squared error of the function f on the given 
-		data. The data must be an iterable of arrays, in which the first element 
-		is the expected result and the rest are the arguments for the function.
-		See <http://en.wikipedia.org/wiki/Root_mean_squared_error>.
+		Returns the [root mean squared error](http://en.wikipedia.org/wiki/Root_mean_squared_error) 
+		of the function f on the given data. The data must be an iterable of 
+		arrays, in which the first element is the expected result and the rest 
+		are the arguments for the function.
 	*/
 	rootMeanSquaredError: function rootMeanSquaredError(f, data) {
 		var length = 0,
@@ -225,7 +218,7 @@ var Element = exports.Element = basis.declare({
 	arrayMapping: function arrayMapping() {
 		var args = arguments, 
 			lastItems = args[args.length - 1];
-		basis.raiseIf(args.length < 1, "Element.linearMapping() expects at least one argument.");
+		basis.raiseIf(args.length < 1, "Element.arrayMapping() expects at least one argument.");
 		return this.values.map(function (v, i) {
 			var items = args.length > i ? args[i] : lastItems;
 			return items[v * items.length | 0];

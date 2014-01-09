@@ -1,16 +1,11 @@
-﻿/** inveniemus/src/metaheuristics/GeneticAlgorithm.js
-	Evolutionary computing for the Inveniemus library.
-	See <http://en.wikipedia.org/wiki/Evolutionary_algorithm>.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+﻿/** Classic Holland's-style [genetic algorithms](http://en.wikipedia.org/wiki/Genetic_algorithm)
+	for the Inveniemus library.
 */
 // GeneticAlgorithm metaheuristic. /////////////////////////////////////////////
 var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = basis.declare(Metaheuristic, {
 	/** new GeneticAlgorithm(params):
 		Builds a genetic algorithm, the base for many evolutionary computing
 		variants.
-		See <http://en.wikipedia.org/wiki/Genetic_algorithm>.
 	*/
 	constructor: function GeneticAlgorithm(params) {
 		Metaheuristic.call(this, params); // Superconstructor call.

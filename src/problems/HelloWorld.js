@@ -1,8 +1,5 @@
-﻿/** inveniemus/src/problems/HelloWorld.js
-	Many reference problems and related utilities are provided in this file.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+﻿/** As it sounds, HelloWorld is a simple problem class, probably only useful for
+	testing purposes.
 */
 problems.HelloWorld = basis.declare(Problem, { /////////////////////////////////
 	title: "Hello world",

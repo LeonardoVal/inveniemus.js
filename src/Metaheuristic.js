@@ -1,13 +1,6 @@
-﻿/** inveniemus/src/Metaheuristic.js
-	A Metaheuristic is usually an optimization algorithm (which can also be used
-	for searching).
-	See <http://en.wikipedia.org/wiki/Metaheuristic>.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+﻿/**	A [Metaheuristic](http://en.wikipedia.org/wiki/Metaheuristic) is an 
+	optimization algorithm (which can also be used for searching).
 */
-// Metaheuristic base class ////////////////////////////////////////////////////
-
 var Metaheuristic = exports.Metaheuristic = basis.declare({
 	/** Metaheuristic.logger:
 		Logger used by the metaheuristic.
@@ -46,18 +39,20 @@ var Metaheuristic = exports.Metaheuristic = basis.declare({
 			This metaheuristic's pseudorandom number generator. It is strongly
 			advised to have only one for the whole process.
 		*/
-			.object('random', { defaultValue: __DEFAULT_RANDOM__ })
+			.object('random', { defaultValue: basis.Randomness.DEFAULT })
 		/** Metaheuristic.statistics:
 			The statistic gatherer for this metaheuristic.
 		*/
 			.object('statistics', { defaultValue: new basis.Statistics() })
 			.object('logger', { ignore: true });
 		/** Metaheuristic.events:
-			Event handler for this metaheuristic. Emitted events are: initiated,
-			expanded, evaluated, sieved, advanced, analyzed & finished.
+			Event handler for this metaheuristic. The emitted events by default
+			are: initiated, updated, expanded, evaluated, sieved, advanced, 
+			analyzed & finished.
 		*/
 		this.events = new basis.Events({ 
-			events: "initiated expanded evaluated sieved advanced analyzed finished".split(' ')
+			events: ["initiated", "updated", "expanded", "evaluated", "sieved", 
+				"advanced", "analyzed", "finished"]
 		});
 	},
 	
@@ -77,7 +72,25 @@ var Metaheuristic = exports.Metaheuristic = basis.declare({
 		this.logger && this.logger.debug('State has been initiated. Nos coepimus.');
 	},
 	
-	/** Metaheuristic.expand(expansion):
+	/** Metaheuristic.update():
+		Updates this metaheuristic's state. It assumes the state has been 
+		initialized. The process may be asynchronous, so it returns a Future.
+		The default implementation first expands the state by calling 
+		this.expand(), then evaluates the added elements by calling 
+		this.evaluate(), and finally removes the worst elements with 
+		this.sieve().
+	*/
+	update: function update() {
+		var mh = this;
+		this.expand();
+		return this.evaluate().then(function () {
+			mh.sieve();
+			mh.events.emit('updated', this);
+			return mh;
+		});
+	},
+	
+	/** Metaheuristic.expand(expansion=[]):
 		Adds to this metaheuristic's state the given expansion. If none is given,
 		this.expansion() is called to get new expansion.
 	*/
@@ -117,17 +130,19 @@ var Metaheuristic = exports.Metaheuristic = basis.declare({
 		return elems;
 	},
 	
-	/** Metaheuristic.evaluate():
+	/** Metaheuristic.evaluate(elements):
 		Evaluates all the elements in this.state with no evaluation, using its
 		evaluation method. After that sorts the state with the compare method
 		of the problem.
-		Returns a Future, regardless of the evaluation being asynchoronous or 
+		Returns a Future, regardless of the evaluation being asynchronous or 
 		not.
 	*/
-	evaluate: function evaluate(cursors) {
-		var mh = this;
-		this.statistics.startTime('time_evaluation');
-		return basis.Future.all(iterable(this.state).filter(
+	evaluate: function evaluate(elements) {
+		var mh = this,
+			evalTime = this.statistics.stat(['time', 'evaluation']);
+		evalTime.startTime();
+		elements = elements || this.state;
+		return basis.Future.all(iterable(elements).filter(
 			function (element) { // For those elements that don't have an evaluation, ...
 				return isNaN(element.evaluation);
 			},
@@ -135,11 +150,11 @@ var Metaheuristic = exports.Metaheuristic = basis.declare({
 				return basis.when(element.evaluate());
 			}
 		)).then(function (results) {
-			mh.state.sort(mh.problem.compare.bind(mh.problem));
-			mh.statistics.addTime('time_evaluation');
+			elements.sort(mh.problem.compare.bind(mh.problem));
+			evalTime.addTime();
 			mh.events.emit('evaluated', this);
 			mh.logger && mh.logger.debug('Evaluated and sorted ', results.length, ' elements. Appretiatus sunt.');
-			return mh;
+			return elements;
 		});
 	},
 	
@@ -188,20 +203,22 @@ var Metaheuristic = exports.Metaheuristic = basis.declare({
 		null otherwise.
 	*/
 	advance: function advance() {
-		var mh = this;
-		if (this.step < 0) {
+		var mh = this, 
+			stepTime = this.statistics.stat(['time', 'step']),
+			result;
+		if (isNaN(this.step) || +this.step < 0) {
 			this.statistics.reset();
-			this.statistics.startTime('time_step');
+			stepTime.startTime();
 			this.initiate();
+			result = this.evaluate();
 		} else {
-			this.statistics.startTime('time_step');
-			this.expand();
+			stepTime.startTime();
+			result = this.update();
 		}
-		return this.evaluate().then(function () {
-			mh.sieve();
-			mh.step = Math.max(0, mh.step + 1);
-			mh.analyze(); // Calculate the state stats after sieving it.
-			mh.statistics.addTime('time_step');
+		return result.then(function () {
+			mh.step = isNaN(mh.step) || +mh.step < 0 ? 0 : +mh.step + 1;
+			mh.analyze(); // Calculate the state's stats after updating it.
+			stepTime.addTime();
 			mh.events.emit('advanced', this);
 			mh.logger && mh.logger.info('Step ', mh.step , ' has been completed. Nos proficimus.');
 			return mh;

@@ -8,16 +8,11 @@
 		global.inveniemus = init(global.basis); // Global namespace.
 	}
 })(function (basis){ var exports = {};
-/** inveniemus/src/Element.js
-	Element is the term used in the Inveniemus library for representations of
-	candidate solutions in a search or optimization problem.
-	See <http://en.wikipedia.org/wiki/Metaheuristic>.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+/**	Element is the term used in the Inveniemus library for representations of
+	[candidate solutions](http://en.wikipedia.org/wiki/Feasible_region) in a 
+	search or optimization problem.
 */
-var __DEFAULT_RANDOM__ = basis.Randomness.DEFAULT,
-	iterable = basis.iterable;
+var iterable = basis.iterable;
 
 var Element = exports.Element = basis.declare({
 	/** Element.length=10:
@@ -38,7 +33,7 @@ var Element = exports.Element = basis.declare({
 	/** Element.random=Randomness.DEFAULT:
 		Pseudorandom number generator used by the element.
 	*/
-	random: __DEFAULT_RANDOM__,
+	random: basis.Randomness.DEFAULT,
 	
 	/** new Element(values=<random values>, evaluation=NaN):
 		An element represents a candidate solution. It is defined by the values
@@ -59,7 +54,7 @@ var Element = exports.Element = basis.declare({
 		*/
 		this.evaluation = +evaluation;
 	},
-
+	
 	/** Element.randomValue():
 		Returns a random value between this.minimumValue and this.maximumValue.
 	*/
@@ -126,11 +121,10 @@ var Element = exports.Element = basis.declare({
 	resolution: Number.EPSILON || 2.220446049250313e-16,
 	
 	/** Element.hammingDistance(array1, array2):
-		The Hamming distance between two arrays is the number of positions at 
-		which corresponding components are different. Arrays are assumed to be
-		of the same length. If they are not, only the common parts are 
-		considered.
-		See <http://en.wikipedia.org/wiki/Hamming_distance>.
+		The [Hamming distance](http://en.wikipedia.org/wiki/Hamming_distance) 
+		between two arrays is the number of positions at which corresponding 
+		components are different. Arrays are assumed to be of the same 
+		length. If they are not, only the common parts are considered.
 	*/
 	hammingDistance: function hammingDistance(array1, array2) {
 		return iterable(array1).zip(array2).filter(function (pair) {
@@ -139,10 +133,10 @@ var Element = exports.Element = basis.declare({
 	},
 
 	/** Element.manhattanDistance(array1, array2):
-		The Manhattan distance between two arrays is the sum of the absolute 
-		differences of corresponding positions. Arrays are assumed to be of the 
-		same length. If they are not, only the common parts are considered.
-		See <http://en.wikipedia.org/wiki/Manhattan_distance>.
+		The [Manhattan distance](http://en.wikipedia.org/wiki/Manhattan_distance) 
+		between two arrays is the sum of the absolute differences of 
+		corresponding positions. Arrays are assumed to be of the same length. If 
+		they are not, only the common parts are considered.
 	*/
 	manhattanDistance: function manhattanDistance(array1, array2) {
 		return iterable(array1).zip(array2).map(function (pair) {
@@ -151,10 +145,9 @@ var Element = exports.Element = basis.declare({
 	},
 
 	/** Element.euclideanDistance(array1, array2):
-		Calculates the euclidean distance between two arrays. Arrays are assumed
-		to be of the same length. If they are not, only the common parts are 
-		considered.
-		See <http://en.wikipedia.org/wiki/Euclidean_distance>.
+		Calculates the [euclidean distance](http://en.wikipedia.org/wiki/Euclidean_distance) 
+		between two arrays. Arrays are assumed to be of the same length. If they 
+		are not, only the common parts are considered.
 	*/
 	euclideanDistance: function euclideanDistance(array1, array2) {
 		return Math.sqrt(iterable(array1).zip(array2).map(function (pair) {
@@ -163,10 +156,10 @@ var Element = exports.Element = basis.declare({
 	},
 
 	/** Element.rootMeanSquaredError(f, data):
-		Returns the root mean squared error of the function f on the given 
-		data. The data must be an iterable of arrays, in which the first element 
-		is the expected result and the rest are the arguments for the function.
-		See <http://en.wikipedia.org/wiki/Root_mean_squared_error>.
+		Returns the [root mean squared error](http://en.wikipedia.org/wiki/Root_mean_squared_error) 
+		of the function f on the given data. The data must be an iterable of 
+		arrays, in which the first element is the expected result and the rest 
+		are the arguments for the function.
 	*/
 	rootMeanSquaredError: function rootMeanSquaredError(f, data) {
 		var length = 0,
@@ -235,7 +228,7 @@ var Element = exports.Element = basis.declare({
 	arrayMapping: function arrayMapping() {
 		var args = arguments, 
 			lastItems = args[args.length - 1];
-		basis.raiseIf(args.length < 1, "Element.linearMapping() expects at least one argument.");
+		basis.raiseIf(args.length < 1, "Element.arrayMapping() expects at least one argument.");
 		return this.values.map(function (v, i) {
 			var items = args.length > i ? args[i] : lastItems;
 			return items[v * items.length | 0];
@@ -285,12 +278,8 @@ var Element = exports.Element = basis.declare({
 }); // declare Element.
 
 
-/** inveniemus/src/Problem.js
-	The Problem type represents a search or optimization problem in the 
+/**	The Problem type represents a search or optimization problem in the 
 	Inveniemus library.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
 */
 var Problem = exports.Problem = basis.declare({
 	/** Problem.title='<no title>':
@@ -306,7 +295,7 @@ var Problem = exports.Problem = basis.declare({
 	/** Problem.random=Randomness.DEFAULT:
 		Pseudorandom number generator used by the problem.
 	*/
-	random: __DEFAULT_RANDOM__,
+	random: basis.Randomness.DEFAULT,
 	
 	/** Problem.representation=Element:
 		Element constructor used for this problem's candidate solutions.
@@ -315,7 +304,8 @@ var Problem = exports.Problem = basis.declare({
 	
 	/** new Problem(params):
 		A search/optimization problem definition, holding the representation of
-		the elements (as an Element constructor).
+		the elements (as an Element constructor), with the comparison and 
+		sufficiency criteria.
 	*/
 	constructor: function Problem(params) {
 		basis.initialize(this, params)
@@ -330,8 +320,8 @@ var Problem = exports.Problem = basis.declare({
 		
 	/** Problem.compare(element1, element2):
 		Standard comparison function between two elements. Returns a positive
-		number if element1 is better than element2, a negative number if 
-		element1 is worse then element2, or zero otherwise.
+		number if element2 is better than element1, a negative number if 
+		element2 is worse then element1, or zero otherwise.
 		Implements a minimization by default.
 	*/
 	compare: function compare(element1, element2) {
@@ -388,16 +378,9 @@ var Problem = exports.Problem = basis.declare({
 var problems = exports.problems = {};
 
 
-/** inveniemus/src/Metaheuristic.js
-	A Metaheuristic is usually an optimization algorithm (which can also be used
-	for searching).
-	See <http://en.wikipedia.org/wiki/Metaheuristic>.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+/**	A [Metaheuristic](http://en.wikipedia.org/wiki/Metaheuristic) is an 
+	optimization algorithm (which can also be used for searching).
 */
-// Metaheuristic base class ////////////////////////////////////////////////////
-
 var Metaheuristic = exports.Metaheuristic = basis.declare({
 	/** Metaheuristic.logger:
 		Logger used by the metaheuristic.
@@ -436,18 +419,20 @@ var Metaheuristic = exports.Metaheuristic = basis.declare({
 			This metaheuristic's pseudorandom number generator. It is strongly
 			advised to have only one for the whole process.
 		*/
-			.object('random', { defaultValue: __DEFAULT_RANDOM__ })
+			.object('random', { defaultValue: basis.Randomness.DEFAULT })
 		/** Metaheuristic.statistics:
 			The statistic gatherer for this metaheuristic.
 		*/
 			.object('statistics', { defaultValue: new basis.Statistics() })
 			.object('logger', { ignore: true });
 		/** Metaheuristic.events:
-			Event handler for this metaheuristic. Emitted events are: initiated,
-			expanded, evaluated, sieved, advanced, analyzed & finished.
+			Event handler for this metaheuristic. The emitted events by default
+			are: initiated, updated, expanded, evaluated, sieved, advanced, 
+			analyzed & finished.
 		*/
 		this.events = new basis.Events({ 
-			events: "initiated expanded evaluated sieved advanced analyzed finished".split(' ')
+			events: ["initiated", "updated", "expanded", "evaluated", "sieved", 
+				"advanced", "analyzed", "finished"]
 		});
 	},
 	
@@ -467,7 +452,25 @@ var Metaheuristic = exports.Metaheuristic = basis.declare({
 		this.logger && this.logger.debug('State has been initiated. Nos coepimus.');
 	},
 	
-	/** Metaheuristic.expand(expansion):
+	/** Metaheuristic.update():
+		Updates this metaheuristic's state. It assumes the state has been 
+		initialized. The process may be asynchronous, so it returns a Future.
+		The default implementation first expands the state by calling 
+		this.expand(), then evaluates the added elements by calling 
+		this.evaluate(), and finally removes the worst elements with 
+		this.sieve().
+	*/
+	update: function update() {
+		var mh = this;
+		this.expand();
+		return this.evaluate().then(function () {
+			mh.sieve();
+			mh.events.emit('updated', this);
+			return mh;
+		});
+	},
+	
+	/** Metaheuristic.expand(expansion=[]):
 		Adds to this metaheuristic's state the given expansion. If none is given,
 		this.expansion() is called to get new expansion.
 	*/
@@ -507,17 +510,19 @@ var Metaheuristic = exports.Metaheuristic = basis.declare({
 		return elems;
 	},
 	
-	/** Metaheuristic.evaluate():
+	/** Metaheuristic.evaluate(elements):
 		Evaluates all the elements in this.state with no evaluation, using its
 		evaluation method. After that sorts the state with the compare method
 		of the problem.
-		Returns a Future, regardless of the evaluation being asynchoronous or 
+		Returns a Future, regardless of the evaluation being asynchronous or 
 		not.
 	*/
-	evaluate: function evaluate(cursors) {
-		var mh = this;
-		this.statistics.startTime('time_evaluation');
-		return basis.Future.all(iterable(this.state).filter(
+	evaluate: function evaluate(elements) {
+		var mh = this,
+			evalTime = this.statistics.stat(['time', 'evaluation']);
+		evalTime.startTime();
+		elements = elements || this.state;
+		return basis.Future.all(iterable(elements).filter(
 			function (element) { // For those elements that don't have an evaluation, ...
 				return isNaN(element.evaluation);
 			},
@@ -525,11 +530,11 @@ var Metaheuristic = exports.Metaheuristic = basis.declare({
 				return basis.when(element.evaluate());
 			}
 		)).then(function (results) {
-			mh.state.sort(mh.problem.compare.bind(mh.problem));
-			mh.statistics.addTime('time_evaluation');
+			elements.sort(mh.problem.compare.bind(mh.problem));
+			evalTime.addTime();
 			mh.events.emit('evaluated', this);
 			mh.logger && mh.logger.debug('Evaluated and sorted ', results.length, ' elements. Appretiatus sunt.');
-			return mh;
+			return elements;
 		});
 	},
 	
@@ -578,20 +583,22 @@ var Metaheuristic = exports.Metaheuristic = basis.declare({
 		null otherwise.
 	*/
 	advance: function advance() {
-		var mh = this;
-		if (this.step < 0) {
+		var mh = this, 
+			stepTime = this.statistics.stat(['time', 'step']),
+			result;
+		if (isNaN(this.step) || +this.step < 0) {
 			this.statistics.reset();
-			this.statistics.startTime('time_step');
+			stepTime.startTime();
 			this.initiate();
+			result = this.evaluate();
 		} else {
-			this.statistics.startTime('time_step');
-			this.expand();
+			stepTime.startTime();
+			result = this.update();
 		}
-		return this.evaluate().then(function () {
-			mh.sieve();
-			mh.step = Math.max(0, mh.step + 1);
-			mh.analyze(); // Calculate the state stats after sieving it.
-			mh.statistics.addTime('time_step');
+		return result.then(function () {
+			mh.step = isNaN(mh.step) || +mh.step < 0 ? 0 : +mh.step + 1;
+			mh.analyze(); // Calculate the state's stats after updating it.
+			stepTime.addTime();
 			mh.events.emit('advanced', this);
 			mh.logger && mh.logger.info('Step ', mh.step , ' has been completed. Nos proficimus.');
 			return mh;
@@ -635,19 +642,13 @@ var Metaheuristic = exports.Metaheuristic = basis.declare({
 */
 var metaheuristics = exports.metaheuristics = {};
 
-/** inveniemus/src/metaheuristics/HillClimbing.js
-	Hill Climbing implementation for the Inveniemus library.
-	See <http://en.wikipedia.org/wiki/Hill_climbing>.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+/** [Hill Climbing](http://en.wikipedia.org/wiki/Hill_climbing) implementation 
+	for the Inveniemus library.
 */
-// HillClimbing metaheuristic. /////////////////////////////////////////////////
-
 var HillClimbing = metaheuristics.HillClimbing = basis.declare(Metaheuristic, {
 	/** new HillClimbing(params):
-		Builds a hill climbing search.
-		See <http://en.wikipedia.org/wiki/Hill_climbing>.
+		Builds a [hill climbing](http://en.wikipedia.org/wiki/Hill_climbing) 
+		search.
 	*/
 	constructor: function HillClimbing(params) {
 		Metaheuristic.call(this, params);
@@ -663,27 +664,36 @@ var HillClimbing = metaheuristics.HillClimbing = basis.declare(Metaheuristic, {
 			.integer('size', { defaultValue: 1,	coerce: true });
 	},
 	
-	/** HillClimbing.expansion():
-		New elements are calculated by adding all variation of existing elements
-		in the state. Each variation is either an increment or decrement in one
-		(and only one) of the element's dimensions.
+	/** HillClimbing.update():
+		Each element in the state is replaced by the best element in its 
+		neighbourhood, if there is any. The surroundings have all possible 
+		elements resulting from either an increment or decrement (of the given
+		delta) in each of the centre element's dimensions.
 	*/
-	expansion: function expansion() {
-		var delta = this.delta,
-			elems = [];
-		this.__previous__ = this.state[0]; // This is for local optimum detection.
-		this.state.forEach(function (element) {
-			elems = elems.concat(element.neighbourhood(delta));
+	update: function update() {
+		var mh = this, 
+			localOptima = 0;
+		return basis.Future.all(this.state.map(function (elem) {
+			var range = elem.neighbourhood(mh.delta);
+			range.push(elem);
+			return mh.evaluate(range).then(function (range) {
+				var best = range[0];
+				if (elem === best) {
+					localOptima++;
+				}
+				return best;
+			});			
+		})).then(function (elems) {
+			mh.state = elems;
+			mh.__localOptima__ = localOptima;
 		});
-		basis.raiseIf(elems.length < 1, "Expansion failed to produce any new elements.");
-		return elems;
 	},
 		
-	/** HillClimbing.atLocalOptimum():
-		Checks if the search is currently at a local optimum.
+	/** HillClimbing.atLocalOptima():
+		Checks if the search is currently stuck at local optima.
 	*/
-	atLocalOptimum: function atLocalOptimum() {
-		return this.__previous__ === this.state[0];
+	atLocalOptima: function atLocalOptima() {
+		return this.__localOptima__ >= this.state.length;
 	},
 		
 	/** HillClimbing.finished():
@@ -691,7 +701,7 @@ var HillClimbing = metaheuristics.HillClimbing = basis.declare(Metaheuristic, {
 		criteria is tested together with all others.
 	*/
 	finished: function finished() {
-		return Metaheuristic.prototype.finished.call(this) || this.atLocalOptimum();
+		return Metaheuristic.prototype.finished.call(this) || this.atLocalOptima();
 	},
 		
 	// Utility methods. ////////////////////////////////////////////////////////
@@ -702,65 +712,14 @@ var HillClimbing = metaheuristics.HillClimbing = basis.declare(Metaheuristic, {
 }); // declare HillClimbing.
 
 
-/** inveniemus/src/metaheuristics/BeamSearch.js
-	Beam search implementation for the Inveniemus library. It is a form of 
-	parallel best-first search with limited memory.
-	See <http://en.wikipedia.org/wiki/Beam_search>.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
-*/
-var BeamSearch = metaheuristics.BeamSearch = basis.declare(Metaheuristic, {
-	/** new BeamSearch(params):
-		Builds a beam search. The problem should have the successors method
-		implemented.
-	*/
-	constructor: function BeamSearch(params) {
-		Metaheuristic.call(this, params);
-	},
-	
-	/** BeamSearch.successors(element):
-		Returns the elements' successors. By default returns 
-		element.successors().
-	*/
-	successors: function successors(element) {
-		return element.successors();
-	},
-	
-	/** BeamSearch.expansion():
-		Successors to all elements are calculated by calling the problem's
-		successors method.
-	*/
-	expansion: function expansion() {
-		var allSuccessors = [],
-			successors = this.successors.bind(this);
-		this.state.forEach(function (element) {
-			allSuccessors = allSuccessors.concat(successors(element));
-		});
-		return allSuccessors;
-	},
-		
-	// Utility methods. ////////////////////////////////////////////////////////
-		
-	toString: function toString() {
-		return (this.constructor.name || 'BeamSearch') +'('+ JSON.stringify(this) +')';
-	}
-}); // declare BeamSearch.
-
-
-/** inveniemus/src/metaheuristics/GeneticAlgorithm.js
-	Evolutionary computing for the Inveniemus library.
-	See <http://en.wikipedia.org/wiki/Evolutionary_algorithm>.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+/** Classic Holland's-style [genetic algorithms](http://en.wikipedia.org/wiki/Genetic_algorithm)
+	for the Inveniemus library.
 */
 // GeneticAlgorithm metaheuristic. /////////////////////////////////////////////
 var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = basis.declare(Metaheuristic, {
 	/** new GeneticAlgorithm(params):
 		Builds a genetic algorithm, the base for many evolutionary computing
 		variants.
-		See <http://en.wikipedia.org/wiki/Genetic_algorithm>.
 	*/
 	constructor: function GeneticAlgorithm(params) {
 		Metaheuristic.call(this, params); // Superconstructor call.
@@ -950,13 +909,153 @@ GeneticAlgorithm.mutations = {
 }; // GeneticAlgorithm.mutations
 
 
-/** inveniemus/src/problems/SumOptimization.js
-	Many reference problems and related utilities are provided in this file.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+/** [Beam search](http://en.wikipedia.org/wiki/Beam_search) implementation for 
+	the Inveniemus library. It is a form of parallel best-first search with 
+	limited memory.
 */
+var BeamSearch = metaheuristics.BeamSearch = basis.declare(Metaheuristic, {
+	/** new BeamSearch(params):
+		Builds a beam search. The problem's element must have its successors 
+		method implemented.
+	*/
+	constructor: function BeamSearch(params) {
+		Metaheuristic.call(this, params);
+	},
+	
+	/** BeamSearch.successors(element):
+		Returns the elements' successors. By default returns 
+		element.successors().
+	*/
+	successors: function successors(element) {
+		return element.successors();
+	},
+	
+	/** BeamSearch.expansion():
+		Successors to all elements are calculated by calling the problem's
+		successors method.
+	*/
+	expansion: function expansion() {
+		var allSuccessors = [],
+			successors = this.successors.bind(this);
+		this.state.forEach(function (element) {
+			allSuccessors = allSuccessors.concat(successors(element));
+		});
+		return allSuccessors;
+	},
+		
+	// Utility methods. ////////////////////////////////////////////////////////
+		
+	toString: function toString() {
+		return (this.constructor.name || 'BeamSearch') +'('+ JSON.stringify(this) +')';
+	}
+}); // declare BeamSearch.
 
+
+/** [Simulated annealing](http://en.wikipedia.org/wiki/Simulated_annealing) 
+	implementation for the Inveniemus library.
+*/
+var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = basis.declare(Metaheuristic, {
+	/** new SimulatedAnnealing(params):
+		Builds a simulated annealing search.
+		See <http://en.wikipedia.org/wiki/Simulated_annealing>.
+	*/
+	constructor: function SimulatedAnnealing(params) {
+		Metaheuristic.call(this, params);
+		basis.initialize(this, params)
+		/** SimulatedAnnealing.maximumTemperature=1:
+			The temperature at the start of the run.
+		*/
+			.number('maximumTemperature', { defaultValue: 1, coerce: true })
+		/** SimulatedAnnealing.minimumTemperature=1:
+			The temperature at the end of the run.
+		*/
+			.number('minimumTemperature', { defaultValue: 0, coerce: true })
+		/** SimulatedAnnealing.delta=0.01:
+			The radius of the elements surroundings in every dimension, that is
+			checked by this algorithm.
+		*/
+			.number('delta', { defaultValue: 0.01, coerce: true })
+		/** SimulatedAnnealing.size=1:
+			Default value for size is 1.
+		*/
+			.integer('size', { defaultValue: 1,	coerce: true });
+	},
+	
+	/** SimulatedAnnealing.randomNeighbour(element, radius=this.delta):
+		Returns one neighbour of the given element chosen at random.
+	*/
+	randomNeighbour: function randomNeighbour(element, radius) {
+		radius = isNaN(radius) ? this.delta : +radius;
+		var i = this.random.randomInt(element.values.length), 
+			v = element.values[i];
+		if (this.random.randomBool()) {
+			v = Math.min(element.maximumValue, v + radius);
+		} else {
+			v = Math.max(element.minimumValue, v - radius);
+		}
+		return element.modification(i, v);
+	},
+	
+	/** SimulatedAnnealing.acceptance(current, neighbour, temp=this.temperature()):
+		Returns the probability of accepting the new element. Uses the original
+		definitions from Kirkpatrick's paper.
+	*/
+	acceptance: function acceptance(current, neighbour, temp) {
+		temp = isNaN(temp) ? this.temperature() : +temp;
+		if (this.problem.compare(current, neighbour) > 0) {
+			return 1; // Should always accept a better neighbour.
+		} else {
+			var d = -Math.abs(neighbour.evaluation - current.evaluation);
+			return Math.min(1, Math.exp(d / temp));
+		}
+	},
+	
+	/** SimulatedAnnealing.temperature():
+		Returns the current temperature of the annealing.
+	*/
+	temperature: function temperature() {
+		return (1 - Math.max(0, this.step) / this.steps) * (this.maximumTemperature - this.minimumTemperature) + this.minimumTemperature;
+	},
+	
+	/** SimulatedAnnealing.update():
+		For each element in the state one of its neighbours is chosen randomly. If
+		the neighbour is better, it replaces the corresponding element. Else it
+		may still do so, but with a probability calculated by this.acceptance().
+	*/
+	update: function update() {
+		var mh = this,
+			temp = this.temperature(),
+			acceptanceStat = this.statistics.stat(['acceptance']),
+			temperatureStat = this.statistics.stat(['temperature']);
+		temperatureStat.add(temp, this.step);
+		return basis.Future.all(this.state.map(function (elem) {
+			var neighbour = mh.randomNeighbour(elem);
+			return basis.when(neighbour.evaluate()).then(function () {
+				var p = mh.acceptance(elem, neighbour, temp);
+				acceptanceStat.add(p, neighbour);
+				if (mh.random.randomBool(p)) {
+					return neighbour;
+				} else {
+					return elem;
+				}
+			});
+		})).then(function (elems) {
+			return mh.state = elems;
+		});
+	},
+
+	// Utility methods. ////////////////////////////////////////////////////////
+		
+	toString: function toString() {
+		return (this.constructor.name || 'SimulatedAnnealing') +'('+ JSON.stringify(this) +')';
+	}
+}); // declare SimulatedAnnealing.
+
+
+/** A class of very simple problems that deal with optimizing the sum of the
+	elements' values. Probably the simplest optimization problem that can be 
+	defined, included here for testing purposes.
+*/
 problems.SumOptimization = basis.declare(Problem, { ////////////////////////////
 	title: "Sum optimization",
 	description: "Very simple problem based on optimizing the elements' values sum.",
@@ -997,11 +1096,8 @@ problems.SumOptimization = basis.declare(Problem, { ////////////////////////////
 }); // declare SumOptimization.
 
 
-/** inveniemus/src/problems/HelloWorld.js
-	Many reference problems and related utilities are provided in this file.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+/** As it sounds, HelloWorld is a simple problem class, probably only useful for
+	testing purposes.
 */
 problems.HelloWorld = basis.declare(Problem, { /////////////////////////////////
 	title: "Hello world",
@@ -1045,11 +1141,7 @@ problems.HelloWorld = basis.declare(Problem, { /////////////////////////////////
 }); // declare HelloWorld.
 
 
-/** inveniemus/src/problems/NQueensPuzzle.js
-	Many reference problems and related utilities are provided in this file.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+/** A generalized version of the classic [8 queens puzzle](http://en.wikipedia.org/wiki/Eight_queens_puzzle).
 */
 problems.NQueensPuzzle = basis.declare(Problem, { ////////////////////////////
 	title: "N-queens puzzle",
@@ -1100,11 +1192,11 @@ problems.NQueensPuzzle = basis.declare(Problem, { ////////////////////////////
 }); // declare NQueensPuzzle
 
 
-/** inveniemus/src/problems/KnapsackProblem.js
-	Many reference problems and related utilities are provided in this file.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+/** The [Knapsack problem](http://en.wikipedia.org/wiki/Knapsack_problem) is a
+	classic combinatorial optimization problem. Given a set of items, each with 
+	cost and worth, a selection must be obtained (to go into the knapsack) so
+	that the total cost does not exceed a certain limit, while maximizing the 
+	total worth.
 */
 problems.KnapsackProblem = basis.declare(Problem, { ////////////////////////////
 	title: "Knapsack problem",
