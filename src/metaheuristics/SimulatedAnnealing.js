@@ -2,33 +2,33 @@
 	implementation for the Inveniemus library.
 */
 var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = basis.declare(Metaheuristic, {
-	/** new SimulatedAnnealing(params):
+	/** new metaheuristics.SimulatedAnnealing(params):
 		Builds a simulated annealing search.
 		See <http://en.wikipedia.org/wiki/Simulated_annealing>.
 	*/
 	constructor: function SimulatedAnnealing(params) {
 		Metaheuristic.call(this, params);
 		basis.initialize(this, params)
-		/** SimulatedAnnealing.maximumTemperature=1:
+		/** metaheuristics.SimulatedAnnealing.maximumTemperature=1:
 			The temperature at the start of the run.
 		*/
 			.number('maximumTemperature', { defaultValue: 1, coerce: true })
-		/** SimulatedAnnealing.minimumTemperature=1:
+		/** metaheuristics.SimulatedAnnealing.minimumTemperature=1:
 			The temperature at the end of the run.
 		*/
 			.number('minimumTemperature', { defaultValue: 0, coerce: true })
-		/** SimulatedAnnealing.delta=0.01:
+		/** metaheuristics.SimulatedAnnealing.delta=0.01:
 			The radius of the elements surroundings in every dimension, that is
 			checked by this algorithm.
 		*/
 			.number('delta', { defaultValue: 0.01, coerce: true })
-		/** SimulatedAnnealing.size=1:
+		/** metaheuristics.SimulatedAnnealing.size=1:
 			Default value for size is 1.
 		*/
 			.integer('size', { defaultValue: 1,	coerce: true });
 	},
 	
-	/** SimulatedAnnealing.randomNeighbour(element, radius=this.delta):
+	/** metaheuristics.SimulatedAnnealing.randomNeighbour(element, radius=this.delta):
 		Returns one neighbour of the given element chosen at random.
 	*/
 	randomNeighbour: function randomNeighbour(element, radius) {
@@ -43,7 +43,7 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = basis.declare(Metah
 		return element.modification(i, v);
 	},
 	
-	/** SimulatedAnnealing.acceptance(current, neighbour, temp=this.temperature()):
+	/** metaheuristics.SimulatedAnnealing.acceptance(current, neighbour, temp=this.temperature()):
 		Returns the probability of accepting the new element. Uses the original
 		definitions from Kirkpatrick's paper.
 	*/
@@ -57,14 +57,14 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = basis.declare(Metah
 		}
 	},
 	
-	/** SimulatedAnnealing.temperature():
+	/** metaheuristics.SimulatedAnnealing.temperature():
 		Returns the current temperature of the annealing.
 	*/
 	temperature: function temperature() {
 		return (1 - Math.max(0, this.step) / this.steps) * (this.maximumTemperature - this.minimumTemperature) + this.minimumTemperature;
 	},
 	
-	/** SimulatedAnnealing.update():
+	/** metaheuristics.SimulatedAnnealing.update():
 		For each element in the state one of its neighbours is chosen randomly. If
 		the neighbour is better, it replaces the corresponding element. Else it
 		may still do so, but with a probability calculated by this.acceptance().

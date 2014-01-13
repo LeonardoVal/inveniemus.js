@@ -2,25 +2,25 @@
 	for the Inveniemus library.
 */
 var HillClimbing = metaheuristics.HillClimbing = basis.declare(Metaheuristic, {
-	/** new HillClimbing(params):
+	/** new metaheuristics.HillClimbing(params):
 		Builds a [hill climbing](http://en.wikipedia.org/wiki/Hill_climbing) 
 		search.
 	*/
 	constructor: function HillClimbing(params) {
 		Metaheuristic.call(this, params);
 		basis.initialize(this, params)
-		/** HillClimbing.delta=0.01:
+		/** metaheuristics.HillClimbing.delta=0.01:
 			The radius of the elements surroundings in every dimension, that is
 			checked by this algorithm.
 		*/
 			.number('delta', { defaultValue: 0.01, coerce: true })
-		/** HillClimbing.size=1:
+		/** metaheuristics.HillClimbing.size=1:
 			Default value for size is 1.
 		*/
 			.integer('size', { defaultValue: 1,	coerce: true });
 	},
 	
-	/** HillClimbing.update():
+	/** metaheuristics.HillClimbing.update():
 		Each element in the state is replaced by the best element in its 
 		neighbourhood, if there is any. The surroundings have all possible 
 		elements resulting from either an increment or decrement (of the given
@@ -45,14 +45,14 @@ var HillClimbing = metaheuristics.HillClimbing = basis.declare(Metaheuristic, {
 		});
 	},
 		
-	/** HillClimbing.atLocalOptima():
+	/** metaheuristics.HillClimbing.atLocalOptima():
 		Checks if the search is currently stuck at local optima.
 	*/
 	atLocalOptima: function atLocalOptima() {
 		return this.__localOptima__ >= this.state.length;
 	},
 		
-	/** HillClimbing.finished():
+	/** metaheuristics.HillClimbing.finished():
 		Hill climbing search must finish when a local optimum is reached. This
 		criteria is tested together with all others.
 	*/

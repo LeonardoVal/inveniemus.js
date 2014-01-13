@@ -3,7 +3,7 @@
 	limited memory.
 */
 var BeamSearch = metaheuristics.BeamSearch = basis.declare(Metaheuristic, {
-	/** new BeamSearch(params):
+	/** new metaheuristics.BeamSearch(params):
 		Builds a beam search. The problem's element must have its successors 
 		method implemented.
 	*/
@@ -11,7 +11,7 @@ var BeamSearch = metaheuristics.BeamSearch = basis.declare(Metaheuristic, {
 		Metaheuristic.call(this, params);
 	},
 	
-	/** BeamSearch.successors(element):
+	/** metaheuristics.BeamSearch.successors(element):
 		Returns the elements' successors. By default returns 
 		element.successors().
 	*/
@@ -19,7 +19,7 @@ var BeamSearch = metaheuristics.BeamSearch = basis.declare(Metaheuristic, {
 		return element.successors();
 	},
 	
-	/** BeamSearch.expansion():
+	/** metaheuristics.BeamSearch.expansion():
 		Successors to all elements are calculated by calling the problem's
 		successors method.
 	*/
