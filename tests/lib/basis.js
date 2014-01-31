@@ -853,7 +853,9 @@ var iterable = exports.iterable = function iterable(x) {
 /** Iterable.EMPTY:
 	An empty Iterable.
 */
-Iterable.EMPTY = new Iterable(stop);
+Iterable.EMPTY = new Iterable(function () {
+	return Iterable.prototype.stop;
+});
 
 // Iterables from common datatypes. ////////////////////////////////////////////
 
@@ -1430,6 +1432,33 @@ Iterable.prototype.lesser = function lesser(evaluation) {
 	return result;
 };
 
+/** Iterable.sample(n, random=Randomness.DEFAULT):
+	Returns an iterable with n elements of this iterable randomly selected. The
+	order of the elements is maintained.
+*/
+Iterable.prototype.sample = function sample(n, random) {
+	random = random || Randomness.DEFAULT;
+	var buffer = [];
+	this.forEach(function (x, i) {
+		var r = random.random();
+		if (buffer.length < n) {
+			buffer.push([r, x, i]);
+		} else if (r < buffer[buffer.length - 1][0]) {
+			buffer.push([r, x, i]);
+			buffer.sort(function (t1, t2) {
+				return t1[0] - t2[0]; // Order by random value.
+			});
+			buffer.pop();
+		}		
+	});
+	buffer.sort(function (t1, t2) {
+		return t1[2] - t2[2]; // Order by index.
+	});
+	return new Iterable(buffer.map(function (t) {
+		return t[1]; // Keep only the elements.
+	}));
+};
+
 // Utility functions. //////////////////////////////////////////////////////////
 
 /** Iterable.range(from=0, to, step=1):
@@ -1495,6 +1524,15 @@ Iterable.iterate = function iterate(f, x, n) {
 			}
 		};
 	});
+};
+
+Iterable.product = function product(it) {
+	if (arguments.length < 1) {
+		return Iterable.EMPTY;
+	} else {
+		it = iterable(it);
+		return it.product.apply(it, Array.prototype.slice.call(arguments, 1));
+	}
 };
 
 /** basis/async.js:
@@ -1761,7 +1799,7 @@ Future.all = function all(futures) {
 	if (count < 1) {
 		result.resolve([]);
 	} else for (var i = 0; i < futures.length; i++) {
-		future = futures[i];
+		future = when(futures[i]);
 		future.done(doneCallback.bind(this, i));
 		future.fail(result.reject.bind(result));
 		future.__onCancel__(result.cancel.bind(result));
@@ -1782,7 +1820,7 @@ Future.any = function any(futures) {
 	if (count < 1) {
 		result.reject();
 	} else for (var i = 0; i < futures.length; i++) {
-		future = futures[i];
+		future = when(futures[i]);
 		future.fail((function (index) {
 			return function (value) {
 				values[index] = value;
