@@ -19,7 +19,8 @@
 				<code>new Element(values=&lt;random values&gt;, evaluation=NaN):</code>
 			</span></h4>
 			
-				<p>An element represents a candidate solution. It is defined by the values
+				<p>
+An element represents a candidate solution. It is defined by the values
 array of numbers, between minimumValue and maximumValue (by default 0
 and 1).</p>
 			
@@ -31,7 +32,8 @@ and 1).</p>
 				<code>Element.arrayMapping(items...):</code>
 			</span></h4>
 			
-				<p>Builds an array of equal length of this element's values. Each value is
+				<p>
+Builds an array of equal length of this element's values. Each value is
 used to index the corresponding items argument. If there are less
 arguments than the element's length, the last one is used for the rest
 of the values.</p>
@@ -44,7 +46,8 @@ of the values.</p>
 				<code>Element.clone():</code>
 			</span></h4>
 			
-				<p>Returns a copy of this element.</p>
+				<p>
+Returns a copy of this element.</p>
 			
 		</div>
 	
@@ -54,7 +57,8 @@ of the values.</p>
 				<code>Element.emblem():</code>
 			</span></h4>
 			
-				<p>The emblem of an element is a string that represents it and can	be
+				<p>
+The emblem of an element is a string that represents it and can	be
 displayed to the user. By default returns the string conversion.</p>
 			
 		</div>
@@ -65,7 +69,8 @@ displayed to the user. By default returns the string conversion.</p>
 				<code>Element.equals(other):</code>
 			</span></h4>
 			
-				<p>Checks if the other element has the same values and constructor than
+				<p>
+Checks if the other element has the same values and constructor than
 this one.</p>
 			
 		</div>
@@ -76,7 +81,8 @@ this one.</p>
 				<code>Element.euclideanDistance(array1, array2):</code>
 			</span></h4>
 			
-				<p>Calculates the <a href="http://en.wikipedia.org/wiki/Euclidean_distance" target="_blank">euclidean distance</a>
+				<p>
+Calculates the <a href="http://en.wikipedia.org/wiki/Euclidean_distance" target="_blank">euclidean distance</a>
 between two arrays. Arrays are assumed to be of the same length. If they
 are not, only the common parts are considered.</p>
 			
@@ -88,7 +94,8 @@ are not, only the common parts are considered.</p>
 				<code>Element.evaluate():</code>
 			</span></h4>
 			
-				<p>Evaluates this element, assigning its evaluation and returning it. It
+				<p>
+Evaluates this element, assigning its evaluation and returning it. It
 can return a Future if the evaluation has to be done asynchronously.</p>
 			
 				<p>This can be interpreted as the solutions cost in a search problem or the
@@ -103,7 +110,8 @@ adding up this element's values, useful only for testing.</p>
 				<code>Element.evaluation=NaN:</code>
 			</span></h4>
 			
-				<p>The element's evaluation is a measure of its fitness to solve a
+				<p>
+The element's evaluation is a measure of its fitness to solve a
 problem. It guides almost all of the metaheuristics.</p>
 			
 		</div>
@@ -114,7 +122,8 @@ problem. It guides almost all of the metaheuristics.</p>
 				<code>Element.hammingDistance(array1, array2):</code>
 			</span></h4>
 			
-				<p>The <a href="http://en.wikipedia.org/wiki/Hamming_distance" target="_blank">Hamming distance</a>
+				<p>
+The <a href="http://en.wikipedia.org/wiki/Hamming_distance" target="_blank">Hamming distance</a>
 between two arrays is the number of positions at which corresponding
 components are different. Arrays are assumed to be of the same
 length. If they are not, only the common parts are considered.</p>
@@ -127,7 +136,8 @@ length. If they are not, only the common parts are considered.</p>
 				<code>Element.length=10:</code>
 			</span></h4>
 			
-				<p>Size of the element's values array.</p>
+				<p>
+Size of the element's values array.</p>
 			
 		</div>
 	
@@ -137,7 +147,8 @@ length. If they are not, only the common parts are considered.</p>
 				<code>Element.manhattanDistance(array1, array2):</code>
 			</span></h4>
 			
-				<p>The <a href="http://en.wikipedia.org/wiki/Manhattan_distance" target="_blank">Manhattan distance</a>
+				<p>
+The <a href="http://en.wikipedia.org/wiki/Manhattan_distance" target="_blank">Manhattan distance</a>
 between two arrays is the sum of the absolute differences of
 corresponding positions. Arrays are assumed to be of the same length. If
 they are not, only the common parts are considered.</p>
@@ -150,7 +161,8 @@ they are not, only the common parts are considered.</p>
 				<code>Element.mapping():</code>
 			</span></h4>
 			
-				<p>Returns an alternate representation of this element that may be fitter
+				<p>
+Returns an alternate representation of this element that may be fitter
 for evaluation or showing it to the user. By default it just returns the
 values array.</p>
 			
@@ -162,7 +174,8 @@ values array.</p>
 				<code>Element.maximumValue=1:</code>
 			</span></h4>
 			
-				<p>Maximum value a number in this element can have.</p>
+				<p>
+Maximum value a number in this element can have.</p>
 			
 		</div>
 	
@@ -172,7 +185,8 @@ values array.</p>
 				<code>Element.minimumValue=0:</code>
 			</span></h4>
 			
-				<p>Minimum value a number in this element can have.</p>
+				<p>
+Minimum value a number in this element can have.</p>
 			
 		</div>
 	
@@ -182,7 +196,8 @@ values array.</p>
 				<code>Element.modification(index, value, ...):</code>
 			</span></h4>
 			
-				<p>Returns a new and unevaluated copy of this element, with its values
+				<p>
+Returns a new and unevaluated copy of this element, with its values
 modified as specified.</p>
 			
 		</div>
@@ -193,7 +208,8 @@ modified as specified.</p>
 				<code>Element.neighbourhood(radius=1%):</code>
 			</span></h4>
 			
-				<p>Returns an array of new elements, with values belonging to the n
+				<p>
+Returns an array of new elements, with values belonging to the n
 dimensional ball around this element's values.</p>
 			
 		</div>
@@ -204,7 +220,8 @@ dimensional ball around this element's values.</p>
 				<code>Element.random=Randomness.DEFAULT:</code>
 			</span></h4>
 			
-				<p>Pseudorandom number generator used by the element.</p>
+				<p>
+Pseudorandom number generator used by the element.</p>
 			
 		</div>
 	
@@ -214,7 +231,8 @@ dimensional ball around this element's values.</p>
 				<code>Element.randomValue():</code>
 			</span></h4>
 			
-				<p>Returns a random value between this.minimumValue and this.maximumValue.</p>
+				<p>
+Returns a random value between this.minimumValue and this.maximumValue.</p>
 			
 		</div>
 	
@@ -224,7 +242,8 @@ dimensional ball around this element's values.</p>
 				<code>Element.randomValues():</code>
 			</span></h4>
 			
-				<p>Returns an array with random numbers.</p>
+				<p>
+Returns an array with random numbers.</p>
 			
 		</div>
 	
@@ -234,7 +253,8 @@ dimensional ball around this element's values.</p>
 				<code>Element.resolution=Number.EPSILON:</code>
 			</span></h4>
 			
-				<p>Minimum difference between two evaluation to consider them different.</p>
+				<p>
+Minimum difference between two evaluation to consider them different.</p>
 			
 		</div>
 	
@@ -244,7 +264,8 @@ dimensional ball around this element's values.</p>
 				<code>Element.rootMeanSquaredError(f, data):</code>
 			</span></h4>
 			
-				<p>Returns the <a href="http://en.wikipedia.org/wiki/Root_mean_squared_error" target="_blank">root mean squared error</a>
+				<p>
+Returns the <a href="http://en.wikipedia.org/wiki/Root_mean_squared_error" target="_blank">root mean squared error</a>
 of the function f on the given data. The data must be an iterable of
 arrays, in which the first element is the expected result and the rest
 are the arguments for the function.</p>
@@ -257,7 +278,8 @@ are the arguments for the function.</p>
 				<code>Element.setMapping(items):</code>
 			</span></h4>
 			
-				<p>Builds an array of equal length of this element's values. Each value is
+				<p>
+Builds an array of equal length of this element's values. Each value is
 used to select one item. Items are not selected more than once.</p>
 			
 		</div>
@@ -268,7 +290,8 @@ used to select one item. Items are not selected more than once.</p>
 				<code>Element.successors():</code>
 			</span></h4>
 			
-				<p>Returns an array with new elements that can be considered adjacent of
+				<p>
+Returns an array with new elements that can be considered adjacent of
 this element. By default returns the element's neighbourhood with the
 default radius.</p>
 			
@@ -280,7 +303,8 @@ default radius.</p>
 				<code>Element.suffices():</code>
 			</span></h4>
 			
-				<p>Returns true if this element is an actual solution to the problem. It
+				<p>
+Returns true if this element is an actual solution to the problem. It
 holds the implementation of the goal test in search problems. More
 complex criteria may be implemented in Problem.suffices.</p>
 			
@@ -294,7 +318,8 @@ complex criteria may be implemented in Problem.suffices.</p>
 				<code>Element.values:</code>
 			</span></h4>
 			
-				<p>An array of numbers that represents a candidate solution.</p>
+				<p>
+An array of numbers that represents a candidate solution.</p>
 			
 		</div>
 	
@@ -304,7 +329,8 @@ complex criteria may be implemented in Problem.suffices.</p>
 				<code>new Metaheuristic(params):</code>
 			</span></h4>
 			
-				<p>Base class of all metaheuristic algorithms, and hence of all
+				<p>
+Base class of all metaheuristic algorithms, and hence of all
 metaheuristic runs.</p>
 			
 		</div>
@@ -315,7 +341,8 @@ metaheuristic runs.</p>
 				<code>Metaheuristic.advance():</code>
 			</span></h4>
 			
-				<p>Performs one step of the optimization. If the process has not been
+				<p>
+Performs one step of the optimization. If the process has not been
 initialized, it does so. Returns a Future if the run has not finished or
 null otherwise.</p>
 			
@@ -327,7 +354,8 @@ null otherwise.</p>
 				<code>Metaheuristic.analyze():</code>
 			</span></h4>
 			
-				<p>Updates the process' statistics.</p>
+				<p>
+Updates the process' statistics.</p>
 			
 		</div>
 	
@@ -337,7 +365,8 @@ null otherwise.</p>
 				<code>Metaheuristic.evaluate(elements):</code>
 			</span></h4>
 			
-				<p>Evaluates all the elements in this.state with no evaluation, using its
+				<p>
+Evaluates all the elements in this.state with no evaluation, using its
 evaluation method. After that sorts the state with the compare method
 of the problem.</p>
 			
@@ -352,7 +381,8 @@ not.</p>
 				<code>Metaheuristic.events:</code>
 			</span></h4>
 			
-				<p>Event handler for this metaheuristic. The emitted events by default
+				<p>
+Event handler for this metaheuristic. The emitted events by default
 are: initiated, updated, expanded, evaluated, sieved, advanced,
 analyzed &amp; finished.</p>
 			
@@ -364,7 +394,8 @@ analyzed &amp; finished.</p>
 				<code>Metaheuristic.expand(expansion=[]):</code>
 			</span></h4>
 			
-				<p>Adds to this metaheuristic's state the given expansion. If none is given,
+				<p>
+Adds to this metaheuristic's state the given expansion. If none is given,
 this.expansion() is called to get new expansion.</p>
 			
 		</div>
@@ -375,7 +406,8 @@ this.expansion() is called to get new expansion.</p>
 				<code>Metaheuristic.expansion(size):</code>
 			</span></h4>
 			
-				<p>Returns an array of new elements to add to the current state. The
+				<p>
+Returns an array of new elements to add to the current state. The
 default implementation generates new random elements.</p>
 			
 		</div>
@@ -386,7 +418,8 @@ default implementation generates new random elements.</p>
 				<code>Metaheuristic.finished():</code>
 			</span></h4>
 			
-				<p>Termination criteria for this metaheuristic. By default it checks if the
+				<p>
+Termination criteria for this metaheuristic. By default it checks if the
 number of passed iterations is not greater than this.steps.</p>
 			
 		</div>
@@ -397,7 +430,8 @@ number of passed iterations is not greater than this.steps.</p>
 				<code>Metaheuristic.initiate(size=this.size):</code>
 			</span></h4>
 			
-				<p>Builds and initiates this metaheuristic state with size new cursors. The
+				<p>
+Builds and initiates this metaheuristic state with size new cursors. The
 elements are build using the initial() function.</p>
 			
 		</div>
@@ -408,7 +442,8 @@ elements are build using the initial() function.</p>
 				<code>Metaheuristic.logger:</code>
 			</span></h4>
 			
-				<p>Logger used by the metaheuristic.</p>
+				<p>
+Logger used by the metaheuristic.</p>
 			
 		</div>
 	
@@ -418,7 +453,8 @@ elements are build using the initial() function.</p>
 				<code>Metaheuristic.problem:</code>
 			</span></h4>
 			
-				<p>Definition of the problem this metaheuristic will try to solve.</p>
+				<p>
+Definition of the problem this metaheuristic will try to solve.</p>
 			
 		</div>
 	
@@ -428,7 +464,8 @@ elements are build using the initial() function.</p>
 				<code>Metaheuristic.prototype.sieve(size=this.size):</code>
 			</span></h4>
 			
-				<p>Cuts the current state down to the given size (or this.size by default).</p>
+				<p>
+Cuts the current state down to the given size (or this.size by default).</p>
 			
 				<p>This is usually used after expanding and evaluating the state. The
 statistics of this metaheuristic are calculated here, right after the
@@ -442,7 +479,8 @@ state is sieved.</p>
 				<code>Metaheuristic.random=Randomness.DEFAULT:</code>
 			</span></h4>
 			
-				<p>This metaheuristic's pseudorandom number generator. It is strongly
+				<p>
+This metaheuristic's pseudorandom number generator. It is strongly
 advised to have only one for the whole process.</p>
 			
 		</div>
@@ -453,7 +491,8 @@ advised to have only one for the whole process.</p>
 				<code>Metaheuristic.reset():</code>
 			</span></h4>
 			
-				<p>Reset the process to start over again. Basically cleans the stats and
+				<p>
+Reset the process to start over again. Basically cleans the stats and
 sets the current step to -1.</p>
 			
 		</div>
@@ -464,7 +503,8 @@ sets the current step to -1.</p>
 				<code>Metaheuristic.run():</code>
 			</span></h4>
 			
-				<p>Returns a Future that is resolved when the whole search process is
+				<p>
+Returns a Future that is resolved when the whole search process is
 finished. The value is the best cursor after the last step.</p>
 			
 		</div>
@@ -475,7 +515,8 @@ finished. The value is the best cursor after the last step.</p>
 				<code>Metaheuristic.size=100:</code>
 			</span></h4>
 			
-				<p>Amount of candidate solutions the metaheuristic treats at each step.</p>
+				<p>
+Amount of candidate solutions the metaheuristic treats at each step.</p>
 			
 		</div>
 	
@@ -485,7 +526,8 @@ finished. The value is the best cursor after the last step.</p>
 				<code>Metaheuristic.state=[]:</code>
 			</span></h4>
 			
-				<p>An array holding the elements this metaheuristic handles at each
+				<p>
+An array holding the elements this metaheuristic handles at each
 step.</p>
 			
 		</div>
@@ -496,7 +538,8 @@ step.</p>
 				<code>Metaheuristic.statistics:</code>
 			</span></h4>
 			
-				<p>The statistic gatherer for this metaheuristic.</p>
+				<p>
+The statistic gatherer for this metaheuristic.</p>
 			
 		</div>
 	
@@ -506,7 +549,8 @@ step.</p>
 				<code>Metaheuristic.step=-1:</code>
 			</span></h4>
 			
-				<p>Current iteration of this metaheuristic, or a negative number if
+				<p>
+Current iteration of this metaheuristic, or a negative number if
 it has not started yet.</p>
 			
 		</div>
@@ -517,7 +561,8 @@ it has not started yet.</p>
 				<code>Metaheuristic.steps=100:</code>
 			</span></h4>
 			
-				<p>Number of steps this metaheuristic must perform.</p>
+				<p>
+Number of steps this metaheuristic must perform.</p>
 			
 		</div>
 	
@@ -527,7 +572,8 @@ it has not started yet.</p>
 				<code>Metaheuristic.update():</code>
 			</span></h4>
 			
-				<p>Updates this metaheuristic's state. It assumes the state has been
+				<p>
+Updates this metaheuristic's state. It assumes the state has been
 initialized. The process may be asynchronous, so it returns a Future.</p>
 			
 				<p>The default implementation first expands the state by calling
@@ -543,7 +589,8 @@ this.sieve().</p>
 				<code>metaheuristics:</code>
 			</span></h4>
 			
-				<p>Bundle of metaheuristics available.</p>
+				<p>
+Bundle of metaheuristics available.</p>
 			
 		</div>
 	
@@ -553,7 +600,8 @@ this.sieve().</p>
 				<code>new metaheuristics.BeamSearch(params):</code>
 			</span></h4>
 			
-				<p>Builds a beam search. The problem's element must have its successors
+				<p>
+Builds a beam search. The problem's element must have its successors
 method implemented.</p>
 			
 		</div>
@@ -564,7 +612,8 @@ method implemented.</p>
 				<code>metaheuristics.BeamSearch.expansion():</code>
 			</span></h4>
 			
-				<p>Successors to all elements are calculated by calling the problem's
+				<p>
+Successors to all elements are calculated by calling the problem's
 successors method.</p>
 			
 		</div>
@@ -575,7 +624,8 @@ successors method.</p>
 				<code>metaheuristics.BeamSearch.successors(element):</code>
 			</span></h4>
 			
-				<p>Returns the elements' successors. By default returns
+				<p>
+Returns the elements' successors. By default returns
 element.successors().</p>
 			
 		</div>
@@ -586,7 +636,8 @@ element.successors().</p>
 				<code>new metaheuristics.GeneticAlgorithm(params):</code>
 			</span></h4>
 			
-				<p>Builds a genetic algorithm, the base for many evolutionary computing
+				<p>
+Builds a genetic algorithm, the base for many evolutionary computing
 variants.</p>
 			
 		</div>
@@ -597,7 +648,8 @@ variants.</p>
 				<code>metaheuristics.GeneticAlgorithm.crossover(parents):</code>
 			</span></h4>
 			
-				<p>Genetic operator that simulates reproduction with inheritance. The
+				<p>
+Genetic operator that simulates reproduction with inheritance. The
 parents argument must be an array of elements. The result is an
 array of elements.</p>
 			
@@ -611,7 +663,8 @@ array of elements.</p>
 				<code>metaheuristics.GeneticAlgorithm.crossovers:</code>
 			</span></h4>
 			
-				<p>Bundle of standard crossover methods. A crossover function takes an
+				<p>
+Bundle of standard crossover methods. A crossover function takes an
 array of parent elements and returns an array of sibling elements.</p>
 			
 		</div>
@@ -622,7 +675,8 @@ array of parent elements and returns an array of sibling elements.</p>
 				<code>metaheuristics.GeneticAlgorithm.crossovers.singlepointCrossover(parents):</code>
 			</span></h4>
 			
-				<p>Given two parents, returns an array of two new elements built with one
+				<p>
+Given two parents, returns an array of two new elements built with one
 half of each parent. The cutpoint is chosen randomly.</p>
 			
 		</div>
@@ -633,7 +687,8 @@ half of each parent. The cutpoint is chosen randomly.</p>
 				<code>metaheuristics.GeneticAlgorithm.expansion():</code>
 			</span></h4>
 			
-				<p>Returns the possibly mutated crossovers of selected elements. How many
+				<p>
+Returns the possibly mutated crossovers of selected elements. How many
 is determined by this.expansionRate.</p>
 			
 		</div>
@@ -644,7 +699,8 @@ is determined by this.expansionRate.</p>
 				<code>metaheuristics.GeneticAlgorithm.expansionRate=0.5:</code>
 			</span></h4>
 			
-				<p>The amount of new elements generated by crossover, as a ratio of the
+				<p>
+The amount of new elements generated by crossover, as a ratio of the
 population size.</p>
 			
 		</div>
@@ -655,7 +711,8 @@ population size.</p>
 				<code>metaheuristics.GeneticAlgorithm.mutation(element):</code>
 			</span></h4>
 			
-				<p>Genetic operator that simulates biological mutation, making a random
+				<p>
+Genetic operator that simulates biological mutation, making a random
 change in the chromosome.</p>
 			
 				<p>By default a single point uniform mutation is used.</p>
@@ -668,7 +725,8 @@ change in the chromosome.</p>
 				<code>metaheuristics.GeneticAlgorithm.mutationRate=0.2:</code>
 			</span></h4>
 			
-				<p>The chance of a new element (resulting from crossover) mutating.</p>
+				<p>
+The chance of a new element (resulting from crossover) mutating.</p>
 			
 		</div>
 	
@@ -678,7 +736,8 @@ change in the chromosome.</p>
 				<code>metaheuristics.GeneticAlgorithm.mutations:</code>
 			</span></h4>
 			
-				<p>Bundle of standard mutation methods.</p>
+				<p>
+Bundle of standard mutation methods.</p>
 			
 		</div>
 	
@@ -688,7 +747,8 @@ change in the chromosome.</p>
 				<code>metaheuristics.GeneticAlgorithm.mutations.singlepointBiasedMutation(element):</code>
 			</span></h4>
 			
-				<p>Sets a randomly selected gene to random deviation of its value, with a
+				<p>
+Sets a randomly selected gene to random deviation of its value, with a
 triangular distribution.</p>
 			
 		</div>
@@ -699,7 +759,8 @@ triangular distribution.</p>
 				<code>metaheuristics.GeneticAlgorithm.mutations.singlepointUniformMutation(element):</code>
 			</span></h4>
 			
-				<p>Sets a randomly selected gene to a uniform random value.</p>
+				<p>
+Sets a randomly selected gene to a uniform random value.</p>
 			
 		</div>
 	
@@ -709,7 +770,8 @@ triangular distribution.</p>
 				<code>metaheuristics.GeneticAlgorithm.mutations.uniformMutation(maxPoints=Infinity):</code>
 			</span></h4>
 			
-				<p>Builds a mutation function that makes at least one and up to maxPoints
+				<p>
+Builds a mutation function that makes at least one and up to maxPoints
 mutations, changing a randomly selected gene to a uniform random value.</p>
 			
 		</div>
@@ -720,7 +782,8 @@ mutations, changing a randomly selected gene to a uniform random value.</p>
 				<code>metaheuristics.GeneticAlgorithm.selection(count):</code>
 			</span></h4>
 			
-				<p>Selects count elements from the current population. These will be
+				<p>
+Selects count elements from the current population. These will be
 the parents of the new elements in the next generation.</p>
 			
 				<p>By default rank selection is used, a.k.a. fitness proportional
@@ -734,7 +797,8 @@ to position in the state.</p>
 				<code>metaheuristics.GeneticAlgorithm.selection.rankSelection(count=2):</code>
 			</span></h4>
 			
-				<p>Makes a selection where each element's probability of being selected is
+				<p>
+Makes a selection where each element's probability of being selected is
 proportional to its position in the state.</p>
 			
 		</div>
@@ -745,7 +809,8 @@ proportional to its position in the state.</p>
 				<code>static metaheuristics.GeneticAlgorithm.selections:</code>
 			</span></h4>
 			
-				<p>Bundle of standard selection methods. A selection function takes the
+				<p>
+Bundle of standard selection methods. A selection function takes the
 amount of elements to be selected and returns an array of selected
 elements.</p>
 			
@@ -757,7 +822,8 @@ elements.</p>
 				<code>metaheuristics.GeneticAlgorithm.selections.rouletteSelection(count=2):</code>
 			</span></h4>
 			
-				<p>Makes a selection where each element's probability of being selected is
+				<p>
+Makes a selection where each element's probability of being selected is
 proportional to its evaluation.</p>
 			
 				<p>Warning! This selection assumes the evaluation is being maximized.</p>
@@ -770,7 +836,8 @@ proportional to its evaluation.</p>
 				<code>new metaheuristics.HillClimbing(params):</code>
 			</span></h4>
 			
-				<p>Builds a <a href="http://en.wikipedia.org/wiki/Hill_climbing" target="_blank">hill climbing</a>
+				<p>
+Builds a <a href="http://en.wikipedia.org/wiki/Hill_climbing" target="_blank">hill climbing</a>
 search.</p>
 			
 		</div>
@@ -781,7 +848,8 @@ search.</p>
 				<code>metaheuristics.HillClimbing.atLocalOptima():</code>
 			</span></h4>
 			
-				<p>Checks if the search is currently stuck at local optima.</p>
+				<p>
+Checks if the search is currently stuck at local optima.</p>
 			
 		</div>
 	
@@ -791,7 +859,8 @@ search.</p>
 				<code>metaheuristics.HillClimbing.delta=0.01:</code>
 			</span></h4>
 			
-				<p>The radius of the elements surroundings in every dimension, that is
+				<p>
+The radius of the elements surroundings in every dimension, that is
 checked by this algorithm.</p>
 			
 		</div>
@@ -802,7 +871,8 @@ checked by this algorithm.</p>
 				<code>metaheuristics.HillClimbing.finished():</code>
 			</span></h4>
 			
-				<p>Hill climbing search must finish when a local optimum is reached. This
+				<p>
+Hill climbing search must finish when a local optimum is reached. This
 criteria is tested together with all others.</p>
 			
 		</div>
@@ -813,7 +883,8 @@ criteria is tested together with all others.</p>
 				<code>metaheuristics.HillClimbing.size=1:</code>
 			</span></h4>
 			
-				<p>Default value for size is 1.</p>
+				<p>
+Default value for size is 1.</p>
 			
 		</div>
 	
@@ -823,7 +894,8 @@ criteria is tested together with all others.</p>
 				<code>metaheuristics.HillClimbing.update():</code>
 			</span></h4>
 			
-				<p>Each element in the state is replaced by the best element in its
+				<p>
+Each element in the state is replaced by the best element in its
 neighbourhood, if there is any. The surroundings have all possible
 elements resulting from either an increment or decrement (of the given
 delta) in each of the centre element's dimensions.</p>
@@ -836,7 +908,8 @@ delta) in each of the centre element's dimensions.</p>
 				<code>new metaheuristics.SimulatedAnnealing(params):</code>
 			</span></h4>
 			
-				<p>Builds a simulated annealing search.</p>
+				<p>
+Builds a simulated annealing search.</p>
 			
 				<p>See &lt;http://en.wikipedia.org/wiki/Simulated_annealing&gt;.</p>
 			
@@ -848,7 +921,8 @@ delta) in each of the centre element's dimensions.</p>
 				<code>metaheuristics.SimulatedAnnealing.acceptance(current, neighbour, temp=this.temperature()):</code>
 			</span></h4>
 			
-				<p>Returns the probability of accepting the new element. Uses the original
+				<p>
+Returns the probability of accepting the new element. Uses the original
 definitions from Kirkpatrick's paper.</p>
 			
 		</div>
@@ -859,7 +933,8 @@ definitions from Kirkpatrick's paper.</p>
 				<code>metaheuristics.SimulatedAnnealing.delta=0.01:</code>
 			</span></h4>
 			
-				<p>The radius of the elements surroundings in every dimension, that is
+				<p>
+The radius of the elements surroundings in every dimension, that is
 checked by this algorithm.</p>
 			
 		</div>
@@ -870,7 +945,8 @@ checked by this algorithm.</p>
 				<code>metaheuristics.SimulatedAnnealing.maximumTemperature=1:</code>
 			</span></h4>
 			
-				<p>The temperature at the start of the run.</p>
+				<p>
+The temperature at the start of the run.</p>
 			
 		</div>
 	
@@ -880,7 +956,8 @@ checked by this algorithm.</p>
 				<code>metaheuristics.SimulatedAnnealing.minimumTemperature=1:</code>
 			</span></h4>
 			
-				<p>The temperature at the end of the run.</p>
+				<p>
+The temperature at the end of the run.</p>
 			
 		</div>
 	
@@ -890,7 +967,8 @@ checked by this algorithm.</p>
 				<code>metaheuristics.SimulatedAnnealing.randomNeighbour(element, radius=this.delta):</code>
 			</span></h4>
 			
-				<p>Returns one neighbour of the given element chosen at random.</p>
+				<p>
+Returns one neighbour of the given element chosen at random.</p>
 			
 		</div>
 	
@@ -900,7 +978,8 @@ checked by this algorithm.</p>
 				<code>metaheuristics.SimulatedAnnealing.size=1:</code>
 			</span></h4>
 			
-				<p>Default value for size is 1.</p>
+				<p>
+Default value for size is 1.</p>
 			
 		</div>
 	
@@ -910,7 +989,8 @@ checked by this algorithm.</p>
 				<code>metaheuristics.SimulatedAnnealing.temperature():</code>
 			</span></h4>
 			
-				<p>Returns the current temperature of the annealing.</p>
+				<p>
+Returns the current temperature of the annealing.</p>
 			
 		</div>
 	
@@ -920,7 +1000,8 @@ checked by this algorithm.</p>
 				<code>metaheuristics.SimulatedAnnealing.update():</code>
 			</span></h4>
 			
-				<p>For each element in the state one of its neighbours is chosen randomly. If
+				<p>
+For each element in the state one of its neighbours is chosen randomly. If
 the neighbour is better, it replaces the corresponding element. Else it
 may still do so, but with a probability calculated by this.acceptance().</p>
 			
@@ -932,7 +1013,8 @@ may still do so, but with a probability calculated by this.acceptance().</p>
 				<code>new Problem(params):</code>
 			</span></h4>
 			
-				<p>A search/optimization problem definition, holding the representation of
+				<p>
+A search/optimization problem definition, holding the representation of
 the elements (as an Element constructor), with the comparison and
 sufficiency criteria.</p>
 			
@@ -944,7 +1026,8 @@ sufficiency criteria.</p>
 				<code>Problem.approximation(target, element1, element2):</code>
 			</span></h4>
 			
-				<p>Compares two elements by distance of its evaluation to the given target
+				<p>
+Compares two elements by distance of its evaluation to the given target
 value in ascending order.</p>
 			
 		</div>
@@ -955,7 +1038,8 @@ value in ascending order.</p>
 				<code>Problem.compare(element1, element2):</code>
 			</span></h4>
 			
-				<p>Standard comparison function between two elements. Returns a positive
+				<p>
+Standard comparison function between two elements. Returns a positive
 number if element2 is better than element1, a negative number if
 element2 is worse then element1, or zero otherwise.</p>
 			
@@ -969,7 +1053,8 @@ element2 is worse then element1, or zero otherwise.</p>
 				<code>Problem.description='&lt;no description&gt;':</code>
 			</span></h4>
 			
-				<p>Description of the problem to be displayed to the user.</p>
+				<p>
+Description of the problem to be displayed to the user.</p>
 			
 		</div>
 	
@@ -979,7 +1064,8 @@ element2 is worse then element1, or zero otherwise.</p>
 				<code>Problem.maximization(element1, element2):</code>
 			</span></h4>
 			
-				<p>Compares two elements by evaluation in descending order.</p>
+				<p>
+Compares two elements by evaluation in descending order.</p>
 			
 		</div>
 	
@@ -989,7 +1075,8 @@ element2 is worse then element1, or zero otherwise.</p>
 				<code>Problem.minimization(element1, element2):</code>
 			</span></h4>
 			
-				<p>Compares two elements by evaluation in ascending order.</p>
+				<p>
+Compares two elements by evaluation in ascending order.</p>
 			
 		</div>
 	
@@ -999,7 +1086,8 @@ element2 is worse then element1, or zero otherwise.</p>
 				<code>Problem.random=Randomness.DEFAULT:</code>
 			</span></h4>
 			
-				<p>Pseudorandom number generator used by the problem.</p>
+				<p>
+Pseudorandom number generator used by the problem.</p>
 			
 		</div>
 	
@@ -1009,7 +1097,8 @@ element2 is worse then element1, or zero otherwise.</p>
 				<code>Problem.representation=Element:</code>
 			</span></h4>
 			
-				<p>Element constructor used for this problem's candidate solutions.</p>
+				<p>
+Element constructor used for this problem's candidate solutions.</p>
 			
 		</div>
 	
@@ -1019,7 +1108,8 @@ element2 is worse then element1, or zero otherwise.</p>
 				<code>Problem.suffices(elements):</code>
 			</span></h4>
 			
-				<p>Returns true if inside the elements array there is an actual solution to
+				<p>
+Returns true if inside the elements array there is an actual solution to
 the problem. It holds the implementation of the goal test in search
 problems.</p>
 			
@@ -1033,7 +1123,8 @@ problems.</p>
 				<code>Problem.title='&lt;no title&gt;':</code>
 			</span></h4>
 			
-				<p>Title of the problem to be displayed to the user.</p>
+				<p>
+Title of the problem to be displayed to the user.</p>
 			
 		</div>
 	
@@ -1043,7 +1134,8 @@ problems.</p>
 				<code>problems:</code>
 			</span></h4>
 			
-				<p>Bundle of classic and reference problems.</p>
+				<p>
+Bundle of classic and reference problems.</p>
 			
 		</div>
 	
@@ -1053,7 +1145,8 @@ problems.</p>
 				<code>new problems.HelloWorld(params):</code>
 			</span></h4>
 			
-				<p>Simple problem where each element is a string, and the optimization
+				<p>
+Simple problem where each element is a string, and the optimization
 goes towards the target string. The string to match is specified by the
 'target' parameter.</p>
 			
@@ -1065,7 +1158,8 @@ goes towards the target string. The string to match is specified by the
 				<code>new problems.KnapsackProblem(params):</code>
 			</span></h4>
 			
-				<p>Classic combinatorial optimization problem, based on a given a set of
+				<p>
+Classic combinatorial optimization problem, based on a given a set of
 items, each with a cost and a worth. The solution is a subset of items
 with maximum worth sum that does not exceed a cost limit.</p>
 			
@@ -1077,7 +1171,8 @@ with maximum worth sum that does not exceed a cost limit.</p>
 				<code>problems.KnapsackProblem.defaultAmount=1:</code>
 			</span></h4>
 			
-				<p>Amount available for each item by default.</p>
+				<p>
+Amount available for each item by default.</p>
 			
 		</div>
 	
@@ -1087,7 +1182,8 @@ with maximum worth sum that does not exceed a cost limit.</p>
 				<code>problems.KnapsackProblem.items:</code>
 			</span></h4>
 			
-				<p>The superset of all candidate solutions. Must be an object with each
+				<p>
+The superset of all candidate solutions. Must be an object with each
 item by name. Each item must have a cost and a worth, and may have an
 amount (1 by default).</p>
 			
@@ -1099,7 +1195,8 @@ amount (1 by default).</p>
 				<code>problems.KnapsackProblem.limit=15:</code>
 			</span></h4>
 			
-				<p>Cost limit that candidate solution should not exceed.</p>
+				<p>
+Cost limit that candidate solution should not exceed.</p>
 			
 		</div>
 	
@@ -1109,7 +1206,8 @@ amount (1 by default).</p>
 				<code>problems.KnapsackProblem.representation:</code>
 			</span></h4>
 			
-				<p>The representation is an array with a number for each item. This
+				<p>
+The representation is an array with a number for each item. This
 number holds the selected amount for each item (from 0 up to the
 item's amount).</p>
 			
@@ -1121,7 +1219,8 @@ item's amount).</p>
 				<code>new problems.NQueensPuzzle(params):</code>
 			</span></h4>
 			
-				<p>Generalized version of the classic problem of placing 8 chess queens on
+				<p>
+Generalized version of the classic problem of placing 8 chess queens on
 an 8x8 chessboard so that no two queens attack each other. The amount
 of queens and board dimensions is specified by the N parameter.</p>
 			
@@ -1133,7 +1232,8 @@ of queens and board dimensions is specified by the N parameter.</p>
 				<code>problems.NQueensPuzzle.representation:</code>
 			</span></h4>
 			
-				<p>The representation is an array of N positions, indicating the row of
+				<p>
+The representation is an array of N positions, indicating the row of
 the queen for each column. Its evaluation is the count of diagonals
 shared by queens pairwise.</p>
 			
@@ -1145,7 +1245,8 @@ shared by queens pairwise.</p>
 				<code>new problems.SumOptimization(params):</code>
 			</span></h4>
 			
-				<p>Very simple problem based on optimizing the elements' values sum. The
+				<p>
+Very simple problem based on optimizing the elements' values sum. The
 params argument should include the 'target' number.</p>
 			
 		</div>
@@ -1156,7 +1257,8 @@ params argument should include the 'target' number.</p>
 				<code>problems.SumOptimization.compare(element1, element2):</code>
 			</span></h4>
 			
-				<p>The comparison between elements depends on this problem's target. For
+				<p>
+The comparison between elements depends on this problem's target. For
 a Infinity maximization is applied, for -Infinity minimization, and
 for every other number approximation.</p>
 			
@@ -1168,7 +1270,8 @@ for every other number approximation.</p>
 				<code>problems.SumOptimization.suffices(elements):</code>
 			</span></h4>
 			
-				<p>Checks if the best element's values add up to the target value.</p>
+				<p>
+Checks if the best element's values add up to the target value.</p>
 			
 		</div>
 	
