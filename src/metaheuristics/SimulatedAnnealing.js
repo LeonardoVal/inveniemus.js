@@ -77,7 +77,7 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = basis.declare(Metah
 		temperatureStat.add(temp, this.step);
 		return basis.Future.all(this.state.map(function (elem) {
 			var neighbour = mh.randomNeighbour(elem);
-			return basis.when(neighbour.evaluate()).then(function () {
+			return basis.Future.when(neighbour.evaluate()).then(function () {
 				var p = mh.acceptance(elem, neighbour, temp);
 				acceptanceStat.add(p, neighbour);
 				if (mh.random.randomBool(p)) {

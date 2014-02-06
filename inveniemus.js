@@ -527,7 +527,7 @@ var Metaheuristic = exports.Metaheuristic = basis.declare({
 				return isNaN(element.evaluation);
 			},
 			function (element) { // ... evaluate them.
-				return basis.when(element.evaluate());
+				return basis.Future.when(element.evaluate());
 			}
 		)).then(function (results) {
 			elements.sort(mh.problem.compare.bind(mh.problem));
@@ -1029,7 +1029,7 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = basis.declare(Metah
 		temperatureStat.add(temp, this.step);
 		return basis.Future.all(this.state.map(function (elem) {
 			var neighbour = mh.randomNeighbour(elem);
-			return basis.when(neighbour.evaluate()).then(function () {
+			return basis.Future.when(neighbour.evaluate()).then(function () {
 				var p = mh.acceptance(elem, neighbour, temp);
 				acceptanceStat.add(p, neighbour);
 				if (mh.random.randomBool(p)) {

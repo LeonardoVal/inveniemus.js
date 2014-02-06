@@ -147,7 +147,7 @@ var Metaheuristic = exports.Metaheuristic = basis.declare({
 				return isNaN(element.evaluation);
 			},
 			function (element) { // ... evaluate them.
-				return basis.when(element.evaluate());
+				return basis.Future.when(element.evaluate());
 			}
 		)).then(function (results) {
 			elements.sort(mh.problem.compare.bind(mh.problem));
