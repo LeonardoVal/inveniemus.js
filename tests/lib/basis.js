@@ -109,7 +109,7 @@ var raise = exports.raise = function raise() {
 */
 var raiseIf = exports.raiseIf = function raiseIf(condition) {
 	if (condition) {
-		basis.raise(Array.prototype.slice.call(arguments, 1).join(''));
+		raise(Array.prototype.slice.call(arguments, 1).join(''));
 	}
 };
 
@@ -1524,11 +1524,13 @@ Iterable.product = function product(it) {
 */
 var Future = exports.Future = declare({
 	/** new Future():
-		An implementation of futures (aka deferreds or promises), a construction 
-		oriented to simplify the interaction between parallel threads. A future 
+		An implementation of [futures](http://docs.oracle.com/javase/7/docs/api/java/util/concurrent/Future.html)
+		(aka [deferreds](http://api.jquery.com/category/deferred-object/) or
+		[promises](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)), 
+		a construction oriented to simplify the interaction between parallel 
+		threads. A [future](http://en.wikipedia.org/wiki/Futures_and_promises) 
 		represents a value that is being calculated asynchronously. Callbacks 
 		are registered for when the value becomes available or an error raised.
-		See <http://en.wikipedia.org/wiki/Future_(programming)>.
 	*/
 	constructor: function Future(value) {
 		/** Future.state=0:
@@ -1542,7 +1544,7 @@ var Future = exports.Future = declare({
 		}
 	},
 
-	/** Future.STATES:
+	/** Future.STATES=['pending', 'resolved', 'rejected', 'cancelled']:
 		An array with labels for the Future's possible states.
 	*/
 	STATES: ['pending', 'resolved', 'rejected', 'cancelled'],
