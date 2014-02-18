@@ -519,7 +519,7 @@ var Metaheuristic = exports.Metaheuristic = basis.declare({
 	*/
 	evaluate: function evaluate(elements) {
 		var mh = this,
-			evalTime = this.statistics.stat(['time', 'evaluation']);
+			evalTime = this.statistics.stat({key:'evaluation_time'});
 		evalTime.startTime();
 		elements = elements || this.state;
 		return basis.Future.all(iterable(elements).filter(
@@ -569,7 +569,7 @@ var Metaheuristic = exports.Metaheuristic = basis.declare({
 		Updates the process' statistics.
 	*/
 	analyze: function analyze() {
-		var stat = this.statistics.stat(['evaluation', 'step='+ this.step]);
+		var stat = this.statistics.stat({key:'evaluation', step: this.step});
 		this.state.forEach(function (element) {
 			stat.add(element.evaluation, element);
 		});
@@ -584,7 +584,7 @@ var Metaheuristic = exports.Metaheuristic = basis.declare({
 	*/
 	advance: function advance() {
 		var mh = this, 
-			stepTime = this.statistics.stat(['time', 'step']),
+			stepTime = this.statistics.stat({key: 'step_time'}),
 			result;
 		if (isNaN(this.step) || +this.step < 0) {
 			this.statistics.reset();
@@ -820,12 +820,11 @@ GeneticAlgorithm.selections = {
 		Warning! This selection assumes the evaluation is being maximized.
 	*/
 	rouletteSelection: function rouletteSelection(count) { //FIXME
-	/* this.statistics.stat('evaluations_step').minimum() .maximum() .sum()
-	*/
 		count = isNaN(count) ? 2 : +count;
 		var len = this.state.length,
-			min = this.statistics.minimum('evaluations_step'),
-			sum = this.statistics.sum('evaluations_step'),
+			evaluationStat = this.statistics.stat({key: 'evaluation', step: this.step}),
+			min = evaluationStat.minimum(),
+			sum = evaluationStat.sum(),
 			randoms = this.random.randoms(count, 0, sum - len * min),
 			selected = [];
 		randoms.sort(function (x, y) { return x-y; });
@@ -1024,8 +1023,8 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = basis.declare(Metah
 	update: function update() {
 		var mh = this,
 			temp = this.temperature(),
-			acceptanceStat = this.statistics.stat(['acceptance']),
-			temperatureStat = this.statistics.stat(['temperature']);
+			acceptanceStat = this.statistics.stat({key: 'acceptance'}),
+			temperatureStat = this.statistics.stat({key: 'temperature'});
 		temperatureStat.add(temp, this.step);
 		return basis.Future.all(this.state.map(function (elem) {
 			var neighbour = mh.randomNeighbour(elem);

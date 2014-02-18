@@ -90,7 +90,7 @@ function main() {
 				runMaximum = -Infinity;
 			metaheuristic.events.on('advanced', function () {
 				// Update evaluationGraph data with the run statistics.
-				var evaluationStats = metaheuristic.statistics.stat(['evaluation', 'step='+ metaheuristic.step]),
+				var evaluationStats = metaheuristic.statistics.stat({key:'evaluation', step: metaheuristic.step}),
 					minimum = evaluationStats.minimum(),
 					maximum = evaluationStats.maximum();
 				graphData.push([

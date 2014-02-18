@@ -72,8 +72,8 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = basis.declare(Metah
 	update: function update() {
 		var mh = this,
 			temp = this.temperature(),
-			acceptanceStat = this.statistics.stat(['acceptance']),
-			temperatureStat = this.statistics.stat(['temperature']);
+			acceptanceStat = this.statistics.stat({key: 'acceptance'}),
+			temperatureStat = this.statistics.stat({key: 'temperature'});
 		temperatureStat.add(temp, this.step);
 		return basis.Future.all(this.state.map(function (elem) {
 			var neighbour = mh.randomNeighbour(elem);

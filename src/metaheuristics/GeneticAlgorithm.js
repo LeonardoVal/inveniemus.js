@@ -106,12 +106,11 @@ GeneticAlgorithm.selections = {
 		Warning! This selection assumes the evaluation is being maximized.
 	*/
 	rouletteSelection: function rouletteSelection(count) { //FIXME
-	/* this.statistics.stat('evaluations_step').minimum() .maximum() .sum()
-	*/
 		count = isNaN(count) ? 2 : +count;
 		var len = this.state.length,
-			min = this.statistics.minimum('evaluations_step'),
-			sum = this.statistics.sum('evaluations_step'),
+			evaluationStat = this.statistics.stat({key: 'evaluation', step: this.step}),
+			min = evaluationStat.minimum(),
+			sum = evaluationStat.sum(),
 			randoms = this.random.randoms(count, 0, sum - len * min),
 			selected = [];
 		randoms.sort(function (x, y) { return x-y; });

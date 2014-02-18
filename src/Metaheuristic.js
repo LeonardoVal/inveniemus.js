@@ -139,7 +139,7 @@ var Metaheuristic = exports.Metaheuristic = basis.declare({
 	*/
 	evaluate: function evaluate(elements) {
 		var mh = this,
-			evalTime = this.statistics.stat(['time', 'evaluation']);
+			evalTime = this.statistics.stat({key:'evaluation_time'});
 		evalTime.startTime();
 		elements = elements || this.state;
 		return basis.Future.all(iterable(elements).filter(
@@ -189,7 +189,7 @@ var Metaheuristic = exports.Metaheuristic = basis.declare({
 		Updates the process' statistics.
 	*/
 	analyze: function analyze() {
-		var stat = this.statistics.stat(['evaluation', 'step='+ this.step]);
+		var stat = this.statistics.stat({key:'evaluation', step: this.step});
 		this.state.forEach(function (element) {
 			stat.add(element.evaluation, element);
 		});
@@ -204,7 +204,7 @@ var Metaheuristic = exports.Metaheuristic = basis.declare({
 	*/
 	advance: function advance() {
 		var mh = this, 
-			stepTime = this.statistics.stat(['time', 'step']),
+			stepTime = this.statistics.stat({key: 'step_time'}),
 			result;
 		if (isNaN(this.step) || +this.step < 0) {
 			this.statistics.reset();
