@@ -23,8 +23,10 @@
 	],
 	"dependencies": {
 		"requirejs": "2.1.9",
-		"jquery": "~2.0.3",
-		"dygraphs": "~1.0.1",
 		"basis": "git://github.com/LeonardoVal/basis.js.git"
+	},
+	"devDependencies": {
+		"jquery": "~2.0.3",
+		"dygraphs": "~1.0.1"
 	}
 }
