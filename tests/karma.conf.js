@@ -16,7 +16,7 @@ module.exports = function(config) {
       'tests/karma-tester.js',
       {pattern: 'tests/specs/*.test.js', included: false},
       {pattern: 'build/inveniemus.js', included: false},
-      {pattern: 'lib/**/*.js', included: false},
+      {pattern: 'bower_components/basis/build/basis.js', included: false},
     ],
 
     // list of files to exclude
