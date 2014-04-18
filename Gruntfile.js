@@ -1,74 +1,84 @@
-﻿/** Gruntfile for inveniemus.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+﻿/** Gruntfile for [inveniemus.js](http://github.com/LeonardoVal/inveniemus.js).
 */
-var umdWrapper = function (init) {
-	if (typeof define === 'function' && define.amd) {
-		define(['basis'], init); // AMD module.
-	} else if (typeof module === 'object' && module.exports) {
-		module.exports = init(require('basis')); // CommonJS module.
-	} else {
-		var global = (0, eval)('this');
-		global.inveniemus = init(global.basis); // Global namespace.
-	}
-};
-
-var sourceFiles = [ 'src/Element.js', 'src/Problem.js', 'src/Metaheuristic.js',
-	'src/metaheuristics/HillClimbing.js', 'src/metaheuristics/GeneticAlgorithm.js', 
-		'src/metaheuristics/BeamSearch.js', 'src/metaheuristics/SimulatedAnnealing.js', 
-	'src/problems/SumOptimization.js', 'src/problems/HelloWorld.js',
-		'src/problems/NQueensPuzzle.js', 'src/problems/KnapsackProblem.js'
-];
-
 module.exports = function(grunt) {
+	var SOURCE_FILES = ['src/__prologue__.js',
+	// Core.
+		'src/Element.js',
+		'src/Problem.js',
+		'src/Metaheuristic.js',
+	// Metaheuristics.
+		'src/metaheuristics/HillClimbing.js',
+		'src/metaheuristics/GeneticAlgorithm.js', 
+		'src/metaheuristics/BeamSearch.js',
+		'src/metaheuristics/SimulatedAnnealing.js', 
+	// Problems.
+		'src/problems/SumOptimization.js',
+		'src/problems/HelloWorld.js',
+		'src/problems/NQueensPuzzle.js',
+		'src/problems/KnapsackProblem.js',
+	// Fin.
+		'src/__epilogue__.js'];
+
+grunt.file.defaultEncoding = 'utf8';
 // Init config. ////////////////////////////////////////////////////////////////
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
-		concat: { //////////////////////////////////////////////////////////////
-			options: {
-				separator: '\n\n',
-				banner: '"use strict"; ('+ umdWrapper +')(function (basis){ var exports = {};\n',
-				footer: '\nreturn exports;\n});'
-			},
+		concat_sourcemap: { ////////////////////////////////////////////////////
 			build: {
-				src: sourceFiles,
-				dest: './<%= pkg.name %>.js',
+				src: SOURCE_FILES,
+				dest: 'build/<%= pkg.name %>.js',
+				options: {
+					separator: '\n\n'
+				}
 			},
+		},
+		karma: { ///////////////////////////////////////////////////////////////
+			options: {
+				configFile: 'tests/karma.conf.js'
+			},
+			build: { browsers: ['PhantomJS'] },
+			chrome: { browsers: ['Chrome'] },
+			firefox: { browsers: ['Firefox'] },
+			opera: { browsers: ['Opera'] },
+			iexplore: { browsers: ['IE'] }
 		},
 		uglify: { //////////////////////////////////////////////////////////////
-		  options: {
-			banner: '//! <%= pkg.name %> <%= pkg.version %>\n',
-			report: 'min'
-		  },
-		  build: {
-			src: './<%= pkg.name %>.js',
-			dest: './<%= pkg.name %>.min.js'
-		  }
-		},
-		docgen: { //////////////////////////////////////////////////////////////
 			build: {
-				src: sourceFiles,
-				dest: 'docs/api.html'
+				src: 'build/<%= pkg.name %>.js',
+				dest: 'build/<%= pkg.name %>.min.js',
+				options: {
+					banner: '//! <%= pkg.name %> <%= pkg.version %>\n',
+					report: 'min',
+					sourceMap: true,
+					sourceMapIn: 'build/<%= pkg.name %>.js.map',
+					sourceMapName: 'build/<%= pkg.name %>.min.js.map'
+				}
 			}
 		},
-		markdown: { ////////////////////////////////////////////////////////////
+		docker: { //////////////////////////////////////////////////////////////
 			build: {
-				files: [ {
-					expand: true,
-					src: 'docs/*.md',
-					ext: '.html'
-				}]
+				src: ["src/**/*.js", "README.md"],
+				dest: "docs/docker",
+				options: {
+					colourScheme: 'borland',
+					ignoreHidden: true,
+					exclude: 'src/__prologue__.js,src/__epilogue__.js'
+				}
 			}
 		}
 	});
-
+	
 // Load tasks. /////////////////////////////////////////////////////////////////
+	grunt.loadNpmTasks('grunt-concat-sourcemap');
+	grunt.loadNpmTasks('grunt-karma');
 	grunt.loadNpmTasks('grunt-contrib-uglify');
-	grunt.loadNpmTasks('grunt-contrib-concat');
-	grunt.loadNpmTasks('grunt-markdown');
-	require('./docs/docgen')(grunt); // In-house documentation generation.
+	grunt.loadNpmTasks('grunt-docker');
 	
 // Register tasks. /////////////////////////////////////////////////////////////
-	grunt.registerTask('default', ['concat', 'uglify', 'docgen', 'markdown']);
+	grunt.registerTask('compile', ['concat_sourcemap:build', 'uglify:build']); 
+	grunt.registerTask('build', ['concat_sourcemap:build', 'karma:build',
+		'uglify:build', 'docker:build']);
+	grunt.registerTask('test', ['concat_sourcemap:build', 'karma:build',
+		'karma:chrome', 'karma:firefox', 'karma:opera', 'karma:iexplore']);
+	grunt.registerTask('default', ['build']);
 };
