@@ -3,7 +3,7 @@
 
 [![Built with Grunt](https://cdn.gruntjs.com/builtwith.png)](http://gruntjs.com/)
 
-A search and optimization library, focusing on [metaheuristics](http://en.wikipedia.org/wiki/Metaheuristic). Currently includes implementations for: [hill climbing search](http://en.wikipedia.org/wiki/Hill_climbing), [simulated_annealing](http://en.wikipedia.org/wiki/Simulated_annealing) and [genetic algorithms](http://en.wikipedia.org/wiki/Genetic_algorithm).
+A search and optimization library, focusing on [metaheuristics](http://en.wikipedia.org/wiki/Metaheuristic). Currently includes implementations for: [hill climbing search](http://en.wikipedia.org/wiki/Hill_climbing), [simulated annealing](http://en.wikipedia.org/wiki/Simulated_annealing) and [genetic algorithms](http://en.wikipedia.org/wiki/Genetic_algorithm).
 
 It supports loading with AMD (with [RequireJS](http://requirejs.org/)) or a script tag (sets 'inveniemus' in the global namespace). In order to work requires another library of mine called [basis](https://github.com/LeonardoVal/basis.js). 
 
