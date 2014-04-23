@@ -65,6 +65,23 @@ grunt.file.defaultEncoding = 'utf8';
 					exclude: 'src/__prologue__.js,src/__epilogue__.js'
 				}
 			}
+		},
+		bowercopy: { ///////////////////////////////////////////////////////////
+			options: {
+				clean: true,
+				runBower: true,
+				srcPrefix: 'bower_components'
+			},
+			lib: {
+				options: {
+					destPrefix: 'lib'
+				},
+				files: {
+					'jquery.js': 'jquery/jquery.js',
+					'require.js': 'requirejs/require.js',
+					'basis.js': 'basis/build/basis.js'
+				},
+			}
 		}
 	});
 	
@@ -73,12 +90,14 @@ grunt.file.defaultEncoding = 'utf8';
 	grunt.loadNpmTasks('grunt-karma');
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-docker');
+	grunt.loadNpmTasks('grunt-bowercopy');
 	
 // Register tasks. /////////////////////////////////////////////////////////////
-	grunt.registerTask('compile', ['concat_sourcemap:build', 'uglify:build']); 
+	grunt.registerTask('compile', ['concat_sourcemap:build', 'uglify:build']);
 	grunt.registerTask('build', ['concat_sourcemap:build', 'karma:build',
 		'uglify:build', 'docker:build']);
+	grunt.registerTask('default', ['build']);
 	grunt.registerTask('test', ['concat_sourcemap:build', 'karma:build',
 		'karma:chrome', 'karma:firefox', 'karma:opera', 'karma:iexplore']);
-	grunt.registerTask('default', ['build']);
+	grunt.registerTask('lib', ['bowercopy:lib']);
 };

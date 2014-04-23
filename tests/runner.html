@@ -8,9 +8,9 @@
 	<title>Inveniemus runner.</title>
 	<meta charset="UTF-8"/>
 	<link rel="stylesheet" type="text/css" href="runner.css"/>
-	<script type="text/javascript" src="../bower_components/requirejs/require.js"></script>
-	<script type="text/javascript" src="../bower_components/jquery/jquery.js"></script>
-	<script type="text/javascript" src="../bower_components/dygraphs/dygraph-dev.js"></script>
+	<script type="text/javascript" src="../lib/require.js"></script>
+	<script type="text/javascript" src="../lib/jquery.js"></script>
+	<script type="text/javascript" src="../lib/dygraph-combined.js"></script>
 </head><body onload="main();">
 <h3>Inveniemus runner.</h3> 
 <div id="header">
@@ -27,7 +27,7 @@
 function main() {
 	require.config({
 		paths: { 
-			basis: '../bower_components/basis/build/basis', 
+			basis: '../lib/basis', 
 			inveniemus: '../build/inveniemus' 
 		}
 	})

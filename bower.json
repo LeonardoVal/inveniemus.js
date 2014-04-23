@@ -26,7 +26,6 @@
 		"basis": "git://github.com/LeonardoVal/basis.js.git"
 	},
 	"devDependencies": {
-		"jquery": "~2.0.3",
-		"dygraphs": "~1.0.1"
+		"jquery": "~2.0.3"
 	}
 }
