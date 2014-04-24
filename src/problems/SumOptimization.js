@@ -2,7 +2,7 @@
 	elements' values. Probably the simplest optimization problem that can be 
 	defined, included here for testing purposes.
 */
-problems.SumOptimization = basis.declare(Problem, { ////////////////////////////
+problems.SumOptimization = declare(Problem, { ////////////////////////////
 	title: "Sum optimization",
 	description: "Very simple problem based on optimizing the elements' values sum.",
 
@@ -12,11 +12,11 @@ problems.SumOptimization = basis.declare(Problem, { ////////////////////////////
 	*/
 	constructor: function SumOptimization(params) {
 		Problem.call(this, params);
-		basis.initialize(this, params)
+		initialize(this, params)
 			.number('target', { coerce: true, defaultValue: -Infinity });
 	},
 	
-	representation: basis.declare(Element, {
+	representation: declare(Element, {
 		evaluate: function evaluate() {
 			return this.evaluation = iterable(this.values).sum();
 		}

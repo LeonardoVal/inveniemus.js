@@ -79,7 +79,7 @@ grunt.file.defaultEncoding = 'utf8';
 				files: {
 					'jquery.js': 'jquery/jquery.js',
 					'require.js': 'requirejs/require.js',
-					'basis.js': 'basis/build/basis.js'
+					'creatartis-base.js': 'creatartis-base/build/creatartis-base.js'
 				},
 			}
 		}

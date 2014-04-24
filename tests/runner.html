@@ -27,15 +27,15 @@
 function main() {
 	require.config({
 		paths: { 
-			basis: '../lib/basis', 
+			'creatartis-base': '../lib/creatartis-base', 
 			inveniemus: '../build/inveniemus' 
 		}
 	})
-	require(['basis', 'inveniemus'], function (basis, inveniemus) {
-		window.basis = basis;
+	require(['creatartis-base', 'inveniemus'], function (base, inveniemus) {
+		window.base = base;
 		window.inveniemus = inveniemus;
 	// Set up log.
-		basis.Logger.ROOT.appendToConsole();
+		base.Logger.ROOT.appendToConsole();
 	// Set up graphs.
 		window.evaluationGraph = new Dygraph(document.getElementById("chart"), [], {
 			labels: ['step', 'minimum', 'average', 'maximum'],

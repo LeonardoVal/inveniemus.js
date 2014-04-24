@@ -1,4 +1,4 @@
-﻿define(['basis', 'inveniemus'], function (basis, inveniemus) {
+﻿define(['creatartis-base', 'inveniemus'], function (base, inveniemus) {
 	var Element = inveniemus.Element;
 
 // Evaluation utilities. ///////////////////////////////////////////////////////

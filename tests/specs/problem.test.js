@@ -1,7 +1,7 @@
-﻿define(['basis', 'inveniemus'], function (basis, inveniemus) {
+﻿define(['creatartis-base', 'inveniemus'], function (base, inveniemus) {
 	var Element = inveniemus.Element,
 		Problem = inveniemus.Problem,
-		RANDOM = basis.Randomness.DEFAULT;
+		RANDOM = base.Randomness.DEFAULT;
 
 	function __randomElements__(count) {
 		return RANDOM.randoms(count).map(function (r) {

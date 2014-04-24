@@ -1,24 +1,32 @@
 /** Package wrapper and layout.
 */
 "use strict";
-(function (init) { // Universal Module Definition.
+(function (global, init) { // Universal Module Definition.
 	if (typeof define === 'function' && define.amd) {
-		define(['basis'], init); // AMD module.
+		define(['creatartis-base'], init); // AMD module.
 	} else if (typeof module === 'object' && module.exports) {
-		module.exports = init(require('basis')); // CommonJS module.
+		module.exports = init(require('creatartis-base')); // CommonJS module.
 	} else { // Browser or web worker (probably).
-		(0, eval)('this').inveniemus = init(global.basis);
+		global.inveniemus = init(global.base);
 	}
-})(function __init__(basis){
+})(this, function __init__(base){
 // Import synonyms. ////////////////////////////////////////////////////////////
-	var declare = basis.declare,
-		iterable = basis.iterable;
+	var declare = base.declare,
+		initialize = base.initialize,
+		iterable = base.iterable,
+		raiseIf = base.raiseIf,
+		Events = base.Events,
+		Future = base.Future,
+		Iterable = base.Iterable,
+		Logger = base.Logger,
+		Randomness = base.Randomness,
+		Statistics = base.Statistics;
 	
 // Library layout. /////////////////////////////////////////////////////////////
 	var exports = {
-		__init__: __init__
+		__name__: 'inveniemus',
+		__init__: (__init__.dependencies = ['creatartis-base'], __init__)
 	};
-	exports.__init__.dependencies = [basis];
 
 /**	# Class Element
 
@@ -62,9 +70,9 @@ var Element = exports.Element = declare({
 	
 	/** The pseudorandom number generator in the class property `random` is
 	required by some of the element's operations. Its equal to 
-	`basis.Randomness.DEFAULT` by default.
+	`base.Randomness.DEFAULT` by default.
 	*/
-	random: basis.Randomness.DEFAULT,
+	random: Randomness.DEFAULT,
 	
 	/** One of this operations is `randomValue()`, which returns a random value 
 	between `this.minimumValue` and `this.maximumValue`.
@@ -220,7 +228,7 @@ var Element = exports.Element = declare({
 		var copy = new this.constructor(this.values), i, v;
 		for (i = 0; i < arguments.length; i += 2) {
 			v = +arguments[i + 1];
-			basis.raiseIf(isNaN(v) || v < this.minimumValue || v > this.maximumValue, "Invalid value ", v, " for element.");
+			raiseIf(isNaN(v) || v < this.minimumValue || v > this.maximumValue, "Invalid value ", v, " for element.");
 			copy.values[arguments[i] | 0] = +arguments[i + 1];
 		}
 		return copy;
@@ -236,7 +244,7 @@ var Element = exports.Element = declare({
 	arrayMapping: function arrayMapping() {
 		var args = arguments, 
 			lastItems = args[args.length - 1];
-		basis.raiseIf(args.length < 1, "Element.arrayMapping() expects at least one argument.");
+		raiseIf(args.length < 1, "Element.arrayMapping() expects at least one argument.");
 		return this.values.map(function (v, i) {
 			var items = args.length > i ? args[i] : lastItems;
 			return items[v * items.length | 0];
@@ -248,7 +256,7 @@ var Element = exports.Element = declare({
 	more than once. 
 	*/
 	setMapping: function setMapping(items) {
-		basis.raiseIf(!Array.isArray(items), "Element.setMapping() expects an array argument.");
+		raiseIf(!Array.isArray(items), "Element.setMapping() expects an array argument.");
 		items = items.slice(); // Shallow copy.
 		return this.values.map(function (v, i) {
 			return items.splice(v * items.length | 0, 1)[0];
@@ -291,7 +299,7 @@ var Element = exports.Element = declare({
 
 The Problem type represents a search or optimization problem in Inveniemus.
 */
-var Problem = exports.Problem = basis.declare({
+var Problem = exports.Problem = declare({
 	/** A problem should have a `title` to be displayed to the user.
 	*/
 	title: "<no title>",
@@ -304,13 +312,13 @@ var Problem = exports.Problem = basis.declare({
 	/** Many operations in this class require a pseudorandom number generator.
 	By default `basis.Randomness.DEFAULT` is used.
 	*/
-	random: basis.Randomness.DEFAULT,
+	random: Randomness.DEFAULT,
 	
 	/** A Problem holds basically three things: the element constructor, the 
 	comparison between elements and the sufficiency criteria.
 	*/
 	constructor: function Problem(params) {
-		basis.initialize(this, params)
+		initialize(this, params)
 			.string('title', { coerce: true, ignore: true })
 			.string('description', { coerce: true, ignore: true })
 			.object('random', { ignore: true })
@@ -395,18 +403,18 @@ var problems = exports.problems = {};
 /**	A [Metaheuristic](http://en.wikipedia.org/wiki/Metaheuristic) is an 
 	optimization algorithm (which can also be used for searching).
 */
-var Metaheuristic = exports.Metaheuristic = basis.declare({
+var Metaheuristic = exports.Metaheuristic = declare({
 	/** Metaheuristic.logger:
 		Logger used by the metaheuristic.
 	*/
-	logger: new basis.Logger('inveniemus', basis.Logger.ROOT, 'INFO'),
+	logger: new Logger('inveniemus', Logger.ROOT, 'INFO'),
 	
 	/** new Metaheuristic(params):
 		Base class of all metaheuristic algorithms, and hence of all 
 		metaheuristic runs.
 	*/
 	constructor: function Metaheuristic(params) {
-		basis.initialize(this, params)
+		initialize(this, params)
 		/** Metaheuristic.problem:
 			Definition of the problem this metaheuristic will try to solve.
 		*/
@@ -433,18 +441,18 @@ var Metaheuristic = exports.Metaheuristic = basis.declare({
 			This metaheuristic's pseudorandom number generator. It is strongly
 			advised to have only one for the whole process.
 		*/
-			.object('random', { defaultValue: basis.Randomness.DEFAULT })
+			.object('random', { defaultValue: Randomness.DEFAULT })
 		/** Metaheuristic.statistics:
 			The statistic gatherer for this metaheuristic.
 		*/
-			.object('statistics', { defaultValue: new basis.Statistics() })
+			.object('statistics', { defaultValue: new Statistics() })
 			.object('logger', { ignore: true });
 		/** Metaheuristic.events:
 			Event handler for this metaheuristic. The emitted events by default
 			are: initiated, updated, expanded, evaluated, sieved, advanced, 
 			analyzed & finished.
 		*/
-		this.events = new basis.Events({ 
+		this.events = new Events({ 
 			events: ["initiated", "updated", "expanded", "evaluated", "sieved", 
 				"advanced", "analyzed", "finished"]
 		});
@@ -536,12 +544,12 @@ var Metaheuristic = exports.Metaheuristic = basis.declare({
 			evalTime = this.statistics.stat({key:'evaluation_time'});
 		evalTime.startTime();
 		elements = elements || this.state;
-		return basis.Future.all(iterable(elements).filter(
+		return Future.all(iterable(elements).filter(
 			function (element) { // For those elements that don't have an evaluation, ...
 				return isNaN(element.evaluation);
 			},
 			function (element) { // ... evaluate them.
-				return basis.Future.when(element.evaluate());
+				return Future.when(element.evaluate());
 			}
 		)).then(function (results) {
 			elements.sort(mh.problem.compare.bind(mh.problem));
@@ -629,7 +637,7 @@ var Metaheuristic = exports.Metaheuristic = basis.declare({
 		function continues() {
 			return !mh.finished();
 		}
-		return basis.Future.doWhile(advance, continues).then(function () {
+		return Future.doWhile(advance, continues).then(function () {
 			mh.logger && mh.logger.info('Finished. Nos invenerunt!');
 			return mh.state[0]; // Return the best cursor.
 		});
@@ -659,14 +667,14 @@ var metaheuristics = exports.metaheuristics = {};
 /** [Hill Climbing](http://en.wikipedia.org/wiki/Hill_climbing) implementation 
 	for the Inveniemus library.
 */
-var HillClimbing = metaheuristics.HillClimbing = basis.declare(Metaheuristic, {
+var HillClimbing = metaheuristics.HillClimbing = declare(Metaheuristic, {
 	/** new metaheuristics.HillClimbing(params):
 		Builds a [hill climbing](http://en.wikipedia.org/wiki/Hill_climbing) 
 		search.
 	*/
 	constructor: function HillClimbing(params) {
 		Metaheuristic.call(this, params);
-		basis.initialize(this, params)
+		initialize(this, params)
 		/** metaheuristics.HillClimbing.delta=0.01:
 			The radius of the elements surroundings in every dimension, that is
 			checked by this algorithm.
@@ -687,7 +695,7 @@ var HillClimbing = metaheuristics.HillClimbing = basis.declare(Metaheuristic, {
 	update: function update() {
 		var mh = this, 
 			localOptima = 0;
-		return basis.Future.all(this.state.map(function (elem) {
+		return Future.all(this.state.map(function (elem) {
 			var range = elem.neighbourhood(mh.delta);
 			range.push(elem);
 			return mh.evaluate(range).then(function (range) {
@@ -729,14 +737,14 @@ var HillClimbing = metaheuristics.HillClimbing = basis.declare(Metaheuristic, {
 /** Classic Holland's-style [genetic algorithms](http://en.wikipedia.org/wiki/Genetic_algorithm)
 	for the Inveniemus library.
 */
-var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = basis.declare(Metaheuristic, {
+var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, {
 	/** new metaheuristics.GeneticAlgorithm(params):
 		Builds a genetic algorithm, the base for many evolutionary computing
 		variants.
 	*/
 	constructor: function GeneticAlgorithm(params) {
 		Metaheuristic.call(this, params); // Superconstructor call.
-		basis.initialize(this, params)
+		initialize(this, params)
 		/** metaheuristics.GeneticAlgorithm.expansionRate=0.5:
 			The amount of new elements generated by crossover, as a ratio of the
 			population size.
@@ -868,7 +876,7 @@ GeneticAlgorithm.crossovers = {
 		half of each parent. The cutpoint is chosen randomly.
 	*/
 	singlepointCrossover: function singlepointCrossover(parents) {
-		basis.raiseIf(!Array.isArray(parents) || parents.length < 2, "A two parent array is required.");
+		raiseIf(!Array.isArray(parents) || parents.length < 2, "A two parent array is required.");
 		var cut = this.random.randomInt(this.length - 1) + 1,
 			values0 = parents[0].values,
 			values1 = parents[1].values,
@@ -925,7 +933,7 @@ GeneticAlgorithm.mutations = {
 	the Inveniemus library. It is a form of parallel best-first search with 
 	limited memory.
 */
-var BeamSearch = metaheuristics.BeamSearch = basis.declare(Metaheuristic, {
+var BeamSearch = metaheuristics.BeamSearch = declare(Metaheuristic, {
 	/** new metaheuristics.BeamSearch(params):
 		Builds a beam search. The problem's element must have its successors 
 		method implemented.
@@ -966,14 +974,14 @@ var BeamSearch = metaheuristics.BeamSearch = basis.declare(Metaheuristic, {
 /** [Simulated annealing](http://en.wikipedia.org/wiki/Simulated_annealing) 
 	implementation for the Inveniemus library.
 */
-var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = basis.declare(Metaheuristic, {
+var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheuristic, {
 	/** new metaheuristics.SimulatedAnnealing(params):
 		Builds a simulated annealing search.
 		See <http://en.wikipedia.org/wiki/Simulated_annealing>.
 	*/
 	constructor: function SimulatedAnnealing(params) {
 		Metaheuristic.call(this, params);
-		basis.initialize(this, params)
+		initialize(this, params)
 		/** metaheuristics.SimulatedAnnealing.maximumTemperature=1:
 			The temperature at the start of the run.
 		*/
@@ -1040,9 +1048,9 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = basis.declare(Metah
 			acceptanceStat = this.statistics.stat({key: 'acceptance'}),
 			temperatureStat = this.statistics.stat({key: 'temperature'});
 		temperatureStat.add(temp, this.step);
-		return basis.Future.all(this.state.map(function (elem) {
+		return Future.all(this.state.map(function (elem) {
 			var neighbour = mh.randomNeighbour(elem);
-			return basis.Future.when(neighbour.evaluate()).then(function () {
+			return Future.when(neighbour.evaluate()).then(function () {
 				var p = mh.acceptance(elem, neighbour, temp);
 				acceptanceStat.add(p, neighbour);
 				if (mh.random.randomBool(p)) {
@@ -1068,7 +1076,7 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = basis.declare(Metah
 	elements' values. Probably the simplest optimization problem that can be 
 	defined, included here for testing purposes.
 */
-problems.SumOptimization = basis.declare(Problem, { ////////////////////////////
+problems.SumOptimization = declare(Problem, { ////////////////////////////
 	title: "Sum optimization",
 	description: "Very simple problem based on optimizing the elements' values sum.",
 
@@ -1078,11 +1086,11 @@ problems.SumOptimization = basis.declare(Problem, { ////////////////////////////
 	*/
 	constructor: function SumOptimization(params) {
 		Problem.call(this, params);
-		basis.initialize(this, params)
+		initialize(this, params)
 			.number('target', { coerce: true, defaultValue: -Infinity });
 	},
 	
-	representation: basis.declare(Element, {
+	representation: declare(Element, {
 		evaluate: function evaluate() {
 			return this.evaluation = iterable(this.values).sum();
 		}
@@ -1111,7 +1119,7 @@ problems.SumOptimization = basis.declare(Problem, { ////////////////////////////
 /** As it sounds, HelloWorld is a simple problem class, probably only useful for
 	testing purposes.
 */
-problems.HelloWorld = basis.declare(Problem, { /////////////////////////////////
+problems.HelloWorld = declare(Problem, { /////////////////////////////////
 	title: "Hello world",
 	description: "Simple problem where each element is a string, and the "+
 		"optimization goes towards the target string.",
@@ -1123,7 +1131,7 @@ problems.HelloWorld = basis.declare(Problem, { /////////////////////////////////
 	*/	
 	constructor: function HelloWorld(params){
 		Problem.call(this, params);
-		basis.initialize(this, params)
+		initialize(this, params)
 			.string('target', { coerce: true, defaultValue: 'Hello world!' });
 		
 		var target = this.target,
@@ -1131,7 +1139,7 @@ problems.HelloWorld = basis.declare(Problem, { /////////////////////////////////
 				return c.charCodeAt(0);
 			}).toArray();
 		// Ad hoc Element declaration.
-		this.representation = basis.declare(Element, {
+		this.representation = declare(Element, {
 			length: target.length,
 			minimumValue: 32,
 			maximumValue: 254,
@@ -1155,7 +1163,7 @@ problems.HelloWorld = basis.declare(Problem, { /////////////////////////////////
 
 /** A generalized version of the classic [8 queens puzzle](http://en.wikipedia.org/wiki/Eight_queens_puzzle).
 */
-problems.NQueensPuzzle = basis.declare(Problem, { ////////////////////////////
+problems.NQueensPuzzle = declare(Problem, { ////////////////////////////
 	title: "N-queens puzzle",
 	description: "Generalized version of the classic problem of placing "+
 		"8 chess queens on an 8x8 chessboard so that no two queens attack each other.",
@@ -1167,17 +1175,17 @@ problems.NQueensPuzzle = basis.declare(Problem, { ////////////////////////////
 	*/	
 	constructor: function NQueensPuzzle(params){
 		Problem.call(this, params);
-		basis.initialize(this, params)
+		initialize(this, params)
 			.integer('N', { coerce: true, defaultValue: 8 });
 		
 		// Ad hoc Element declaration.
-		var rowRange = basis.Iterable.range(this.N).toArray();
+		var rowRange = Iterable.range(this.N).toArray();
 		/** problems.NQueensPuzzle.representation:
 			The representation is an array of N positions, indicating the row of
 			the queen for each column. Its evaluation is the count of diagonals
 			shared by queens pairwise.
 		*/
-		this.representation = basis.declare(Element, {
+		this.representation = declare(Element, {
 			length: this.N,
 			suffices: function suffices() {
 				return this.evaluation === 0;
@@ -1210,7 +1218,7 @@ problems.NQueensPuzzle = basis.declare(Problem, { ////////////////////////////
 	that the total cost does not exceed a certain limit, while maximizing the 
 	total worth.
 */
-problems.KnapsackProblem = basis.declare(Problem, { ////////////////////////////
+problems.KnapsackProblem = declare(Problem, { ////////////////////////////
 	title: "Knapsack problem",
 	description: "Given a set of items with a cost and a worth, select a subset "+
 		" maximizing the worth sum but not exceeding a cost limit.",
@@ -1235,7 +1243,7 @@ problems.KnapsackProblem = basis.declare(Problem, { ////////////////////////////
 	*/	
 	constructor: function KnapsackProblem(params){
 		Problem.call(this, params);
-		basis.initialize(this, params)
+		initialize(this, params)
 			/** problems.KnapsackProblem.limit=15:
 				Cost limit that candidate solution should not exceed.
 			*/
@@ -1253,7 +1261,7 @@ problems.KnapsackProblem = basis.declare(Problem, { ////////////////////////////
 			number holds the selected amount for each item (from 0 up to the
 			item's amount).
 		*/
-		this.representation = basis.declare(Element, {
+		this.representation = declare(Element, {
 			length: Object.keys(this.items).length,
 			evaluate: function evaluate() {
 				var selection = this.mapping(),

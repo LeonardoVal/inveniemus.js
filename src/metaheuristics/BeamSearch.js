@@ -2,7 +2,7 @@
 	the Inveniemus library. It is a form of parallel best-first search with 
 	limited memory.
 */
-var BeamSearch = metaheuristics.BeamSearch = basis.declare(Metaheuristic, {
+var BeamSearch = metaheuristics.BeamSearch = declare(Metaheuristic, {
 	/** new metaheuristics.BeamSearch(params):
 		Builds a beam search. The problem's element must have its successors 
 		method implemented.

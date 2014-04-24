@@ -40,9 +40,9 @@ var Element = exports.Element = declare({
 	
 	/** The pseudorandom number generator in the class property `random` is
 	required by some of the element's operations. Its equal to 
-	`basis.Randomness.DEFAULT` by default.
+	`base.Randomness.DEFAULT` by default.
 	*/
-	random: basis.Randomness.DEFAULT,
+	random: Randomness.DEFAULT,
 	
 	/** One of this operations is `randomValue()`, which returns a random value 
 	between `this.minimumValue` and `this.maximumValue`.
@@ -198,7 +198,7 @@ var Element = exports.Element = declare({
 		var copy = new this.constructor(this.values), i, v;
 		for (i = 0; i < arguments.length; i += 2) {
 			v = +arguments[i + 1];
-			basis.raiseIf(isNaN(v) || v < this.minimumValue || v > this.maximumValue, "Invalid value ", v, " for element.");
+			raiseIf(isNaN(v) || v < this.minimumValue || v > this.maximumValue, "Invalid value ", v, " for element.");
 			copy.values[arguments[i] | 0] = +arguments[i + 1];
 		}
 		return copy;
@@ -214,7 +214,7 @@ var Element = exports.Element = declare({
 	arrayMapping: function arrayMapping() {
 		var args = arguments, 
 			lastItems = args[args.length - 1];
-		basis.raiseIf(args.length < 1, "Element.arrayMapping() expects at least one argument.");
+		raiseIf(args.length < 1, "Element.arrayMapping() expects at least one argument.");
 		return this.values.map(function (v, i) {
 			var items = args.length > i ? args[i] : lastItems;
 			return items[v * items.length | 0];
@@ -226,7 +226,7 @@ var Element = exports.Element = declare({
 	more than once. 
 	*/
 	setMapping: function setMapping(items) {
-		basis.raiseIf(!Array.isArray(items), "Element.setMapping() expects an array argument.");
+		raiseIf(!Array.isArray(items), "Element.setMapping() expects an array argument.");
 		items = items.slice(); // Shallow copy.
 		return this.values.map(function (v, i) {
 			return items.splice(v * items.length | 0, 1)[0];

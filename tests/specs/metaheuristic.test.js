@@ -1,6 +1,6 @@
-﻿define(['basis', 'inveniemus'], function (basis, inveniemus) {
-	var iterable = basis.iterable,
-		Future = basis.Future;
+﻿define(['creatartis-base', 'inveniemus'], function (base, inveniemus) {
+	var iterable = base.iterable,
+		Future = base.Future;
 
 	var metaheuristics = iterable(inveniemus.metaheuristics)
 			.mapApply(function (name, member) {

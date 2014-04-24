@@ -1,14 +1,14 @@
 ﻿/** [Simulated annealing](http://en.wikipedia.org/wiki/Simulated_annealing) 
 	implementation for the Inveniemus library.
 */
-var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = basis.declare(Metaheuristic, {
+var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheuristic, {
 	/** new metaheuristics.SimulatedAnnealing(params):
 		Builds a simulated annealing search.
 		See <http://en.wikipedia.org/wiki/Simulated_annealing>.
 	*/
 	constructor: function SimulatedAnnealing(params) {
 		Metaheuristic.call(this, params);
-		basis.initialize(this, params)
+		initialize(this, params)
 		/** metaheuristics.SimulatedAnnealing.maximumTemperature=1:
 			The temperature at the start of the run.
 		*/
@@ -75,9 +75,9 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = basis.declare(Metah
 			acceptanceStat = this.statistics.stat({key: 'acceptance'}),
 			temperatureStat = this.statistics.stat({key: 'temperature'});
 		temperatureStat.add(temp, this.step);
-		return basis.Future.all(this.state.map(function (elem) {
+		return Future.all(this.state.map(function (elem) {
 			var neighbour = mh.randomNeighbour(elem);
-			return basis.Future.when(neighbour.evaluate()).then(function () {
+			return Future.when(neighbour.evaluate()).then(function () {
 				var p = mh.acceptance(elem, neighbour, temp);
 				acceptanceStat.add(p, neighbour);
 				if (mh.random.randomBool(p)) {

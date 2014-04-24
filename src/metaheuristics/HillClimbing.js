@@ -1,14 +1,14 @@
 ﻿/** [Hill Climbing](http://en.wikipedia.org/wiki/Hill_climbing) implementation 
 	for the Inveniemus library.
 */
-var HillClimbing = metaheuristics.HillClimbing = basis.declare(Metaheuristic, {
+var HillClimbing = metaheuristics.HillClimbing = declare(Metaheuristic, {
 	/** new metaheuristics.HillClimbing(params):
 		Builds a [hill climbing](http://en.wikipedia.org/wiki/Hill_climbing) 
 		search.
 	*/
 	constructor: function HillClimbing(params) {
 		Metaheuristic.call(this, params);
-		basis.initialize(this, params)
+		initialize(this, params)
 		/** metaheuristics.HillClimbing.delta=0.01:
 			The radius of the elements surroundings in every dimension, that is
 			checked by this algorithm.
@@ -29,7 +29,7 @@ var HillClimbing = metaheuristics.HillClimbing = basis.declare(Metaheuristic, {
 	update: function update() {
 		var mh = this, 
 			localOptima = 0;
-		return basis.Future.all(this.state.map(function (elem) {
+		return Future.all(this.state.map(function (elem) {
 			var range = elem.neighbourhood(mh.delta);
 			range.push(elem);
 			return mh.evaluate(range).then(function (range) {

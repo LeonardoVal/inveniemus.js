@@ -8,12 +8,12 @@
 function main() {
 	require.config({ 
 		paths: {
-			"basis": "../lib/basis",
+			"creatartis-base": "../lib/creatartis-base",
 			"inveniemus": "../build/inveniemus"
 		},
 	});
-	require(['basis', 'inveniemus'], function (basis, inveniemus) {
-		window.basis = basis;
+	require(['creatartis-base', 'inveniemus'], function (base, inveniemus) {
+		window.base = base;
 		window.inveniemus = inveniemus;
 		(function (s){ // See: <http://jsconsole.com>.
 			s.src = 'jsconsole/inject.js';

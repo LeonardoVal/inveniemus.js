@@ -1,18 +1,18 @@
 ﻿/**	A [Metaheuristic](http://en.wikipedia.org/wiki/Metaheuristic) is an 
 	optimization algorithm (which can also be used for searching).
 */
-var Metaheuristic = exports.Metaheuristic = basis.declare({
+var Metaheuristic = exports.Metaheuristic = declare({
 	/** Metaheuristic.logger:
 		Logger used by the metaheuristic.
 	*/
-	logger: new basis.Logger('inveniemus', basis.Logger.ROOT, 'INFO'),
+	logger: new Logger('inveniemus', Logger.ROOT, 'INFO'),
 	
 	/** new Metaheuristic(params):
 		Base class of all metaheuristic algorithms, and hence of all 
 		metaheuristic runs.
 	*/
 	constructor: function Metaheuristic(params) {
-		basis.initialize(this, params)
+		initialize(this, params)
 		/** Metaheuristic.problem:
 			Definition of the problem this metaheuristic will try to solve.
 		*/
@@ -39,18 +39,18 @@ var Metaheuristic = exports.Metaheuristic = basis.declare({
 			This metaheuristic's pseudorandom number generator. It is strongly
 			advised to have only one for the whole process.
 		*/
-			.object('random', { defaultValue: basis.Randomness.DEFAULT })
+			.object('random', { defaultValue: Randomness.DEFAULT })
 		/** Metaheuristic.statistics:
 			The statistic gatherer for this metaheuristic.
 		*/
-			.object('statistics', { defaultValue: new basis.Statistics() })
+			.object('statistics', { defaultValue: new Statistics() })
 			.object('logger', { ignore: true });
 		/** Metaheuristic.events:
 			Event handler for this metaheuristic. The emitted events by default
 			are: initiated, updated, expanded, evaluated, sieved, advanced, 
 			analyzed & finished.
 		*/
-		this.events = new basis.Events({ 
+		this.events = new Events({ 
 			events: ["initiated", "updated", "expanded", "evaluated", "sieved", 
 				"advanced", "analyzed", "finished"]
 		});
@@ -142,12 +142,12 @@ var Metaheuristic = exports.Metaheuristic = basis.declare({
 			evalTime = this.statistics.stat({key:'evaluation_time'});
 		evalTime.startTime();
 		elements = elements || this.state;
-		return basis.Future.all(iterable(elements).filter(
+		return Future.all(iterable(elements).filter(
 			function (element) { // For those elements that don't have an evaluation, ...
 				return isNaN(element.evaluation);
 			},
 			function (element) { // ... evaluate them.
-				return basis.Future.when(element.evaluate());
+				return Future.when(element.evaluate());
 			}
 		)).then(function (results) {
 			elements.sort(mh.problem.compare.bind(mh.problem));
@@ -235,7 +235,7 @@ var Metaheuristic = exports.Metaheuristic = basis.declare({
 		function continues() {
 			return !mh.finished();
 		}
-		return basis.Future.doWhile(advance, continues).then(function () {
+		return Future.doWhile(advance, continues).then(function () {
 			mh.logger && mh.logger.info('Finished. Nos invenerunt!');
 			return mh.state[0]; // Return the best cursor.
 		});

@@ -2,7 +2,7 @@
 
 The Problem type represents a search or optimization problem in Inveniemus.
 */
-var Problem = exports.Problem = basis.declare({
+var Problem = exports.Problem = declare({
 	/** A problem should have a `title` to be displayed to the user.
 	*/
 	title: "<no title>",
@@ -15,13 +15,13 @@ var Problem = exports.Problem = basis.declare({
 	/** Many operations in this class require a pseudorandom number generator.
 	By default `basis.Randomness.DEFAULT` is used.
 	*/
-	random: basis.Randomness.DEFAULT,
+	random: Randomness.DEFAULT,
 	
 	/** A Problem holds basically three things: the element constructor, the 
 	comparison between elements and the sufficiency criteria.
 	*/
 	constructor: function Problem(params) {
-		basis.initialize(this, params)
+		initialize(this, params)
 			.string('title', { coerce: true, ignore: true })
 			.string('description', { coerce: true, ignore: true })
 			.object('random', { ignore: true })

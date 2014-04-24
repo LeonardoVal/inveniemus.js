@@ -4,7 +4,7 @@
 	that the total cost does not exceed a certain limit, while maximizing the 
 	total worth.
 */
-problems.KnapsackProblem = basis.declare(Problem, { ////////////////////////////
+problems.KnapsackProblem = declare(Problem, { ////////////////////////////
 	title: "Knapsack problem",
 	description: "Given a set of items with a cost and a worth, select a subset "+
 		" maximizing the worth sum but not exceeding a cost limit.",
@@ -29,7 +29,7 @@ problems.KnapsackProblem = basis.declare(Problem, { ////////////////////////////
 	*/	
 	constructor: function KnapsackProblem(params){
 		Problem.call(this, params);
-		basis.initialize(this, params)
+		initialize(this, params)
 			/** problems.KnapsackProblem.limit=15:
 				Cost limit that candidate solution should not exceed.
 			*/
@@ -47,7 +47,7 @@ problems.KnapsackProblem = basis.declare(Problem, { ////////////////////////////
 			number holds the selected amount for each item (from 0 up to the
 			item's amount).
 		*/
-		this.representation = basis.declare(Element, {
+		this.representation = declare(Element, {
 			length: Object.keys(this.items).length,
 			evaluate: function evaluate() {
 				var selection = this.mapping(),

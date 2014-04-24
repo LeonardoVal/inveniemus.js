@@ -1,21 +1,29 @@
 /** Package wrapper and layout.
 */
 "use strict";
-(function (init) { // Universal Module Definition.
+(function (global, init) { // Universal Module Definition.
 	if (typeof define === 'function' && define.amd) {
-		define(['basis'], init); // AMD module.
+		define(['creatartis-base'], init); // AMD module.
 	} else if (typeof module === 'object' && module.exports) {
-		module.exports = init(require('basis')); // CommonJS module.
+		module.exports = init(require('creatartis-base')); // CommonJS module.
 	} else { // Browser or web worker (probably).
-		(0, eval)('this').inveniemus = init(global.basis);
+		global.inveniemus = init(global.base);
 	}
-})(function __init__(basis){
+})(this, function __init__(base){
 // Import synonyms. ////////////////////////////////////////////////////////////
-	var declare = basis.declare,
-		iterable = basis.iterable;
+	var declare = base.declare,
+		initialize = base.initialize,
+		iterable = base.iterable,
+		raiseIf = base.raiseIf,
+		Events = base.Events,
+		Future = base.Future,
+		Iterable = base.Iterable,
+		Logger = base.Logger,
+		Randomness = base.Randomness,
+		Statistics = base.Statistics;
 	
 // Library layout. /////////////////////////////////////////////////////////////
 	var exports = {
-		__init__: __init__
+		__name__: 'inveniemus',
+		__init__: (__init__.dependencies = ['creatartis-base'], __init__)
 	};
-	exports.__init__.dependencies = [basis];

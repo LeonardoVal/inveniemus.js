@@ -1,7 +1,7 @@
 ﻿/** As it sounds, HelloWorld is a simple problem class, probably only useful for
 	testing purposes.
 */
-problems.HelloWorld = basis.declare(Problem, { /////////////////////////////////
+problems.HelloWorld = declare(Problem, { /////////////////////////////////
 	title: "Hello world",
 	description: "Simple problem where each element is a string, and the "+
 		"optimization goes towards the target string.",
@@ -13,7 +13,7 @@ problems.HelloWorld = basis.declare(Problem, { /////////////////////////////////
 	*/	
 	constructor: function HelloWorld(params){
 		Problem.call(this, params);
-		basis.initialize(this, params)
+		initialize(this, params)
 			.string('target', { coerce: true, defaultValue: 'Hello world!' });
 		
 		var target = this.target,
@@ -21,7 +21,7 @@ problems.HelloWorld = basis.declare(Problem, { /////////////////////////////////
 				return c.charCodeAt(0);
 			}).toArray();
 		// Ad hoc Element declaration.
-		this.representation = basis.declare(Element, {
+		this.representation = declare(Element, {
 			length: target.length,
 			minimumValue: 32,
 			maximumValue: 254,
