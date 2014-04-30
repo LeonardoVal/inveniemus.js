@@ -5,7 +5,7 @@
 		"search", "optimization", "metaheuristic", "hill climbing", 
 		"evolutionary computing", "genetic algorithm" 
 	],
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"author": {
 		"name": "Leonardo Val",
 		"email": "leonardo.val@creatartis.com>"
@@ -27,7 +27,9 @@
 	},
 	"main": "build/inveniemus.min.js",
 	"files": [ "build" ],
-	"dependencies": {},
+	"dependencies": {
+		"creatartis-base": "git://github.com/LeonardoVal/creatartis-base.git"
+	},
 	"devDependencies": {
 		"requirejs": "~2.1.9",
 		"grunt": "~0.4.4",

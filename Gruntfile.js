@@ -106,7 +106,8 @@ module.exports = function(grunt) {
 					"creatartis-base": "git://github.com/LeonardoVal/creatartis-base.git"
 				},
 				"devDependencies": {
-					"jquery": "~2.0.3"
+					"jquery": "~2.0.3",
+					//"dygraphs": "~1.0.1" // Dygraphs bower package does not have the combined library.
 				}
 			};
 		// Copy package.json members to bower.json.
@@ -122,8 +123,8 @@ module.exports = function(grunt) {
 	
 // Register tasks. /////////////////////////////////////////////////////////////
 	grunt.registerTask('compile', ['concat_sourcemap:build', 'uglify:build']);
-	grunt.registerTask('build', ['concat_sourcemap:build', 'karma:build',
-		'uglify:build', 'docker:build']);
+	grunt.registerTask('build', ['concat_sourcemap:build', 
+		'karma:build', 'uglify:build', 'docker:build']);
 	grunt.registerTask('default', ['build']);
 	grunt.registerTask('test', ['concat_sourcemap:build', 'karma:build',
 		'karma:chrome', 'karma:firefox', 'karma:opera', 'karma:iexplore']);
