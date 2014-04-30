@@ -1,25 +1,27 @@
 {
-	"name": "inveniemus",
-	"version": "0.1.1",
-	"authors": [
-		"Leonardo Val <leonardo.val@creatartis.com>"
-	],
-	"description": "A search and optimization library, focusing on metaheuristics.",
 	"moduleType": [
-		"amd", "globals", "node"
+		"amd",
+		"globals",
+		"node"
 	],
-	"keywords": [
-		"search", "optimization", "metaheuristic", "hill climbing", 
-		"evolutionary computing", "genetic algorithm"
+	"authors": [
+		{
+			"name": "Leonardo Val",
+			"email": "leonardo.val@creatartis.com>"
+		}
 	],
-	"license": "MIT",
-	"homepage": "http://creatartis.com",
-	"private": true,
-	"main": "build/inveniemus.js",
 	"ignore": [
-		"**/.*", 
-		"node_modules", "bower_components", "src", "tests", "docs",
-		"bower.json", "package.json", "Gruntfile.js", "LICENSE.md", "README.md"
+		"**/.*",
+		"node_modules",
+		"bower_components",
+		"src",
+		"tests",
+		"docs",
+		"bower.json",
+		"package.json",
+		"Gruntfile.js",
+		"LICENSE.md",
+		"README.md"
 	],
 	"dependencies": {
 		"requirejs": "2.1.9",
@@ -27,5 +29,33 @@
 	},
 	"devDependencies": {
 		"jquery": "~2.0.3"
-	}
+	},
+	"name": "inveniemus",
+	"description": "A search and optimization library, focusing on metaheuristics.",
+	"version": "0.1.1",
+	"keywords": [
+		"search",
+		"optimization",
+		"metaheuristic",
+		"hill climbing",
+		"evolutionary computing",
+		"genetic algorithm"
+	],
+	"licence": "MIT",
+	"homepage": "http://creatartis.com",
+	"contributors": [
+		{
+			"name": "Andrés Zeballos Juanicó",
+			"email": "andreszeballosjuanico@gmail.com"
+		},
+		{
+			"name": "Gonzalo Martínez",
+			"email": "gonzalo.martinez@live.com"
+		},
+		{
+			"name": "Mathías Lepratte",
+			"email": "mlepratte3108@hotmail.com"
+		}
+	],
+	"main": "build/inveniemus.min.js"
 }

@@ -19,7 +19,7 @@ module.exports = function(grunt) {
 	// Fin.
 		'src/__epilogue__.js'];
 
-grunt.file.defaultEncoding = 'utf8';
+	grunt.file.defaultEncoding = 'utf8';
 // Init config. ////////////////////////////////////////////////////////////////
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
@@ -85,12 +85,40 @@ grunt.file.defaultEncoding = 'utf8';
 		}
 	});
 	
-// Load tasks. /////////////////////////////////////////////////////////////////
+// Load plugins. ///////////////////////////////////////////////////////////////
 	grunt.loadNpmTasks('grunt-concat-sourcemap');
 	grunt.loadNpmTasks('grunt-karma');
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-docker');
 	grunt.loadNpmTasks('grunt-bowercopy');
+	
+// Custom tasks. ///////////////////////////////////////////////////////////////
+	grunt.registerTask('bower-json', 'Writes <bower.json> based on <package.json>.', function() {
+		var pkg = grunt.config.get('pkg'),
+			bowerJSON = { // bower.json own members.
+				"moduleType": ["amd", "globals", "node"],
+				"authors": [pkg.author],
+				"ignore": ["**/.*", "node_modules", "bower_components", "src", 
+					"tests", "docs", "bower.json", "package.json", "Gruntfile.js", 
+					"LICENSE.md", "README.md"],
+				"dependencies": {
+					"requirejs": "2.1.9",
+					"creatartis-base": "git://github.com/LeonardoVal/creatartis-base.git"
+				},
+				"devDependencies": {
+					"jquery": "~2.0.3"
+				}
+			};
+		// Copy package.json members to bower.json.
+		['name', 'description', 'version', 'keywords', 'licence', 'homepage',
+		 'contributors', 'private', 'main', 'dependencies', 'devDependencies',
+		 'optionalDependencies'].forEach(function (id) {
+			if (pkg.hasOwnProperty(id) && !bowerJSON.hasOwnProperty(id)) {
+				bowerJSON[id] = pkg[id];
+			}
+		});
+		grunt.file.write('bower.json', JSON.stringify(bowerJSON, null, '\t'), { encoding: 'utf8' });
+	}); // bower-json.
 	
 // Register tasks. /////////////////////////////////////////////////////////////
 	grunt.registerTask('compile', ['concat_sourcemap:build', 'uglify:build']);

@@ -1,7 +1,10 @@
 ﻿{
 	"name": "inveniemus",
 	"description": "A search and optimization library, focusing on metaheuristics.",
-	"keywords": [],
+	"keywords": [ 
+		"search", "optimization", "metaheuristic", "hill climbing", 
+		"evolutionary computing", "genetic algorithm" 
+	],
 	"version": "0.1.1",
 	"author": {
 		"name": "Leonardo Val",
@@ -22,6 +25,8 @@
 		"type": "git", 
 		"url": "http://github.com/LeonardoVal/inveniemus"
 	},
+	"main": "build/inveniemus.min.js",
+	"files": [ "build" ],
 	"dependencies": {},
 	"devDependencies": {
 		"requirejs": "~2.1.9",
