@@ -25,8 +25,9 @@
 // Library layout. /////////////////////////////////////////////////////////////
 	var exports = {
 		__name__: 'inveniemus',
-		__init__: (__init__.dependencies = ['creatartis-base'], __init__)
+		__init__: __init__
 	};
+	__init__.dependencies = {'creatartis-base': base};
 
 /**	# Class Element
 
