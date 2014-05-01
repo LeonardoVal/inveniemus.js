@@ -1,5 +1,5 @@
-﻿Inveniemus.js
-=============
+﻿Inveniemus
+==========
 
 [![Built with Grunt](https://cdn.gruntjs.com/builtwith.png)](http://gruntjs.com/)
 
@@ -14,6 +14,8 @@ Open source under an MIT license. See [LICENSE](LICENSE.md).
 ## Development
 
 Development requires [NodeJS](http://nodejs.org/) (ver >= 0.10). Download the repository and run `npm install` to install dependencies, like: [RequireJS](http://requirejs.org/), [Grunt](http://gruntjs.com/), [Karma](http://karma-runner.github.io/) and [Jasmine](http://jasmine.github.io/).
+
+There is also a dependency with another library of mine: [creatartis-base](http://github.com/LeonardoVal/creatartis-base). It is included in `package.json` as a development dependency, but it is really a production dependency. It must be installed manually. This avoids problems which arise when `npm install` duplicates this module. Running [`npm dedupe`](https://www.npmjs.org/doc/cli/npm-dedupe.html) should help, yet as of the date this was written [it does not work when using URL dependencies](https://github.com/npm/npm/issues/3081#issuecomment-12486316). 
 
 ## Contact
 
