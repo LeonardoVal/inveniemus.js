@@ -45,5 +45,8 @@
 			"karma-opera-launcher": "~0.1.0",
 			"karma-sourcemap-loader": "~0.1",
 		"creatartis-base": "git://github.com/LeonardoVal/creatartis-base.git"
+	},
+	"scripts": {
+		"postinstall": "npm dedupe"
 	}
 }
