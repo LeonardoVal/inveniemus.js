@@ -1,14 +1,15 @@
-﻿/** A class of very simple problems that deal with optimizing the sum of the
-	elements' values. Probably the simplest optimization problem that can be 
-	defined, included here for testing purposes.
+﻿/** # Sum optimization problem
+
+A class of very simple problems that deal with optimizing the sum of the 
+elements' values. Probably the simplest optimization problem that can be 
+defined, included here for testing purposes.
 */
-problems.SumOptimization = declare(Problem, { ////////////////////////////
+problems.SumOptimization = declare(Problem, {
 	title: "Sum optimization",
 	description: "Very simple problem based on optimizing the elements' values sum.",
 
-	/** new problems.SumOptimization(params):
-		Very simple problem based on optimizing the elements' values sum. The
-		params argument should include the 'target' number.
+	/** This very simple problem is based on optimizing the elements' values 
+	sum. The `target` number determines which way the optimization goes.
 	*/
 	constructor: function SumOptimization(params) {
 		Problem.call(this, params);
@@ -22,17 +23,16 @@ problems.SumOptimization = declare(Problem, { ////////////////////////////
 		}
 	}),
 	
-	/** problems.SumOptimization.suffices(elements):
-		Checks if the best element's values add up to the target value.
+	/** A state `suffices(elements)` when the best element's values add up to 
+	the target value.
 	*/
 	suffices: function suffices(elements) {
 		return iterable(elements[0].values).sum() === this.target;
 	},
 	
-	/** problems.SumOptimization.compare(element1, element2):
-		The comparison between elements depends on this problem's target. For
-		a Infinity maximization is applied, for -Infinity minimization, and
-		for every other number approximation.
+	/** The comparison between elements depends on this problem's target. For
+	a `Infinity` maximization is applied, for `-Infinity` minimization, and for 
+	every other number approximation.
 	*/
 	compare: function compare(element1, element2) {
 		return this.target === -Infinity ? this.minimization(element1, element2)

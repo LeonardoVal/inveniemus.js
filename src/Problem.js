@@ -1,4 +1,4 @@
-﻿/**	## Class Problem
+﻿/**	# Problem
 
 The Problem type represents a search or optimization problem in Inveniemus.
 */
@@ -13,20 +13,22 @@ var Problem = exports.Problem = declare({
 	description: "<no description>",
 
 	/** Many operations in this class require a pseudorandom number generator.
-	By default `basis.Randomness.DEFAULT` is used.
+	By default `base.Randomness.DEFAULT` is used.
 	*/
 	random: Randomness.DEFAULT,
 	
-	/** A Problem holds basically three things: the element constructor, the 
-	comparison between elements and the sufficiency criteria.
+	/** A Problem holds basically three things:
+	
+	+ `representation`: the element constructor, 
+	+ `compare`: the comparison between elements,
+	+ `suffices`: the sufficiency criteria.
 	*/
 	constructor: function Problem(params) {
 		initialize(this, params)
 			.string('title', { coerce: true, ignore: true })
 			.string('description', { coerce: true, ignore: true })
 			.object('random', { ignore: true })
-		// Overrides.
-			.func('representation', { ignore: true })
+			.func('representation', { ignore: true }) // Overrides.
 			.func('compare', { ignore: true })
 			.func('suffices', { ignore: true });
 	},
@@ -39,8 +41,8 @@ var Problem = exports.Problem = declare({
 	/** How elements are compared with each other in the problem determines 
 	which kind of optimization is performed. The `compare` method implements the 
 	comparison between two elements. It follows the standard protocol of 
-	comparison functions. Returns a positive number if element2 is better than 
-	element1, a negative number if element2 is worse then element1, or zero 
+	comparison functions; i.e. returns a positive number if element2 is better 
+	than element1, a negative number if element2 is worse then element1, or zero 
 	otherwise. 
 	
 	Better and worse may mean less or greater evaluation (`minimization`), 
@@ -52,10 +54,10 @@ var Problem = exports.Problem = declare({
 	},
 		
 	/** When a set of elements is sufficient, the search/optimization ends. The
-	method `suffices(elements)` returns true if inside the elements array there 
-	are enough actual solutions to this problem. It holds the implementation of 
-	the goal test in search problems. By default calls the `suffice` method of
-	the first element (assumed to be the best).
+	method `suffices(elements)` returns `true` if inside the elements array 
+	there are enough actual solutions to this problem. It holds the 
+	implementation of the goal test in search problems. By default calls the 
+	`suffice` method of the first element (assumed to be the best one).
 	*/
 	suffices: function suffices(elements) {
 		return elements[0].suffices();
@@ -86,7 +88,7 @@ var Problem = exports.Problem = declare({
 		return isNaN(d) ? Infinity : Math.abs(d) < element1.resolution ? 0 : d;
 	},
 		
-	// ## Utility methods ######################################################
+	// ## Utilities ############################################################
 	
 	/** The default string representation of a Problem instance has this shape: 
 	`"Problem(params)"`.
@@ -96,8 +98,6 @@ var Problem = exports.Problem = declare({
 	}
 }); // declare Problem.
 		
-/** ## Namespace problems
-
-A bundle of classic and reference problems.
+/** `problems` is a bundle of classic and reference problems.
 */
 var problems = exports.problems = {};

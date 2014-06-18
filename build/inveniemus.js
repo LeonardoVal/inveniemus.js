@@ -29,7 +29,7 @@
 	};
 	__init__.dependencies = {'creatartis-base': base};
 
-/**	# Class Element
+/**	# Element
 
 Element is the term used in Inveniemus for representations of 
 [candidate solutions](http://en.wikipedia.org/wiki/Feasible_region) in a search 
@@ -296,7 +296,7 @@ var Element = exports.Element = declare({
 }); // declare Element.
 
 
-/**	## Class Problem
+/**	# Problem
 
 The Problem type represents a search or optimization problem in Inveniemus.
 */
@@ -311,20 +311,22 @@ var Problem = exports.Problem = declare({
 	description: "<no description>",
 
 	/** Many operations in this class require a pseudorandom number generator.
-	By default `basis.Randomness.DEFAULT` is used.
+	By default `base.Randomness.DEFAULT` is used.
 	*/
 	random: Randomness.DEFAULT,
 	
-	/** A Problem holds basically three things: the element constructor, the 
-	comparison between elements and the sufficiency criteria.
+	/** A Problem holds basically three things:
+	
+	+ `representation`: the element constructor, 
+	+ `compare`: the comparison between elements,
+	+ `suffices`: the sufficiency criteria.
 	*/
 	constructor: function Problem(params) {
 		initialize(this, params)
 			.string('title', { coerce: true, ignore: true })
 			.string('description', { coerce: true, ignore: true })
 			.object('random', { ignore: true })
-		// Overrides.
-			.func('representation', { ignore: true })
+			.func('representation', { ignore: true }) // Overrides.
 			.func('compare', { ignore: true })
 			.func('suffices', { ignore: true });
 	},
@@ -337,8 +339,8 @@ var Problem = exports.Problem = declare({
 	/** How elements are compared with each other in the problem determines 
 	which kind of optimization is performed. The `compare` method implements the 
 	comparison between two elements. It follows the standard protocol of 
-	comparison functions. Returns a positive number if element2 is better than 
-	element1, a negative number if element2 is worse then element1, or zero 
+	comparison functions; i.e. returns a positive number if element2 is better 
+	than element1, a negative number if element2 is worse then element1, or zero 
 	otherwise. 
 	
 	Better and worse may mean less or greater evaluation (`minimization`), 
@@ -350,10 +352,10 @@ var Problem = exports.Problem = declare({
 	},
 		
 	/** When a set of elements is sufficient, the search/optimization ends. The
-	method `suffices(elements)` returns true if inside the elements array there 
-	are enough actual solutions to this problem. It holds the implementation of 
-	the goal test in search problems. By default calls the `suffice` method of
-	the first element (assumed to be the best).
+	method `suffices(elements)` returns `true` if inside the elements array 
+	there are enough actual solutions to this problem. It holds the 
+	implementation of the goal test in search problems. By default calls the 
+	`suffice` method of the first element (assumed to be the best one).
 	*/
 	suffices: function suffices(elements) {
 		return elements[0].suffices();
@@ -384,7 +386,7 @@ var Problem = exports.Problem = declare({
 		return isNaN(d) ? Infinity : Math.abs(d) < element1.resolution ? 0 : d;
 	},
 		
-	// ## Utility methods ######################################################
+	// ## Utilities ############################################################
 	
 	/** The default string representation of a Problem instance has this shape: 
 	`"Problem(params)"`.
@@ -394,64 +396,68 @@ var Problem = exports.Problem = declare({
 	}
 }); // declare Problem.
 		
-/** ## Namespace problems
-
-A bundle of classic and reference problems.
+/** `problems` is a bundle of classic and reference problems.
 */
 var problems = exports.problems = {};
 
 
-/**	A [Metaheuristic](http://en.wikipedia.org/wiki/Metaheuristic) is an 
-	optimization algorithm (which can also be used for searching).
+/**	# Metaheuristic
+
+A [Metaheuristic](http://en.wikipedia.org/wiki/Metaheuristic) is an optimization
+algorithm (which can also be used for searching). This is the base class of all
+metaheuristic algorithms, and hence of all metaheuristic runs.
 */
 var Metaheuristic = exports.Metaheuristic = declare({
-	/** Metaheuristic.logger:
-		Logger used by the metaheuristic.
+	/** Each metaheuristic has its own `logger`, to track its process.
 	*/
 	logger: new Logger('inveniemus', Logger.ROOT, 'INFO'),
 	
-	/** new Metaheuristic(params):
-		Base class of all metaheuristic algorithms, and hence of all 
-		metaheuristic runs.
+	/** The constructor takes a `params` object with the metaheuristic 
+	parameters. Although the different algorithms have particular parameters of
+	their own, some apply to all.
 	*/
 	constructor: function Metaheuristic(params) {
 		initialize(this, params)
-		/** Metaheuristic.problem:
-			Definition of the problem this metaheuristic will try to solve.
+		/** First, the definition of the `problem` this metaheuristic is meant
+		to solve.
 		*/
 			.object('problem', { defaultValue: null })
-		/** Metaheuristic.size=100:
-			Amount of candidate solutions the metaheuristic treats at each step.
+		/** The optimization's `size` is the amount of candidate solutions the 
+		metaheuristic treats at each step. By default it is 100.
 		*/
 			.number('size', { defaultValue: 100, coerce: true })
-		/** Metaheuristic.state=[]:
-			An array holding the elements this metaheuristic handles at each
-			step.
+		/** The `state` is the array that holds the elements this metaheuristic 
+		handles at each step.
 		*/
 			.array('state', { defaultValue: [] })
-		/** Metaheuristic.steps=100:
-			Number of steps this metaheuristic must perform.
+		/** All optimizations perform a certain number of iterations or `steps`
+		(100 by default).
 		*/
 			.number('steps', { defaultValue: 100, coerce: true })
-		/** Metaheuristic.step=-1:
-			Current iteration of this metaheuristic, or a negative number if
-			it has not started yet.
+		/** The property `step` indicates the current iteration of this 
+		optimization, or a negative number if it has not started yet.
 		*/
 			.integer('step', { defaultValue: -1, coerce: true })
-		/** Metaheuristic.random=Randomness.DEFAULT:
-			This metaheuristic's pseudorandom number generator. It is strongly
-			advised to have only one for the whole process.
+		/** Most metaheuristic are stochastic processes, hence the need for a
+		pseudo-random number generator. By default `base.Randomness.DEFAULT` is 
+		used, yet it is strongly advised to provide one.
 		*/
 			.object('random', { defaultValue: Randomness.DEFAULT })
-		/** Metaheuristic.statistics:
-			The statistic gatherer for this metaheuristic.
+		/** Metaheuristic's runs usually gather `statistics` about the process.
 		*/
 			.object('statistics', { defaultValue: new Statistics() })
 			.object('logger', { ignore: true });
-		/** Metaheuristic.events:
-			Event handler for this metaheuristic. The emitted events by default
-			are: initiated, updated, expanded, evaluated, sieved, advanced, 
-			analyzed & finished.
+		/** For better customization the `events` handler emits the following
+		events: 
+		
+		+ `initiated` when the state has been initialized.
+		+ `updated` when the state has been expanded, evaluated and sieved.
+		+ `expanded` after new elements are added to the state.
+		+ `evaluated` after the elements in the state are evaluated.
+		+ `sieved` after elements are removed from the state.
+		+ `advanced` when one full iteration is completed.
+		+ `analyzed` after the statistics are calculated.
+		+ `finished` when the run finishes.
 		*/
 		this.events = new Events({ 
 			events: ["initiated", "updated", "expanded", "evaluated", "sieved", 
@@ -459,11 +465,11 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		});
 	},
 	
-	// Basic workflow. /////////////////////////////////////////////////////////
+	// ## Basic workflow #######################################################
 	
-	/**	Metaheuristic.initiate(size=this.size):
-		Builds and initiates this metaheuristic state with size new cursors. The
-		elements are build using the initial() function.
+	/**	`initiate(size=this.size)` builds and initiates this metaheuristic state 
+	with size new cursors. The elements are build using the `initial()` 
+	function.
 	*/
 	initiate: function initiate(size) {
 		size = isNaN(size) ? this.size : +size >> 0;
@@ -475,13 +481,11 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		this.logger && this.logger.debug('State has been initiated. Nos coepimus.');
 	},
 	
-	/** Metaheuristic.update():
-		Updates this metaheuristic's state. It assumes the state has been 
-		initialized. The process may be asynchronous, so it returns a Future.
-		The default implementation first expands the state by calling 
-		this.expand(), then evaluates the added elements by calling 
-		this.evaluate(), and finally removes the worst elements with 
-		this.sieve().
+	/** `update()` updates this metaheuristic's state. It assumes the state has 
+	been initialized. The process may be asynchronous, so it returns a future.
+	The default implementation first expands the state by calling `expand()`, 
+	then evaluates the added elements by calling `evaluate()`, and finally 
+	removes the worst elements with `sieve()`.
 	*/
 	update: function update() {
 		var mh = this;
@@ -493,9 +497,8 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		});
 	},
 	
-	/** Metaheuristic.expand(expansion=[]):
-		Adds to this metaheuristic's state the given expansion. If none is given,
-		this.expansion() is called to get new expansion.
+	/** `expand(expansion=[])` adds to this metaheuristic's state the given 
+	expansion. If none is given, `expansion()` is called to get new expansion.
 	*/
 	expand: function expand(expansion) {
 		expansion = expansion || this.expansion();
@@ -504,8 +507,7 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		} else {
 			var expanded = this.state.concat(expansion),
 				len = expanded.length;
-			// Trim equal elements from the expanded state.
-			expanded = expanded.filter(function (elem, i) {
+			expanded = expanded.filter(function (elem, i) { // Trim equal elements from the expanded state.
 				for (i++; i < len; i++) {
 					if (elem.equals(expanded[i])) {
 						return false;
@@ -519,9 +521,8 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		this.logger && this.logger.debug('State has been expanded. Nos exploramus.');
 	},
 	
-	/** Metaheuristic.expansion(size):
-		Returns an array of new elements to add to the current state. The 
-		default implementation generates new random elements.		
+	/** `expansion(size)` returns an array of new elements to add to the current 
+	state. The default implementation generates new random elements.		
 	*/
 	expansion: function expansion(size) {
 		var expansionRate = isNaN(this.expansionRate) ? 0.5 : +this.expansionRate;
@@ -533,12 +534,10 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		return elems;
 	},
 	
-	/** Metaheuristic.evaluate(elements):
-		Evaluates all the elements in this.state with no evaluation, using its
-		evaluation method. After that sorts the state with the compare method
-		of the problem.
-		Returns a Future, regardless of the evaluation being asynchronous or 
-		not.
+	/** `evaluate(elements)` evaluates all the elements in `state` with no 
+	evaluation, using its evaluation method. After that sorts the state with 
+	the `compare` method of the problem. Returns a future, regardless of the 
+	evaluation being asynchronous or not.
 	*/
 	evaluate: function evaluate(elements) {
 		var mh = this,
@@ -561,11 +560,9 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		});
 	},
 	
-	/** Metaheuristic.prototype.sieve(size=this.size):
-		Cuts the current state down to the given size (or this.size by default).
-		This is usually used after expanding and evaluating the state. The
-		statistics of this metaheuristic are calculated here, right after the
-		state is sieved.
+	/** `sieve(size=this.size)` cuts the current state down to the given size 
+	(or this.size by default). This is usually used after expanding and 
+	evaluating the state.
 	*/
 	sieve: function sieve(size) {
 		size = isNaN(size) ? this.size : size | 0;
@@ -576,9 +573,8 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		this.logger && this.logger.debug('State has been sieved. Viam selectus est.');
 	},
 	
-	/** Metaheuristic.finished():
-		Termination criteria for this metaheuristic. By default it checks if the
-		number of passed iterations is not greater than this.steps.
+	/** `finished()` termination criteria for this metaheuristic. By default it 
+	checks if the number of passed iterations is not greater than `steps`.
 	*/
 	finished: function finished() {
 		if (this.step >= this.steps || this.problem.suffices(this.state)) {
@@ -588,8 +584,7 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		return false;
 	},
 
-	/** Metaheuristic.analyze():
-		Updates the process' statistics.
+	/** `analyze()` updates the process' statistics.
 	*/
 	analyze: function analyze() {
 		var stat = this.statistics.stat({key:'evaluation', step: this.step});
@@ -600,10 +595,9 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		return stat;
 	},
 	
-	/** Metaheuristic.advance():
-		Performs one step of the optimization. If the process has not been 
-		initialized, it does so. Returns a Future if the run has not finished or 
-		null otherwise.
+	/** `advance()` performs one step of the optimization. If the process has 
+	not been initialized, it does so. Returns a future if the run has not 
+	finished or null otherwise.
 	*/
 	advance: function advance() {
 		var mh = this, 
@@ -628,9 +622,8 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		});
 	},
 	
-	/** Metaheuristic.run():
-		Returns a Future that is resolved when the whole search process is 
-		finished. The value is the best cursor after the last step.
+	/** `run()` returns a future that is resolved when the whole search process 
+	is finished. The value is the best cursor after the last step.
 	*/
 	run: function run() {
 		var mh = this, 
@@ -644,54 +637,53 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		});
 	},
 
-	/** Metaheuristic.reset():
-		Reset the process to start over again. Basically cleans the stats and 
-		sets the current step to -1.
+	/** `reset()` reset the process to start over again. Basically cleans the 
+	statistics and sets the current `step` to -1.
 	*/
 	reset: function reset() {
 		this.step = -1;
 		this.statistics.reset();
 	},
 	
-	// Utility methods. ////////////////////////////////////////////////////////
+	// ## Utilities ############################################################
 	
+	/** The default string representation of a Metaheuristic shows its 
+	constructor's name and its parameters.
+	*/
 	toString: function toString() {
 		return (this.constructor.name || 'Metaheuristic') +"("+ JSON.stringify(this) +")";
 	}	
 }); // declare Metaheuristic.
 
-/** metaheuristics:
-	Bundle of metaheuristics available.
+/** `metaheuristics` is a bundle of available metaheuristics.
 */
 var metaheuristics = exports.metaheuristics = {};
 
-/** [Hill Climbing](http://en.wikipedia.org/wiki/Hill_climbing) implementation 
-	for the Inveniemus library.
+/** # Hill climbing
+
+[Hill Climbing](http://en.wikipedia.org/wiki/Hill_climbing) is a simple 
+iterative local search method. The state has only one element, and in each 
+iteration its best successor replaces it, after a local optimum is reached.
 */
 var HillClimbing = metaheuristics.HillClimbing = declare(Metaheuristic, {
-	/** new metaheuristics.HillClimbing(params):
-		Builds a [hill climbing](http://en.wikipedia.org/wiki/Hill_climbing) 
-		search.
+	/** The constructor takes an extra `delta=0.01` parameter. This is the 
+	radius of the elements surroundings in every dimension, that is checked by 
+	this algorithm.
 	*/
 	constructor: function HillClimbing(params) {
 		Metaheuristic.call(this, params);
 		initialize(this, params)
-		/** metaheuristics.HillClimbing.delta=0.01:
-			The radius of the elements surroundings in every dimension, that is
-			checked by this algorithm.
-		*/
 			.number('delta', { defaultValue: 0.01, coerce: true })
-		/** metaheuristics.HillClimbing.size=1:
-			Default value for size is 1.
+		/** Also, the state's size is constrained to 1 by default. This may be
+		increased, resulting in many parallel climbings.
 		*/
 			.integer('size', { defaultValue: 1,	coerce: true });
 	},
 	
-	/** metaheuristics.HillClimbing.update():
-		Each element in the state is replaced by the best element in its 
-		neighbourhood, if there is any. The surroundings have all possible 
-		elements resulting from either an increment or decrement (of the given
-		delta) in each of the centre element's dimensions.
+	/** The hill climbings `update()` replaces each element in the state by the 
+	best element in its neighbourhood, if there is any. The surroundings have 
+	all possible elements resulting from either an increment or decrement (of 
+	the given `delta`) in each of the centre element's dimensions.
 	*/
 	update: function update() {
 		var mh = this, 
@@ -712,22 +704,19 @@ var HillClimbing = metaheuristics.HillClimbing = declare(Metaheuristic, {
 		});
 	},
 		
-	/** metaheuristics.HillClimbing.atLocalOptima():
-		Checks if the search is currently stuck at local optima.
+	/** `atLocalOptima()` checks if the search is currently stuck at a local 
+	optima.
 	*/
 	atLocalOptima: function atLocalOptima() {
 		return this.__localOptima__ >= this.state.length;
 	},
 		
-	/** metaheuristics.HillClimbing.finished():
-		Hill climbing search must finish when a local optimum is reached. This
-		criteria is tested together with all others.
+	/** A hill climbing search must finish when a local optimum is reached. This
+	criteria is tested together with all others.
 	*/
 	finished: function finished() {
 		return Metaheuristic.prototype.finished.call(this) || this.atLocalOptima();
 	},
-		
-	// Utility methods. ////////////////////////////////////////////////////////
 		
 	toString: function toString() {
 		return (this.constructor.name || 'HillClimbing') +'('+ JSON.stringify(this) +')';
@@ -735,51 +724,51 @@ var HillClimbing = metaheuristics.HillClimbing = declare(Metaheuristic, {
 }); // declare HillClimbing.
 
 
-/** Classic Holland's-style [genetic algorithms](http://en.wikipedia.org/wiki/Genetic_algorithm)
-	for the Inveniemus library.
+/** # Genetic algorithm
+
+Classic Holland's-style [genetic algorithms](http://en.wikipedia.org/wiki/Genetic_algorithm),
+which is the base for many evolutionary computing variants.
 */
 var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, {
-	/** new metaheuristics.GeneticAlgorithm(params):
-		Builds a genetic algorithm, the base for many evolutionary computing
-		variants.
+	/** The constructor takes many parameters specific for this technique:
 	*/
 	constructor: function GeneticAlgorithm(params) {
 		Metaheuristic.call(this, params); // Superconstructor call.
 		initialize(this, params)
-		/** metaheuristics.GeneticAlgorithm.expansionRate=0.5:
-			The amount of new elements generated by crossover, as a ratio of the
-			population size.
+		/** + `expansionRate=0.5` is the amount of new elements generated by 
+		crossover, as a ratio of the population size.
 		*/
 			.number('expansionRate', { defaultValue: 0.5, minimum: 0, coerce: true })
-		/** metaheuristics.GeneticAlgorithm.mutationRate=0.2:
-			The chance of a new element (resulting from crossover) mutating.
+		/** + `mutationRate=0.2` is the chance of a new element (resulting from 
+		crossover) mutating.
 		*/
 			.number('mutationRate', { defaultValue: 0.2, minimum: 0, maximum: 1, coerce: true })
-		/** metaheuristics.GeneticAlgorithm.selection(count):
-			Selects count elements from the current population. These will be 
-			the parents of the new elements in the next generation.
-			By default rank selection is used, a.k.a. fitness proportional
-			to position in the state.
+		/** `selection(count)` is a function that selects count elements from 
+		the current population. These will be the parents of the new elements in 
+		the next generation.
+		
+		By default rank selection is used, a.k.a. fitness proportional to 
+		position in the state.
 		*/
 			.func('selection', { defaultValue: GeneticAlgorithm.selections.rankSelection })
-		/** metaheuristics.GeneticAlgorithm.crossover(parents):
-			Genetic operator that simulates reproduction with inheritance. The 
-			parents argument must be an array of elements. The result is an 
-			array of elements.
-			By default the single point crossover is used.
+		/** `crossover(parents)` is a function implementing the genetic operator 
+		that simulates reproduction with inheritance. The parents argument must 
+		be an array of elements. The result is an array of elements.
+		
+		By default the single point crossover is used.
 		*/
 			.func('crossover', { defaultValue: GeneticAlgorithm.crossovers.singlepointCrossover })
-		/** metaheuristics.GeneticAlgorithm.mutation(element):
-			Genetic operator that simulates biological mutation, making a random
-			change in the chromosome.
-			By default a single point uniform mutation is used.
+		/** `mutation(element)` is a function implementing the genetic operator 
+		that simulates biological mutation, making a random change in the 
+		chromosome.
+		
+		By default a single point uniform mutation is used.
 		*/
 			.func('mutation', { defaultValue: GeneticAlgorithm.mutations.singlepointUniformMutation });
 	},
 
-	/** metaheuristics.GeneticAlgorithm.expansion():
-		Returns the possibly mutated crossovers of selected elements. How many 
-		is determined by this.expansionRate.
+	/** The population's (state) `expansion()` is the possibly mutated 
+	crossovers of selected elements. How many is determined by `expansionRate`.
 	*/
 	expansion: function expansion() {
 		var parents, childs, child,
@@ -797,22 +786,20 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 		return newElements;
 	},
 	
-	// Utility methods. ////////////////////////////////////////////////////////
-	
 	toString: function toString() {
 		return (this.constructor.name || 'GeneticAlgorithm')+ '('+ JSON.stringify(this) +')';
 	}
 }); // declare GeneticAlgorithm.
-	
-/** static metaheuristics.GeneticAlgorithm.selections:
-	Bundle of standard selection methods. A selection function takes the
-	amount of elements to be selected and returns an array of selected
-	elements.
+
+/** ## Selection methods #######################################################
+
+`GeneticAlgorithm.selections` is a bundle of standard selection methods. A 
+selection function takes the amount of elements to be selected and returns an 
+array of selected elements. The implemented methods are:
 */
 GeneticAlgorithm.selections = {
-	/** metaheuristics.GeneticAlgorithm.selection.rankSelection(count=2):
-		Makes a selection where each element's probability of being selected is
-		proportional to its position in the state.
+	/** + `rankSelection(count=2)` makes a selection where each element's 
+		probability of being selected is proportional to its position in the state.
 	*/
 	rankSelection: function rankSelection(count) {
 		count = isNaN(count) ? 2 : +count;
@@ -837,9 +824,8 @@ GeneticAlgorithm.selections = {
 		return selected;
 	},
 	
-	/** metaheuristics.GeneticAlgorithm.selections.rouletteSelection(count=2):
-		Makes a selection where each element's probability of being selected is
-		proportional to its evaluation.
+	/** + `rouletteSelection(count=2)` makes a selection where each element's 
+		probability of being selected is proportional to its evaluation.
 		Warning! This selection assumes the evaluation is being maximized.
 	*/
 	rouletteSelection: function rouletteSelection(count) { //FIXME
@@ -867,14 +853,16 @@ GeneticAlgorithm.selections = {
 	}
 }; // GeneticAlgorithm.selections
 
-/** metaheuristics.GeneticAlgorithm.crossovers:
-	Bundle of standard crossover methods. A crossover function takes an 
-	array of parent elements and returns an array of sibling elements.
+/** ## Crossover methods #######################################################
+
+`GeneticAlgorithm.crossovers` is a bundle of standard crossover methods. A 
+crossover function takes an array of parent elements and returns an array of 
+sibling elements. The implemented methods are:
 */
 GeneticAlgorithm.crossovers = {
-	/** metaheuristics.GeneticAlgorithm.crossovers.singlepointCrossover(parents):
-		Given two parents, returns an array of two new elements built with one
-		half of each parent. The cutpoint is chosen randomly.
+	/** + `singlepointCrossover(parents)` given two parents returns an array of 
+	two new elements built with one half of each parent. The cutpoint is chosen 
+	randomly.
 	*/
 	singlepointCrossover: function singlepointCrossover(parents) {
 		raiseIf(!Array.isArray(parents) || parents.length < 2, "A two parent array is required.");
@@ -889,20 +877,23 @@ GeneticAlgorithm.crossovers = {
 	}	
 }; // GeneticAlgorithm.crossovers
 	
-/** metaheuristics.GeneticAlgorithm.mutations:
-	Bundle of standard mutation methods.
+/** ## Mutation methods ########################################################
+
+`GeneticAlgorithm.mutations` is a bundle of standard mutation methods. 
+A mutation function takes an element and returns a new element which is a 
+variation of the former. The implemented methods are:
 */
 GeneticAlgorithm.mutations = {
-	/** metaheuristics.GeneticAlgorithm.mutations.singlepointUniformMutation(element):
-		Sets a randomly selected gene to a uniform random value.
+	/** + `singlepointUniformMutation(element)` sets a randomly selected gene to 
+	a uniform random value.
 	*/
 	singlepointUniformMutation: function singlepointUniformMutation(element) {
 		return element.modification(this.random.randomInt(element.length), element.randomValue());
 	},
 		
-	/** metaheuristics.GeneticAlgorithm.mutations.uniformMutation(maxPoints=Infinity):
-		Builds a mutation function that makes at least one and up to maxPoints 
-		mutations, changing a randomly selected gene to a uniform random value.
+	/** + `uniformMutation(maxPoints=Infinity)` builds a mutation function that 
+	makes at least one and up to `maxPoints` mutations, changing a randomly 
+	selected gene to a uniform random value.
 	*/
 	uniformMutation: function uniformMutation(maxPoints) {
 		max = isNaN(maxPoints) ? Infinity : +maxPoints;
@@ -916,9 +907,8 @@ GeneticAlgorithm.mutations = {
 		};
 	},
 	
-	/** metaheuristics.GeneticAlgorithm.mutations.singlepointBiasedMutation(element):
-		Sets a randomly selected gene to random deviation of its value, with a
-		triangular distribution.
+	/** + `singlepointBiasedMutation(element)` sets a randomly selected gene to 
+	random deviation of its value, with a triangular distribution.
 	*/
 	singlepointBiasedMutation: function singlepointBiasedMutation(element) {
 		return element.modification(this.random.randomInt(element.length),
@@ -930,30 +920,27 @@ GeneticAlgorithm.mutations = {
 }; // GeneticAlgorithm.mutations
 
 
-/** [Beam search](http://en.wikipedia.org/wiki/Beam_search) implementation for 
-	the Inveniemus library. It is a form of parallel best-first search with 
-	limited memory.
+/** # Beam search
+
+[Beam search](http://en.wikipedia.org/wiki/Beam_search) is a form of parallel 
+best-first search with limited memory.
 */
 var BeamSearch = metaheuristics.BeamSearch = declare(Metaheuristic, {
-	/** new metaheuristics.BeamSearch(params):
-		Builds a beam search. The problem's element must have its successors 
-		method implemented.
+	/** The constructor does not take any special parameters.
 	*/
 	constructor: function BeamSearch(params) {
 		Metaheuristic.call(this, params);
 	},
 	
-	/** metaheuristics.BeamSearch.successors(element):
-		Returns the elements' successors. By default returns 
-		element.successors().
+	/** `successors(element)` returns the elements' successors. The problem's 
+	element must have its `successors` method implemented.
 	*/
 	successors: function successors(element) {
 		return element.successors();
 	},
 	
-	/** metaheuristics.BeamSearch.expansion():
-		Successors to all elements are calculated by calling the problem's
-		successors method.
+	/** The expansion in beam search adds all successors of all elements to the
+	state. After being evaluated and sieved only the best will remain.
 	*/
 	expansion: function expansion() {
 		var allSuccessors = [],
@@ -964,46 +951,40 @@ var BeamSearch = metaheuristics.BeamSearch = declare(Metaheuristic, {
 		return allSuccessors;
 	},
 		
-	// Utility methods. ////////////////////////////////////////////////////////
-		
 	toString: function toString() {
 		return (this.constructor.name || 'BeamSearch') +'('+ JSON.stringify(this) +')';
 	}
 }); // declare BeamSearch.
 
 
-/** [Simulated annealing](http://en.wikipedia.org/wiki/Simulated_annealing) 
-	implementation for the Inveniemus library.
+/** # Simulated annealing
+
+[Simulated annealing](http://en.wikipedia.org/wiki/Simulated_annealing) is a
+stochastic global optimization technique.
 */
 var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheuristic, {
-	/** new metaheuristics.SimulatedAnnealing(params):
-		Builds a simulated annealing search.
-		See <http://en.wikipedia.org/wiki/Simulated_annealing>.
+	/** The constructor takes some specific parameters for this search:
 	*/
 	constructor: function SimulatedAnnealing(params) {
 		Metaheuristic.call(this, params);
 		initialize(this, params)
-		/** metaheuristics.SimulatedAnnealing.maximumTemperature=1:
-			The temperature at the start of the run.
+		/** + `maximumTemperature=1` is the temperature at the start of the run.
 		*/
 			.number('maximumTemperature', { defaultValue: 1, coerce: true })
-		/** metaheuristics.SimulatedAnnealing.minimumTemperature=1:
-			The temperature at the end of the run.
+		/** + `minimumTemperature=0` is the temperature at the end of the run.
 		*/
 			.number('minimumTemperature', { defaultValue: 0, coerce: true })
-		/** metaheuristics.SimulatedAnnealing.delta=0.01:
-			The radius of the elements surroundings in every dimension, that is
-			checked by this algorithm.
+		/** + `delta=0.01` is the radius of the elements surroundings in every 
+		dimension, that is checked by this algorithm.
 		*/
 			.number('delta', { defaultValue: 0.01, coerce: true })
-		/** metaheuristics.SimulatedAnnealing.size=1:
-			Default value for size is 1.
+		/** + `size=1` is 1 by default, but larger states are supported.
 		*/
 			.integer('size', { defaultValue: 1,	coerce: true });
 	},
 	
-	/** metaheuristics.SimulatedAnnealing.randomNeighbour(element, radius=this.delta):
-		Returns one neighbour of the given element chosen at random.
+	/** `randomNeighbour(element, radius=this.delta)` returns one neighbour of 
+	the given element chosen at random.
 	*/
 	randomNeighbour: function randomNeighbour(element, radius) {
 		radius = isNaN(radius) ? this.delta : +radius;
@@ -1017,9 +998,9 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 		return element.modification(i, v);
 	},
 	
-	/** metaheuristics.SimulatedAnnealing.acceptance(current, neighbour, temp=this.temperature()):
-		Returns the probability of accepting the new element. Uses the original
-		definitions from Kirkpatrick's paper.
+	/** The `acceptance(current, neighbour, temp=this.temperature())` is the 
+	probability of accepting the new element. Uses the original definitions from 
+	[Kirkpatrick's paper](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.123.7607).
 	*/
 	acceptance: function acceptance(current, neighbour, temp) {
 		temp = isNaN(temp) ? this.temperature() : +temp;
@@ -1031,17 +1012,17 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 		}
 	},
 	
-	/** metaheuristics.SimulatedAnnealing.temperature():
-		Returns the current temperature of the annealing.
+	/** The annealings `temperature()`is a metaphore for the amount of 
+	randomness the process applies.
 	*/
 	temperature: function temperature() {
 		return (1 - Math.max(0, this.step) / this.steps) * (this.maximumTemperature - this.minimumTemperature) + this.minimumTemperature;
 	},
 	
-	/** metaheuristics.SimulatedAnnealing.update():
-		For each element in the state one of its neighbours is chosen randomly. If
-		the neighbour is better, it replaces the corresponding element. Else it
-		may still do so, but with a probability calculated by this.acceptance().
+	/** At every iteration, for each element in the state one of its neighbours 
+	is chosen randomly. If the neighbour is better, it replaces the 
+	corresponding element. Else it may still do so, but with a probability 
+	calculated by `acceptance()`.
 	*/
 	update: function update() {
 		var mh = this,
@@ -1065,25 +1046,24 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 		});
 	},
 
-	// Utility methods. ////////////////////////////////////////////////////////
-		
 	toString: function toString() {
 		return (this.constructor.name || 'SimulatedAnnealing') +'('+ JSON.stringify(this) +')';
 	}
 }); // declare SimulatedAnnealing.
 
 
-/** A class of very simple problems that deal with optimizing the sum of the
-	elements' values. Probably the simplest optimization problem that can be 
-	defined, included here for testing purposes.
+/** # Sum optimization problem
+
+A class of very simple problems that deal with optimizing the sum of the 
+elements' values. Probably the simplest optimization problem that can be 
+defined, included here for testing purposes.
 */
-problems.SumOptimization = declare(Problem, { ////////////////////////////
+problems.SumOptimization = declare(Problem, {
 	title: "Sum optimization",
 	description: "Very simple problem based on optimizing the elements' values sum.",
 
-	/** new problems.SumOptimization(params):
-		Very simple problem based on optimizing the elements' values sum. The
-		params argument should include the 'target' number.
+	/** This very simple problem is based on optimizing the elements' values 
+	sum. The `target` number determines which way the optimization goes.
 	*/
 	constructor: function SumOptimization(params) {
 		Problem.call(this, params);
@@ -1097,17 +1077,16 @@ problems.SumOptimization = declare(Problem, { ////////////////////////////
 		}
 	}),
 	
-	/** problems.SumOptimization.suffices(elements):
-		Checks if the best element's values add up to the target value.
+	/** A state `suffices(elements)` when the best element's values add up to 
+	the target value.
 	*/
 	suffices: function suffices(elements) {
 		return iterable(elements[0].values).sum() === this.target;
 	},
 	
-	/** problems.SumOptimization.compare(element1, element2):
-		The comparison between elements depends on this problem's target. For
-		a Infinity maximization is applied, for -Infinity minimization, and
-		for every other number approximation.
+	/** The comparison between elements depends on this problem's target. For
+	a `Infinity` maximization is applied, for `-Infinity` minimization, and for 
+	every other number approximation.
 	*/
 	compare: function compare(element1, element2) {
 		return this.target === -Infinity ? this.minimization(element1, element2)
@@ -1117,18 +1096,19 @@ problems.SumOptimization = declare(Problem, { ////////////////////////////
 }); // declare SumOptimization.
 
 
-/** As it sounds, HelloWorld is a simple problem class, probably only useful for
-	testing purposes.
+/** # _"Hello World"_ problem
+
+As it sounds, `HelloWorld` is a simple problem class, probably only useful for
+testing purposes.
 */
-problems.HelloWorld = declare(Problem, { /////////////////////////////////
+problems.HelloWorld = declare(Problem, { 
 	title: "Hello world",
 	description: "Simple problem where each element is a string, and the "+
 		"optimization goes towards the target string.",
 	
-	/** new problems.HelloWorld(params):
-		Simple problem where each element is a string, and the optimization 
-		goes towards the target string. The string to match is specified by the
-		'target' parameter.
+	/** In this simple problem each element is a string, and the optimization 
+	goes towards the target string. The string to match is specified by the 
+	`target` parameter (`"Hello world!"` by default).
 	*/	
 	constructor: function HelloWorld(params){
 		Problem.call(this, params);
@@ -1139,17 +1119,24 @@ problems.HelloWorld = declare(Problem, { /////////////////////////////////
 			__target__ = iterable(target).map(function (c) {
 				return c.charCodeAt(0);
 			}).toArray();
-		// Ad hoc Element declaration.
+		// The elements` representation is _ad-hoc_.
 		this.representation = declare(Element, {
+			// The elements` `length` is equal to the length of the target string.
 			length: target.length,
+			// The elements` values must be between 32 (space) and 254.
 			minimumValue: 32,
 			maximumValue: 254,
+			// An element `suffices()` when its equal to the target string.
 			suffices: function suffices() {
 				return this.mapping() === target;
 			},
+			// An element evaluation is equal to its distance from target string.
 			evaluate: function evaluate() {
 				return this.evaluation = this.manhattanDistance(__target__, this.values);
 			},
+			// An element's values are always numbers. These are converted to a 
+			// string by converting each number to its corresponding Unicode 
+			// character.
 			mapping: function mapping() {
 				return iterable(this.values).map(function (n) {
 					return String.fromCharCode(n | 0);
@@ -1158,39 +1145,39 @@ problems.HelloWorld = declare(Problem, { /////////////////////////////////
 		});
 	},
 	
+	/** Since elements' evaluation is a distance, this value must be minimized 
+	to guide the search towards the target string.
+	*/
 	compare: Problem.prototype.minimization
 }); // declare HelloWorld.
 
 
-/** A generalized version of the classic [8 queens puzzle](http://en.wikipedia.org/wiki/Eight_queens_puzzle).
+/** # N queens puzzle problem
+
+A generalized version of the classic [8 queens puzzle](http://en.wikipedia.org/wiki/Eight_queens_puzzle),
+a problem of placing 8 chess queens on an 8x8 chessboard so that no two queens 
+may attack each other.
 */
 problems.NQueensPuzzle = declare(Problem, { ////////////////////////////
 	title: "N-queens puzzle",
 	description: "Generalized version of the classic problem of placing "+
 		"8 chess queens on an 8x8 chessboard so that no two queens attack each other.",
 	
-	/** new problems.NQueensPuzzle(params):
-		Generalized version of the classic problem of placing 8 chess queens on 
-		an 8x8 chessboard so that no two queens attack each other. The amount
-		of queens and board dimensions is specified by the N parameter.
+	/** The constructor takes only one particular parameter:
 	*/	
 	constructor: function NQueensPuzzle(params){
 		Problem.call(this, params);
 		initialize(this, params)
+			// + `N=8`: the number of queens and both dimensions of the board.
 			.integer('N', { coerce: true, defaultValue: 8 });
 		
-		// Ad hoc Element declaration.
 		var rowRange = Iterable.range(this.N).toArray();
-		/** problems.NQueensPuzzle.representation:
-			The representation is an array of N positions, indicating the row of
-			the queen for each column. Its evaluation is the count of diagonals
-			shared by queens pairwise.
+		/** The representation is an array of `N` positions, indicating the row of
+		the queen for each column.
 		*/
 		this.representation = declare(Element, {
 			length: this.N,
-			suffices: function suffices() {
-				return this.evaluation === 0;
-			},
+			// Its evaluation is the count of diagonals shared by queens pairwise.
 			evaluate: function evaluate() {
 				var rows = this.mapping(),
 					count = 0;
@@ -1203,31 +1190,36 @@ problems.NQueensPuzzle = declare(Problem, { ////////////////////////////
 				});
 				return this.evaluation = count;
 			},
+			// It is sufficient when no pair of queens share diagonals.
+			suffices: function suffices() {
+				return this.evaluation === 0;
+			},
 			mapping: function mapping() {
 				return this.setMapping(rowRange);
 			}
 		});
 	},
 	
+	// Of course, the number of shared diagonals must be minimized.
 	compare: Problem.prototype.minimization
 }); // declare NQueensPuzzle
 
 
-/** The [Knapsack problem](http://en.wikipedia.org/wiki/Knapsack_problem) is a
-	classic combinatorial optimization problem. Given a set of items, each with 
-	cost and worth, a selection must be obtained (to go into the knapsack) so
-	that the total cost does not exceed a certain limit, while maximizing the 
-	total worth.
+/** # Knapsack problem
+
+The [Knapsack problem](http://en.wikipedia.org/wiki/Knapsack_problem) is a
+classic combinatorial optimization problem. Given a set of items, each with cost 
+and worth, a selection must be obtained (to go into the knapsack) so that the 
+total cost does not exceed a certain limit, while maximizing the total worth.
 */
 problems.KnapsackProblem = declare(Problem, { ////////////////////////////
 	title: "Knapsack problem",
 	description: "Given a set of items with a cost and a worth, select a subset "+
 		" maximizing the worth sum but not exceeding a cost limit.",
 	
-	/** problems.KnapsackProblem.items:
-		The superset of all candidate solutions. Must be an object with each
-		item by name. Each item must have a cost and a worth, and may have an
-		amount (1 by default).
+	/** `items` is the superset of all candidate solutions. Must be an object 
+	with each item by name. Each item must have a cost and a worth, and may have 
+	an amount (1 by default).
 	*/
 	items: {
 		itemA: { cost: 12, worth:  4 }, 
@@ -1237,33 +1229,33 @@ problems.KnapsackProblem = declare(Problem, { ////////////////////////////
 		itemE: { cost:  4, worth: 10 }
 	},
 	
-	/** new problems.KnapsackProblem(params):
-		Classic combinatorial optimization problem, based on a given a set of 
-		items, each with a cost and a worth. The solution is a subset of items
-		with maximum worth sum that does not exceed a cost limit.
+	/** The problem is based on a given a set of items, each with a cost and a 
+	worth. The solution is a subset of items with maximum worth sum that does 
+	not exceed a cost limit.
+	
+	The parameters specific for this problem are:
 	*/	
 	constructor: function KnapsackProblem(params){
 		Problem.call(this, params);
 		initialize(this, params)
-			/** problems.KnapsackProblem.limit=15:
-				Cost limit that candidate solution should not exceed.
-			*/
+			// + `limit=15` is the cost limit that candidate solution should not exceed.
 			.number('limit', { coerce: true, defaultValue: 15 })
-			/** problems.KnapsackProblem.defaultAmount=1:
-				Amount available for each item by default.
-			*/
+			// + `defaultAmount=1` is the amount available for each item by default.
 			.integer('amount', { coerce: true, defaultValue: 1, minimum: 1 })
+			// + `items` is the set of items.
 			.object('items', { ignore: true });
 		
-		// Ad hoc Element declaration.
 		var problem = this;
-		/** problems.KnapsackProblem.representation:
-			The representation is an array with a number for each item. This
-			number holds the selected amount for each item (from 0 up to the
-			item's amount).
+		/** The problem's representation is declared _ad hoc_. It is an array 
+		with a number for each item. This number holds the selected amount for 
+		each item (from 0 up to the item's amount).
 		*/
 		this.representation = declare(Element, {
 			length: Object.keys(this.items).length,
+			/** All elements are evaluated by calculating the worth of all 
+			included items. If their cost is greater than the problem's limit,
+			the worth becomes negative.
+			*/
 			evaluate: function evaluate() {
 				var selection = this.mapping(),
 					worth = 0,
@@ -1276,6 +1268,9 @@ problems.KnapsackProblem = declare(Problem, { ////////////////////////////
 				});
 				return this.evaluation = cost > problem.limit ? -worth : worth;
 			},
+			/** All elements are mapped to an object with the selected amount
+			associated to each item.
+			*/
 			mapping: function mapping() {
 				var selection = {},
 					keys = Object.keys(problem.items);
@@ -1290,6 +1285,9 @@ problems.KnapsackProblem = declare(Problem, { ////////////////////////////
 		});
 	},
 	
+	/** The best selection of items is the one that maximizes worth, without
+	exceeding the cost limit.
+	*/
 	compare: Problem.prototype.maximization
 }); // declare KnapsackProblem
 

@@ -1,4 +1,4 @@
-﻿/**	# Class Element
+﻿/**	# Element
 
 Element is the term used in Inveniemus for representations of 
 [candidate solutions](http://en.wikipedia.org/wiki/Feasible_region) in a search 

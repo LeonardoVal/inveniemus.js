@@ -1,27 +1,24 @@
-﻿/** [Beam search](http://en.wikipedia.org/wiki/Beam_search) implementation for 
-	the Inveniemus library. It is a form of parallel best-first search with 
-	limited memory.
+﻿/** # Beam search
+
+[Beam search](http://en.wikipedia.org/wiki/Beam_search) is a form of parallel 
+best-first search with limited memory.
 */
 var BeamSearch = metaheuristics.BeamSearch = declare(Metaheuristic, {
-	/** new metaheuristics.BeamSearch(params):
-		Builds a beam search. The problem's element must have its successors 
-		method implemented.
+	/** The constructor does not take any special parameters.
 	*/
 	constructor: function BeamSearch(params) {
 		Metaheuristic.call(this, params);
 	},
 	
-	/** metaheuristics.BeamSearch.successors(element):
-		Returns the elements' successors. By default returns 
-		element.successors().
+	/** `successors(element)` returns the elements' successors. The problem's 
+	element must have its `successors` method implemented.
 	*/
 	successors: function successors(element) {
 		return element.successors();
 	},
 	
-	/** metaheuristics.BeamSearch.expansion():
-		Successors to all elements are calculated by calling the problem's
-		successors method.
+	/** The expansion in beam search adds all successors of all elements to the
+	state. After being evaluated and sieved only the best will remain.
 	*/
 	expansion: function expansion() {
 		var allSuccessors = [],
@@ -31,8 +28,6 @@ var BeamSearch = metaheuristics.BeamSearch = declare(Metaheuristic, {
 		});
 		return allSuccessors;
 	},
-		
-	// Utility methods. ////////////////////////////////////////////////////////
 		
 	toString: function toString() {
 		return (this.constructor.name || 'BeamSearch') +'('+ JSON.stringify(this) +')';

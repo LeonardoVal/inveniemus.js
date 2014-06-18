@@ -1,35 +1,31 @@
-﻿/** [Simulated annealing](http://en.wikipedia.org/wiki/Simulated_annealing) 
-	implementation for the Inveniemus library.
+﻿/** # Simulated annealing
+
+[Simulated annealing](http://en.wikipedia.org/wiki/Simulated_annealing) is a
+stochastic global optimization technique.
 */
 var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheuristic, {
-	/** new metaheuristics.SimulatedAnnealing(params):
-		Builds a simulated annealing search.
-		See <http://en.wikipedia.org/wiki/Simulated_annealing>.
+	/** The constructor takes some specific parameters for this search:
 	*/
 	constructor: function SimulatedAnnealing(params) {
 		Metaheuristic.call(this, params);
 		initialize(this, params)
-		/** metaheuristics.SimulatedAnnealing.maximumTemperature=1:
-			The temperature at the start of the run.
+		/** + `maximumTemperature=1` is the temperature at the start of the run.
 		*/
 			.number('maximumTemperature', { defaultValue: 1, coerce: true })
-		/** metaheuristics.SimulatedAnnealing.minimumTemperature=1:
-			The temperature at the end of the run.
+		/** + `minimumTemperature=0` is the temperature at the end of the run.
 		*/
 			.number('minimumTemperature', { defaultValue: 0, coerce: true })
-		/** metaheuristics.SimulatedAnnealing.delta=0.01:
-			The radius of the elements surroundings in every dimension, that is
-			checked by this algorithm.
+		/** + `delta=0.01` is the radius of the elements surroundings in every 
+		dimension, that is checked by this algorithm.
 		*/
 			.number('delta', { defaultValue: 0.01, coerce: true })
-		/** metaheuristics.SimulatedAnnealing.size=1:
-			Default value for size is 1.
+		/** + `size=1` is 1 by default, but larger states are supported.
 		*/
 			.integer('size', { defaultValue: 1,	coerce: true });
 	},
 	
-	/** metaheuristics.SimulatedAnnealing.randomNeighbour(element, radius=this.delta):
-		Returns one neighbour of the given element chosen at random.
+	/** `randomNeighbour(element, radius=this.delta)` returns one neighbour of 
+	the given element chosen at random.
 	*/
 	randomNeighbour: function randomNeighbour(element, radius) {
 		radius = isNaN(radius) ? this.delta : +radius;
@@ -43,9 +39,9 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 		return element.modification(i, v);
 	},
 	
-	/** metaheuristics.SimulatedAnnealing.acceptance(current, neighbour, temp=this.temperature()):
-		Returns the probability of accepting the new element. Uses the original
-		definitions from Kirkpatrick's paper.
+	/** The `acceptance(current, neighbour, temp=this.temperature())` is the 
+	probability of accepting the new element. Uses the original definitions from 
+	[Kirkpatrick's paper](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.123.7607).
 	*/
 	acceptance: function acceptance(current, neighbour, temp) {
 		temp = isNaN(temp) ? this.temperature() : +temp;
@@ -57,17 +53,17 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 		}
 	},
 	
-	/** metaheuristics.SimulatedAnnealing.temperature():
-		Returns the current temperature of the annealing.
+	/** The annealings `temperature()`is a metaphore for the amount of 
+	randomness the process applies.
 	*/
 	temperature: function temperature() {
 		return (1 - Math.max(0, this.step) / this.steps) * (this.maximumTemperature - this.minimumTemperature) + this.minimumTemperature;
 	},
 	
-	/** metaheuristics.SimulatedAnnealing.update():
-		For each element in the state one of its neighbours is chosen randomly. If
-		the neighbour is better, it replaces the corresponding element. Else it
-		may still do so, but with a probability calculated by this.acceptance().
+	/** At every iteration, for each element in the state one of its neighbours 
+	is chosen randomly. If the neighbour is better, it replaces the 
+	corresponding element. Else it may still do so, but with a probability 
+	calculated by `acceptance()`.
 	*/
 	update: function update() {
 		var mh = this,
@@ -91,8 +87,6 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 		});
 	},
 
-	// Utility methods. ////////////////////////////////////////////////////////
-		
 	toString: function toString() {
 		return (this.constructor.name || 'SimulatedAnnealing') +'('+ JSON.stringify(this) +')';
 	}
