@@ -1,22 +1,21 @@
 ﻿/**	# Element
 
 Element is the term used in Inveniemus for representations of 
-[candidate solutions](http://en.wikipedia.org/wiki/Feasible_region) in a search 
-or optimization [problem](Problem.js.html). Implementations may declare their 
-own subclass of `Element` to represent their candidate solutions.
+[candidate solutions](http://en.wikipedia.org/wiki/Feasible_region) in a search or optimization 
+[problem](Problem.js.html). Implementations may declare their own subclass of `Element` to represent
+their candidate solutions.
 */
 var Element = exports.Element = declare({
-	/** All elements are defined by an array of numbers (i.e. the element's 
-	`values`, random numbers by default) and an `evaluation` (`NaN` by default).
+	/** All elements are defined by an array of numbers (i.e. the element's `values`, random numbers
+	by default) and an `evaluation` (`NaN` by default).
 	
-	The `values` store all data about the candidate solution this element 
-	represents. This may appear to abstract and stark, but it helps	to separate 
-	the problem definition from the search or optimization strategy.
+	The `values` store all data about the candidate solution this element represents. This may 
+	appear to abstract and stark, but it helps	to separate the problem definition from the search
+	or optimization strategy.
 	
-	The element's `evaluation` is a numerical assessment of the represented 
-	candidate solution. Usually is a measure of how well the problem is solved, 
-	or how close the element is to a real solution. It guides almost all of the 
-	metaheuristics.
+	The element's `evaluation` is a numerical assessment of the represented candidate solution. 
+	Usually is a measure of how well the problem is solved, or how close the element is to a real 
+	solution. It guides almost all of the metaheuristics.
 	*/
 	constructor: function Element(values, evaluation) {
 		if (typeof values === 'undefined') {
@@ -27,33 +26,31 @@ var Element = exports.Element = declare({
 		this.evaluation = +evaluation;
 	},
 	
-	/** The class property `length` defines the size of the element's values 
-	array (10 by default).
+	/** The class property `length` defines the size of the element's values array (10 by default).
 	*/
 	length: 10,
 
-	/** All numbers in an element's values range between `minimumValue` (0 by
-	default) and `maximumValue` (1 by default).
+	/** All numbers in an element's values range between `minimumValue` (0 by default) and 
+	`maximumValue` (1 by default).
 	*/
 	minimumValue: 0,
 	maximumValue: 1,
 	
-	/** The pseudorandom number generator in the class property `random` is
-	required by some of the element's operations. Its equal to 
-	`base.Randomness.DEFAULT` by default.
+	/** The pseudorandom number generator in the class property `random` is required by some of the
+	element's operations. Its equal to `base.Randomness.DEFAULT` by default.
 	*/
 	random: Randomness.DEFAULT,
 	
-	/** One of this operations is `randomValue()`, which returns a random value 
-	between `this.minimumValue` and `this.maximumValue`.
+	/** One of this operations is `randomValue()`, which returns a random value between
+	`this.minimumValue` and `this.maximumValue`.
 	*/
 	randomValue: function randomValue() {
 		return this.random.random(this.minimumValue, this.maximumValue);
 	},
 	
-	/** This method is used in `randomValues()` to calculate an array with 
-	random numbers, suitable to be used as an element's `values`. Many
-	metaheuristics require random initiation of the elements they handle.
+	/** This method is used in `randomValues()` to calculate an array with random numbers, suitable
+	to be used as an element's `values`. Many metaheuristics require random initiation of the
+	elements they handle.
 	*/
 	randomValues: function randomValues() {
 		var values = new Array(this.length),
@@ -65,58 +62,52 @@ var Element = exports.Element = declare({
 		return values;
 	},
 	
-	// ## Basic operations #####################################################
+	// ## Basic operations #########################################################################
 	
-	/** The element's evaluation is calculated by `evaluate()`, which assigns 
-	and returns this number. It can return a promise if the evaluation has to 
-	be done asynchronously. This can be interpreted as the solutions cost in a 
-	search problem or the target function of an optimization problem. The 
-	default behaviour is adding up this element's values, useful only for 
-	testing.
+	/** The element's evaluation is calculated by `evaluate()`, which assigns and returns this 
+	number. It can return a promise if the evaluation has to be done asynchronously. This can be 
+	interpreted as the solutions cost in a search problem or the target function of an optimization 
+	problem. The default behaviour is adding up this element's values, useful only for testing.
 	*/
 	evaluate: function evaluate() {
 		return this.evaluation = iterable(this.values).sum();
 	},
 
-	/** Whether this element is a actual solution or not is decided by 
-	`suffices()`. It holds the implementation of the goal test in search 
-	problems. More complex criteria may be implemented in `Problem.suffices`.
-	By default it checks if the values add up to zero, again only useful for
+	/** Whether this element is a actual solution or not is decided by `suffices()`. It holds the 
+	implementation of the goal test in search problems. More complex criteria may be implemented in 
+	`Problem.suffices`. By default it checks if the values add up to zero, again only useful for
 	testing purposes.
 	*/
 	suffices: function suffices() {
 		return iterable(this.values).sum() === 0;
 	},
 	
-	/** Usually a numbers array is just too abstract to handle, and	another 
-	representation of the candidate solution must be build. For this `mapping()` 
-	must be overridden to returns an alternate representation of this element 
-	that may be fitter for evaluation or showing it to the user. By default it 
-	just returns the same `values` array.
+	/** Usually a numbers array is just too abstract to handle, and	another representation of the 
+	candidate solution must be build. For this `mapping()` must be overridden to returns an 
+	alternate representation of this element that may be fitter for evaluation or showing it to the
+	user. By default it just returns the same `values` array.
 	*/
 	mapping: function mapping() {
 		return this.values;
 	},
 
-	/** The `emblem` of an element is a string that represents it and can be 
-	displayed to the user. By default returns the JSON conversion of the 
-	`values` array.
+	/** The `emblem` of an element is a string that represents it and can be displayed to the user. 
+	By default returns the JSON conversion of the `values` array.
 	*/
 	emblem: function emblem() {
 		return JSON.stringify(this.mapping());
 	},
 
-	// ## Evaluations ##########################################################
+	// ## Evaluations ##############################################################################
 
-	/** The element's `resolution` is the minimal difference between elements'
-	evaluations, below which two evaluations are considered equal.
+	/** The element's `resolution` is the minimal difference between elements' evaluations, below 
+	which two evaluations are considered equal.
 	*/
 	resolution: 1 / Math.pow(2, 52),
 	
-	/** The [Hamming distance](http://en.wikipedia.org/wiki/Hamming_distance) 
-	between two arrays is the number of positions at which corresponding 
-	components are different. Arrays are assumed to be of the same length. If 
-	they are not, only the common parts are considered.
+	/** The [Hamming distance](http://en.wikipedia.org/wiki/Hamming_distance) between two arrays is 
+	the number of positions at which corresponding components are different. Arrays are assumed to 
+	be of the same length. If they are not, only the common parts are considered.
 	*/
 	hammingDistance: function hammingDistance(array1, array2) {
 		return iterable(array1).zip(array2).filter(function (pair) {
@@ -124,9 +115,8 @@ var Element = exports.Element = declare({
 		}).count();
 	},
 
-	/** The [Manhattan distance](http://en.wikipedia.org/wiki/Manhattan_distance) 
-	between two arrays is the sum of the absolute differences of corresponding 
-	positions.
+	/** The [Manhattan distance](http://en.wikipedia.org/wiki/Manhattan_distance) between two arrays 
+	is the sum of the absolute differences of corresponding positions.
 	*/
 	manhattanDistance: function manhattanDistance(array1, array2) {
 		return iterable(array1).zip(array2).map(function (pair) {
@@ -134,8 +124,8 @@ var Element = exports.Element = declare({
 		}).sum();
 	},
 
-	/** The [euclidean distance](http://en.wikipedia.org/wiki/Euclidean_distance) 
-	between two arrays is another option for evaluation.
+	/** The [euclidean distance](http://en.wikipedia.org/wiki/Euclidean_distance) between two arrays 
+	is another option for evaluation.
 	*/
 	euclideanDistance: function euclideanDistance(array1, array2) {
 		return Math.sqrt(iterable(array1).zip(array2).map(function (pair) {
@@ -143,12 +133,10 @@ var Element = exports.Element = declare({
 		}).sum());
 	},
 
-	/** Another common evaluation is the 
-	[root mean squared error](http://en.wikipedia.org/wiki/Root_mean_squared_error).
-	The method `rootMeanSquaredError` takes a function `f` (usually a mapping
-	of this element) and some `data`. This `data` must be an iterable of arrays, 
-	in which the first element is the expected result and the rest are the 
-	arguments for the function.
+	/** Another common evaluation is the [root mean squared error](http://en.wikipedia.org/wiki/Root_mean_squared_error).
+	The method `rootMeanSquaredError` takes a function `f` (usually a mapping of this element) and 
+	some `data`. This `data` must be an iterable of arrays, in which the first element is the 
+	expected result and the rest are the arguments for the function.
 	*/
 	rootMeanSquaredError: function rootMeanSquaredError(f, data) {
 		var length = 0,
@@ -159,19 +147,17 @@ var Element = exports.Element = declare({
 		return length == 0 ? 0 : Math.sqrt(error / length);
 	},
 
-	// ## Expansions ###########################################################
+	// ## Expansions ###############################################################################
 	
-	/** An element's `successors` are other elements that can be considered 
-	adjacent of this element. By default returns the element's neighbourhood 
-	with the default radius.
+	/** An element's `successors` are other elements that can be considered adjacent of this 
+	element. By default returns the element's neighbourhood with the default radius.
 	*/
 	successors: function successors(element) {
 		return this.neighbourhood();
 	},
 	
-	/** An element's `neighbourhood` is a set of new elements, with values 
-	belonging to the n dimensional ball around this element's values with the
-	given `radius` (1% by default). 
+	/** An element's `neighbourhood` is a set of new elements, with values belonging to the n 
+	dimensional ball around this element's values with the given `radius` (1% by default). 
 	*/
 	neighbourhood: function neighbourhood(radius) {
 		radius = isNaN(radius) ? (this.maximumValue - this.minimumValue) / 100 : +radius;
@@ -191,8 +177,8 @@ var Element = exports.Element = declare({
 		return elems;
 	},
 	
-	/** The method `modification(index, value, ...)` returns a new and 
-	unevaluated copy of this element, with its values modified as specified.
+	/** The method `modification(index, value, ...)` returns a new and unevaluated copy of this 
+	element, with its values modified as specified.
 	*/
 	modification: function modification() {
 		var copy = new this.constructor(this.values), i, v;
@@ -204,12 +190,11 @@ var Element = exports.Element = declare({
 		return copy;
 	},
 	
-	// ## Mappings #############################################################
+	// ## Mappings #################################################################################
 	
-	/** An array mapping builds an array of equal length of this element's 
-	`values`. Each value is used to index the corresponding items argument. If 
-	there are less arguments than the element's `length`, the last one is used 
-	for the rest of the values. 
+	/** An array mapping builds an array of equal length of this element's `values`. Each value is 
+	used to index the corresponding items argument. If there are less arguments than the element's 
+	`length`, the last one is used for the rest of the values. 
 	*/
 	arrayMapping: function arrayMapping() {
 		var args = arguments, 
@@ -221,9 +206,8 @@ var Element = exports.Element = declare({
 		});
 	},
 	
-	/** A set mapping builds an array of equal length of this element's 
-	`values`. Each value is used to select one item. Items are not selected 
-	more than once. 
+	/** A set mapping builds an array of equal length of this element's `values`. Each value is used 
+	to select one item. Items are not selected more than once. 
 	*/
 	setMapping: function setMapping(items) {
 		raiseIf(!Array.isArray(items), "Element.setMapping() expects an array argument.");
@@ -233,7 +217,7 @@ var Element = exports.Element = declare({
 		});
 	},
 	
-	// ## Other utilities ######################################################
+	// ## Other utilities ##########################################################################
 
 	/** A `clone` is a copy of this element.
 	*/
@@ -241,8 +225,8 @@ var Element = exports.Element = declare({
 		return new this.constructor(this.values, this.evaluation);
 	},
 	
-	/** Two elements can be compared with `equals(other)`. It checks if the 
-	other element has the same values and constructor than this one.
+	/** Two elements can be compared with `equals(other)`. It checks if the other element has the 
+	same values and constructor than this one.
 	*/
 	equals: function equals(other) {
 		if (this.constructor === other.constructor && this.values.length === other.values.length) {

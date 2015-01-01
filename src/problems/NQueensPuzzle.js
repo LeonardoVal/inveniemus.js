@@ -1,8 +1,8 @@
 ﻿/** # N queens puzzle problem
 
 A generalized version of the classic [8 queens puzzle](http://en.wikipedia.org/wiki/Eight_queens_puzzle),
-a problem of placing 8 chess queens on an 8x8 chessboard so that no two queens 
-may attack each other.
+a problem of placing 8 chess queens on an 8x8 chessboard so that no two queens may attack each 
+other.
 */
 problems.NQueensPuzzle = declare(Problem, { ////////////////////////////
 	title: "N-queens puzzle",
@@ -14,16 +14,18 @@ problems.NQueensPuzzle = declare(Problem, { ////////////////////////////
 	constructor: function NQueensPuzzle(params){
 		Problem.call(this, params);
 		initialize(this, params)
-			// + `N=8`: the number of queens and both dimensions of the board.
+			/** + `N=8`: the number of queens and both dimensions of the board.
+			*/
 			.integer('N', { coerce: true, defaultValue: 8 });
 		
 		var rowRange = Iterable.range(this.N).toArray();
-		/** The representation is an array of `N` positions, indicating the row of
-		the queen for each column.
+		/** The representation is an array of `N` positions, indicating the row of the queen for 
+		each column.
 		*/
 		this.representation = declare(Element, {
 			length: this.N,
-			// Its evaluation is the count of diagonals shared by queens pairwise.
+			/** Its evaluation is the count of diagonals shared by queens pairwise.
+			*/
 			evaluate: function evaluate() {
 				var rows = this.mapping(),
 					count = 0;
@@ -36,7 +38,8 @@ problems.NQueensPuzzle = declare(Problem, { ////////////////////////////
 				});
 				return this.evaluation = count;
 			},
-			// It is sufficient when no pair of queens share diagonals.
+			/** It is sufficient when no pair of queens share diagonals.
+			*/
 			suffices: function suffices() {
 				return this.evaluation === 0;
 			},
@@ -46,6 +49,7 @@ problems.NQueensPuzzle = declare(Problem, { ////////////////////////////
 		});
 	},
 	
-	// Of course, the number of shared diagonals must be minimized.
+	/** Of course, the number of shared diagonals must be minimized.
+	*/
 	compare: Problem.prototype.minimization
 }); // declare NQueensPuzzle
