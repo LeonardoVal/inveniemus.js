@@ -1,4 +1,4 @@
-define(['creatartis-base', 'inveniemus'], function (base, inveniemus) {
+﻿define(['creatartis-base', 'inveniemus'], function (base, inveniemus) {
 	var runner = {};
 	runner.base = base;
 	runner.inveniemus = inveniemus;
