@@ -10,7 +10,8 @@ module.exports = function(grunt) {
 		'src/metaheuristics/HillClimbing.js',
 		'src/metaheuristics/GeneticAlgorithm.js', 
 		'src/metaheuristics/BeamSearch.js',
-		'src/metaheuristics/SimulatedAnnealing.js', 
+		'src/metaheuristics/SimulatedAnnealing.js',
+		'src/metaheuristics/ParticleSwarm.js',
 	// Problems.
 		'src/problems/SumOptimization.js',
 		'src/problems/HelloWorld.js',

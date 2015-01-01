@@ -32,22 +32,21 @@
 /**	# Element
 
 Element is the term used in Inveniemus for representations of 
-[candidate solutions](http://en.wikipedia.org/wiki/Feasible_region) in a search 
-or optimization [problem](Problem.js.html). Implementations may declare their 
-own subclass of `Element` to represent their candidate solutions.
+[candidate solutions](http://en.wikipedia.org/wiki/Feasible_region) in a search or optimization 
+[problem](Problem.js.html). Implementations may declare their own subclass of `Element` to represent
+their candidate solutions.
 */
 var Element = exports.Element = declare({
-	/** All elements are defined by an array of numbers (i.e. the element's 
-	`values`, random numbers by default) and an `evaluation` (`NaN` by default).
+	/** All elements are defined by an array of numbers (i.e. the element's `values`, random numbers
+	by default) and an `evaluation` (`NaN` by default).
 	
-	The `values` store all data about the candidate solution this element 
-	represents. This may appear to abstract and stark, but it helps	to separate 
-	the problem definition from the search or optimization strategy.
+	The `values` store all data about the candidate solution this element represents. This may 
+	appear to abstract and stark, but it helps	to separate the problem definition from the search
+	or optimization strategy.
 	
-	The element's `evaluation` is a numerical assessment of the represented 
-	candidate solution. Usually is a measure of how well the problem is solved, 
-	or how close the element is to a real solution. It guides almost all of the 
-	metaheuristics.
+	The element's `evaluation` is a numerical assessment of the represented candidate solution. 
+	Usually is a measure of how well the problem is solved, or how close the element is to a real 
+	solution. It guides almost all of the metaheuristics.
 	*/
 	constructor: function Element(values, evaluation) {
 		if (typeof values === 'undefined') {
@@ -58,33 +57,31 @@ var Element = exports.Element = declare({
 		this.evaluation = +evaluation;
 	},
 	
-	/** The class property `length` defines the size of the element's values 
-	array (10 by default).
+	/** The class property `length` defines the size of the element's values array (10 by default).
 	*/
 	length: 10,
 
-	/** All numbers in an element's values range between `minimumValue` (0 by
-	default) and `maximumValue` (1 by default).
+	/** All numbers in an element's values range between `minimumValue` (0 by default) and 
+	`maximumValue` (1 by default).
 	*/
 	minimumValue: 0,
 	maximumValue: 1,
 	
-	/** The pseudorandom number generator in the class property `random` is
-	required by some of the element's operations. Its equal to 
-	`base.Randomness.DEFAULT` by default.
+	/** The pseudorandom number generator in the class property `random` is required by some of the
+	element's operations. Its equal to `base.Randomness.DEFAULT` by default.
 	*/
 	random: Randomness.DEFAULT,
 	
-	/** One of this operations is `randomValue()`, which returns a random value 
-	between `this.minimumValue` and `this.maximumValue`.
+	/** One of this operations is `randomValue()`, which returns a random value between
+	`this.minimumValue` and `this.maximumValue`.
 	*/
 	randomValue: function randomValue() {
 		return this.random.random(this.minimumValue, this.maximumValue);
 	},
 	
-	/** This method is used in `randomValues()` to calculate an array with 
-	random numbers, suitable to be used as an element's `values`. Many
-	metaheuristics require random initiation of the elements they handle.
+	/** This method is used in `randomValues()` to calculate an array with random numbers, suitable
+	to be used as an element's `values`. Many metaheuristics require random initiation of the
+	elements they handle.
 	*/
 	randomValues: function randomValues() {
 		var values = new Array(this.length),
@@ -96,58 +93,52 @@ var Element = exports.Element = declare({
 		return values;
 	},
 	
-	// ## Basic operations #####################################################
+	// ## Basic operations #########################################################################
 	
-	/** The element's evaluation is calculated by `evaluate()`, which assigns 
-	and returns this number. It can return a promise if the evaluation has to 
-	be done asynchronously. This can be interpreted as the solutions cost in a 
-	search problem or the target function of an optimization problem. The 
-	default behaviour is adding up this element's values, useful only for 
-	testing.
+	/** The element's evaluation is calculated by `evaluate()`, which assigns and returns this 
+	number. It can return a promise if the evaluation has to be done asynchronously. This can be 
+	interpreted as the solutions cost in a search problem or the target function of an optimization 
+	problem. The default behaviour is adding up this element's values, useful only for testing.
 	*/
 	evaluate: function evaluate() {
 		return this.evaluation = iterable(this.values).sum();
 	},
 
-	/** Whether this element is a actual solution or not is decided by 
-	`suffices()`. It holds the implementation of the goal test in search 
-	problems. More complex criteria may be implemented in `Problem.suffices`.
-	By default it checks if the values add up to zero, again only useful for
+	/** Whether this element is a actual solution or not is decided by `suffices()`. It holds the 
+	implementation of the goal test in search problems. More complex criteria may be implemented in 
+	`Problem.suffices`. By default it checks if the values add up to zero, again only useful for
 	testing purposes.
 	*/
 	suffices: function suffices() {
 		return iterable(this.values).sum() === 0;
 	},
 	
-	/** Usually a numbers array is just too abstract to handle, and	another 
-	representation of the candidate solution must be build. For this `mapping()` 
-	must be overridden to returns an alternate representation of this element 
-	that may be fitter for evaluation or showing it to the user. By default it 
-	just returns the same `values` array.
+	/** Usually a numbers array is just too abstract to handle, and	another representation of the 
+	candidate solution must be build. For this `mapping()` must be overridden to returns an 
+	alternate representation of this element that may be fitter for evaluation or showing it to the
+	user. By default it just returns the same `values` array.
 	*/
 	mapping: function mapping() {
 		return this.values;
 	},
 
-	/** The `emblem` of an element is a string that represents it and can be 
-	displayed to the user. By default returns the JSON conversion of the 
-	`values` array.
+	/** The `emblem` of an element is a string that represents it and can be displayed to the user. 
+	By default returns the JSON conversion of the `values` array.
 	*/
 	emblem: function emblem() {
 		return JSON.stringify(this.mapping());
 	},
 
-	// ## Evaluations ##########################################################
+	// ## Evaluations ##############################################################################
 
-	/** The element's `resolution` is the minimal difference between elements'
-	evaluations, below which two evaluations are considered equal.
+	/** The element's `resolution` is the minimal difference between elements' evaluations, below 
+	which two evaluations are considered equal.
 	*/
 	resolution: 1 / Math.pow(2, 52),
 	
-	/** The [Hamming distance](http://en.wikipedia.org/wiki/Hamming_distance) 
-	between two arrays is the number of positions at which corresponding 
-	components are different. Arrays are assumed to be of the same length. If 
-	they are not, only the common parts are considered.
+	/** The [Hamming distance](http://en.wikipedia.org/wiki/Hamming_distance) between two arrays is 
+	the number of positions at which corresponding components are different. Arrays are assumed to 
+	be of the same length. If they are not, only the common parts are considered.
 	*/
 	hammingDistance: function hammingDistance(array1, array2) {
 		return iterable(array1).zip(array2).filter(function (pair) {
@@ -155,9 +146,8 @@ var Element = exports.Element = declare({
 		}).count();
 	},
 
-	/** The [Manhattan distance](http://en.wikipedia.org/wiki/Manhattan_distance) 
-	between two arrays is the sum of the absolute differences of corresponding 
-	positions.
+	/** The [Manhattan distance](http://en.wikipedia.org/wiki/Manhattan_distance) between two arrays 
+	is the sum of the absolute differences of corresponding positions.
 	*/
 	manhattanDistance: function manhattanDistance(array1, array2) {
 		return iterable(array1).zip(array2).map(function (pair) {
@@ -165,8 +155,8 @@ var Element = exports.Element = declare({
 		}).sum();
 	},
 
-	/** The [euclidean distance](http://en.wikipedia.org/wiki/Euclidean_distance) 
-	between two arrays is another option for evaluation.
+	/** The [euclidean distance](http://en.wikipedia.org/wiki/Euclidean_distance) between two arrays 
+	is another option for evaluation.
 	*/
 	euclideanDistance: function euclideanDistance(array1, array2) {
 		return Math.sqrt(iterable(array1).zip(array2).map(function (pair) {
@@ -174,12 +164,10 @@ var Element = exports.Element = declare({
 		}).sum());
 	},
 
-	/** Another common evaluation is the 
-	[root mean squared error](http://en.wikipedia.org/wiki/Root_mean_squared_error).
-	The method `rootMeanSquaredError` takes a function `f` (usually a mapping
-	of this element) and some `data`. This `data` must be an iterable of arrays, 
-	in which the first element is the expected result and the rest are the 
-	arguments for the function.
+	/** Another common evaluation is the [root mean squared error](http://en.wikipedia.org/wiki/Root_mean_squared_error).
+	The method `rootMeanSquaredError` takes a function `f` (usually a mapping of this element) and 
+	some `data`. This `data` must be an iterable of arrays, in which the first element is the 
+	expected result and the rest are the arguments for the function.
 	*/
 	rootMeanSquaredError: function rootMeanSquaredError(f, data) {
 		var length = 0,
@@ -190,19 +178,17 @@ var Element = exports.Element = declare({
 		return length == 0 ? 0 : Math.sqrt(error / length);
 	},
 
-	// ## Expansions ###########################################################
+	// ## Expansions ###############################################################################
 	
-	/** An element's `successors` are other elements that can be considered 
-	adjacent of this element. By default returns the element's neighbourhood 
-	with the default radius.
+	/** An element's `successors` are other elements that can be considered adjacent of this 
+	element. By default returns the element's neighbourhood with the default radius.
 	*/
 	successors: function successors(element) {
 		return this.neighbourhood();
 	},
 	
-	/** An element's `neighbourhood` is a set of new elements, with values 
-	belonging to the n dimensional ball around this element's values with the
-	given `radius` (1% by default). 
+	/** An element's `neighbourhood` is a set of new elements, with values belonging to the n 
+	dimensional ball around this element's values with the given `radius` (1% by default). 
 	*/
 	neighbourhood: function neighbourhood(radius) {
 		radius = isNaN(radius) ? (this.maximumValue - this.minimumValue) / 100 : +radius;
@@ -222,8 +208,8 @@ var Element = exports.Element = declare({
 		return elems;
 	},
 	
-	/** The method `modification(index, value, ...)` returns a new and 
-	unevaluated copy of this element, with its values modified as specified.
+	/** The method `modification(index, value, ...)` returns a new and unevaluated copy of this 
+	element, with its values modified as specified.
 	*/
 	modification: function modification() {
 		var copy = new this.constructor(this.values), i, v;
@@ -235,12 +221,11 @@ var Element = exports.Element = declare({
 		return copy;
 	},
 	
-	// ## Mappings #############################################################
+	// ## Mappings #################################################################################
 	
-	/** An array mapping builds an array of equal length of this element's 
-	`values`. Each value is used to index the corresponding items argument. If 
-	there are less arguments than the element's `length`, the last one is used 
-	for the rest of the values. 
+	/** An array mapping builds an array of equal length of this element's `values`. Each value is 
+	used to index the corresponding items argument. If there are less arguments than the element's 
+	`length`, the last one is used for the rest of the values. 
 	*/
 	arrayMapping: function arrayMapping() {
 		var args = arguments, 
@@ -252,9 +237,8 @@ var Element = exports.Element = declare({
 		});
 	},
 	
-	/** A set mapping builds an array of equal length of this element's 
-	`values`. Each value is used to select one item. Items are not selected 
-	more than once. 
+	/** A set mapping builds an array of equal length of this element's `values`. Each value is used 
+	to select one item. Items are not selected more than once. 
 	*/
 	setMapping: function setMapping(items) {
 		raiseIf(!Array.isArray(items), "Element.setMapping() expects an array argument.");
@@ -264,7 +248,7 @@ var Element = exports.Element = declare({
 		});
 	},
 	
-	// ## Other utilities ######################################################
+	// ## Other utilities ##########################################################################
 
 	/** A `clone` is a copy of this element.
 	*/
@@ -272,8 +256,8 @@ var Element = exports.Element = declare({
 		return new this.constructor(this.values, this.evaluation);
 	},
 	
-	/** Two elements can be compared with `equals(other)`. It checks if the 
-	other element has the same values and constructor than this one.
+	/** Two elements can be compared with `equals(other)`. It checks if the other element has the 
+	same values and constructor than this one.
 	*/
 	equals: function equals(other) {
 		if (this.constructor === other.constructor && this.values.length === other.values.length) {
@@ -305,47 +289,45 @@ var Problem = exports.Problem = declare({
 	*/
 	title: "<no title>",
 		
-	/** A `description` of the problem to be displayed to the user may also be
-	appreciated.
+	/** A `description` of the problem to be displayed to the user may also be appreciated.
 	*/
 	description: "<no description>",
 
-	/** Many operations in this class require a pseudorandom number generator.
-	By default `base.Randomness.DEFAULT` is used.
+	/** Many operations in this class require a pseudorandom number generator. By default 
+	`base.Randomness.DEFAULT` is used.
 	*/
 	random: Randomness.DEFAULT,
 	
-	/** A Problem holds basically three things:
-	
-	+ `representation`: the element constructor, 
-	+ `compare`: the comparison between elements,
-	+ `suffices`: the sufficiency criteria.
+	/** A Problem holds basically three things:	
 	*/
 	constructor: function Problem(params) {
 		initialize(this, params)
 			.string('title', { coerce: true, ignore: true })
 			.string('description', { coerce: true, ignore: true })
 			.object('random', { ignore: true })
+			/** + `representation`: the element constructor,
+			*/
 			.func('representation', { ignore: true }) // Overrides.
+			/** + `compare`: the comparison between elements,
+			*/
 			.func('compare', { ignore: true })
+			/** + `suffices`: the sufficiency criteria.
+			*/
 			.func('suffices', { ignore: true });
 	},
 
-	/** The problem's candidate solution `representation` is a subclass of
-	[`Element`](Element.js.html).
+	/** The problem's candidate solution `representation` is a subclass of [`Element`](Element.js.html).
 	*/
 	representation: Element,
 	
-	/** How elements are compared with each other in the problem determines 
-	which kind of optimization is performed. The `compare` method implements the 
-	comparison between two elements. It follows the standard protocol of 
-	comparison functions; i.e. returns a positive number if element2 is better 
-	than element1, a negative number if element2 is worse then element1, or zero 
-	otherwise. 
+	/** How elements are compared with each other in the problem determines which kind of 
+	optimization is performed. The `compare` method implements the comparison between two elements. 
+	It follows the standard protocol of comparison functions; i.e. returns a positive number if 
+	`element2` is better than `element1`, a negative number if `element2` is worse then `element1`,
+	or zero otherwise. 
 	
-	Better and worse may mean less or greater evaluation (`minimization`), 
-	viceversa (`maximization`) or another criteria altogether. The default 
-	implementation is `minimization`.
+	Better and worse may mean less or greater evaluation (`minimization`), viceversa 
+	(`maximization`) or another criteria altogether. The default implementation is `minimization`.
 	*/
 	compare: function compare(element1, element2) {
 		return this.minimization(element1, element2);
@@ -361,10 +343,9 @@ var Problem = exports.Problem = declare({
 		return elements[0].suffices();
 	},
 	
-	// ## Optimization modes ###################################################
+	// ## Optimization modes #######################################################################
 		
-	/** A `maximization` compares two elements by evaluation in descending 
-	order.
+	/** A `maximization` compares two elements by evaluation in descending order.
 	*/
 	maximization: function maximization(element1, element2) {
 		var d = element2.evaluation - element1.evaluation;
@@ -378,15 +359,15 @@ var Problem = exports.Problem = declare({
 		return isNaN(d) ? Infinity : Math.abs(d) < element1.resolution ? 0 : d;
 	},
 		
-	/** An `approximation` compares two elements by distance of its evaluation 
-	to the given target value in ascending order.
+	/** An `approximation` compares two elements by distance of its evaluation to the given target 
+	value in ascending order.
 	*/
 	approximation: function approximation(target, element1, element2) {
 		var d = Math.abs(element1.evaluation - target) - Math.abs(element2.evaluation - target);
 		return isNaN(d) ? Infinity : Math.abs(d) < element1.resolution ? 0 : d;
 	},
 		
-	// ## Utilities ############################################################
+	// ## Utilities ################################################################################
 	
 	/** The default string representation of a Problem instance has this shape: 
 	`"Problem(params)"`.
@@ -661,29 +642,28 @@ var metaheuristics = exports.metaheuristics = {};
 
 /** # Hill climbing
 
-[Hill Climbing](http://en.wikipedia.org/wiki/Hill_climbing) is a simple 
-iterative local search method. The state has only one element, and in each 
-iteration its best successor replaces it, after a local optimum is reached.
+[Hill Climbing](http://en.wikipedia.org/wiki/Hill_climbing) is a simple iterative local search 
+method. The state has only one element, and in each iteration its best successor replaces it, after
+a local optimum is reached.
 */
 var HillClimbing = metaheuristics.HillClimbing = declare(Metaheuristic, {
-	/** The constructor takes an extra `delta=0.01` parameter. This is the 
-	radius of the elements surroundings in every dimension, that is checked by 
-	this algorithm.
+	/** The constructor takes an extra `delta=0.01` parameter. This is the radius of the elements 
+	surroundings in every dimension, that is checked by this algorithm.
 	*/
 	constructor: function HillClimbing(params) {
 		Metaheuristic.call(this, params);
 		initialize(this, params)
 			.number('delta', { defaultValue: 0.01, coerce: true })
-		/** Also, the state's size is constrained to 1 by default. This may be
-		increased, resulting in many parallel climbings.
+		/** Also, the state's size is constrained to 1 by default. This may be increased, resulting 
+		in many parallel climbings.
 		*/
 			.integer('size', { defaultValue: 1,	coerce: true });
 	},
 	
-	/** The hill climbings `update()` replaces each element in the state by the 
-	best element in its neighbourhood, if there is any. The surroundings have 
-	all possible elements resulting from either an increment or decrement (of 
-	the given `delta`) in each of the centre element's dimensions.
+	/** The hill climbings `update()` replaces each element in the state by the best element in its 
+	neighbourhood, if there is any. The surroundings have all possible elements resulting from 
+	either an increment or decrement (of the given `delta`) in each of the centre element's 
+	dimensions.
 	*/
 	update: function update() {
 		var mh = this, 
@@ -704,15 +684,14 @@ var HillClimbing = metaheuristics.HillClimbing = declare(Metaheuristic, {
 		});
 	},
 		
-	/** `atLocalOptima()` checks if the search is currently stuck at a local 
-	optima.
+	/** `atLocalOptima()` checks if the search is currently stuck at a local optima.
 	*/
 	atLocalOptima: function atLocalOptima() {
 		return this.__localOptima__ >= this.state.length;
 	},
 		
-	/** A hill climbing search must finish when a local optimum is reached. This
-	criteria is tested together with all others.
+	/** A hill climbing search must finish when a local optimum is reached. This criteria is tested 
+	together with all others.
 	*/
 	finished: function finished() {
 		return Metaheuristic.prototype.finished.call(this) || this.atLocalOptima();
@@ -959,8 +938,8 @@ var BeamSearch = metaheuristics.BeamSearch = declare(Metaheuristic, {
 
 /** # Simulated annealing
 
-[Simulated annealing](http://en.wikipedia.org/wiki/Simulated_annealing) is a
-stochastic global optimization technique.
+[Simulated annealing](http://en.wikipedia.org/wiki/Simulated_annealing) is a stochastic global 
+optimization technique.
 */
 var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheuristic, {
 	/** The constructor takes some specific parameters for this search:
@@ -980,11 +959,14 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 			.number('delta', { defaultValue: 0.01, coerce: true })
 		/** + `size=1` is 1 by default, but larger states are supported.
 		*/
-			.integer('size', { defaultValue: 1,	coerce: true });
+			.integer('size', { defaultValue: 1,	coerce: true })
+		/** + `temperature=coolingSchedule.linear` is the temperature function.
+		*/
+			.func('temperature', { defaultValue: this.coolingSchedule.linear });
 	},
 	
-	/** `randomNeighbour(element, radius=this.delta)` returns one neighbour of 
-	the given element chosen at random.
+	/** `randomNeighbour(element, radius=this.delta)` returns one neighbour of the given element 
+	chosen at random.
 	*/
 	randomNeighbour: function randomNeighbour(element, radius) {
 		radius = isNaN(radius) ? this.delta : +radius;
@@ -998,8 +980,8 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 		return element.modification(i, v);
 	},
 	
-	/** The `acceptance(current, neighbour, temp=this.temperature())` is the 
-	probability of accepting the new element. Uses the original definitions from 
+	/** The `acceptance(current, neighbour, temp=this.temperature())` is the probability of 
+	accepting the new element. Uses the original definitions from 
 	[Kirkpatrick's paper](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.123.7607).
 	*/
 	acceptance: function acceptance(current, neighbour, temp) {
@@ -1008,21 +990,24 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 			return 1; // Should always accept a better neighbour.
 		} else {
 			var d = -Math.abs(neighbour.evaluation - current.evaluation);
-			return Math.min(1, Math.exp(d / temp));
+			return Math.max(0, Math.min(1, Math.exp(d / temp)));
 		}
 	},
 	
-	/** The annealings `temperature()`is a metaphore for the amount of 
-	randomness the process applies.
+	/** The annealings temperature is a metaphore for the amount of randomness the process applies. 
+	The cooling schedule is a function that calculates the temperature for any given step in the
+	optimization.
 	*/
-	temperature: function temperature() {
-		return (1 - Math.max(0, this.step) / this.steps) * (this.maximumTemperature - this.minimumTemperature) + this.minimumTemperature;
+	coolingSchedule: {
+		linear: function temperature() {
+			return (1 - Math.max(0, this.step) / this.steps) * 
+				(this.maximumTemperature - this.minimumTemperature) + this.minimumTemperature;
+		}
 	},
 	
-	/** At every iteration, for each element in the state one of its neighbours 
-	is chosen randomly. If the neighbour is better, it replaces the 
-	corresponding element. Else it may still do so, but with a probability 
-	calculated by `acceptance()`.
+	/** At every iteration, for each element in the state one of its neighbours is chosen randomly. 
+	If the neighbour is better, it replaces the corresponding element. Else it may still do so, but 
+	with a probability calculated by `acceptance()`.
 	*/
 	update: function update() {
 		var mh = this,
@@ -1035,11 +1020,7 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 			return Future.when(neighbour.evaluate()).then(function () {
 				var p = mh.acceptance(elem, neighbour, temp);
 				acceptanceStat.add(p, neighbour);
-				if (mh.random.randomBool(p)) {
-					return neighbour;
-				} else {
-					return elem;
-				}
+				return mh.random.randomBool(p) ? neighbour : elem;
 			});
 		})).then(function (elems) {
 			return mh.state = elems;
@@ -1052,18 +1033,121 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 }); // declare SimulatedAnnealing.
 
 
+/** # Particle swarm
+
+[Particle Swarm](http://en.wikipedia.org/wiki/Particle_swarm_optimization) is an stochastic 
+optimization technique. Every candidate solution is treated as a particle with a position and a 
+velocity. On each iteration the positions and velocities of every particle are updated considering
+the best positions so far.
+*/
+var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
+	/** The constructor takes some specific parameters for this search:
+	*/
+	constructor: function ParticleSwarm(params) {
+		Metaheuristic.call(this, params);
+		initialize(this, params)
+		/** + `inertia=1` is the weight of the particle's current velocity in the velocity update.
+		*/
+			.number('inertia', { defaultValue: 1, coerce: true })
+		/** + `localAcceleration=0.5` is the weight of the particle's current best position in the 
+				velocity update.
+		*/
+			.number('localAcceleration', { defaultValue: 0.5, coerce: true })
+		/** + `globalAcceleration=0.3` is the weight of the whole swarm's current best position in 
+				the velocity update.
+		*/
+			.number('globalAcceleration', { defaultValue: 0.3, coerce: true });
+	},
+	
+	/** The elements in a particle swarm have two added properties which have to be initialized:
+	
+	+ `__velocity__` is the vector that defines the movement of the particle. Initially it is a 
+		random vector.
+	+ `__localBest__` is the best position of the particle in the run. The first position has 
+		itself as the best so far.
+	*/
+	initiate: function initiate(size) {
+		Metaheuristic.prototype.initiate.call(this, size);
+		var mh = this;
+		this.state.forEach(function (element) {
+			var range = element.maximumValue - element.minimumValue
+			element.__velocity__ = mh.random.randoms(element.length, -range, range);
+			element.__localBest__ = element;
+		});
+	},
+	
+	/** The method `nextVelocity` calculates the velocity of the particle for the next iteration.
+	*/
+	nextVelocity: function nextVelocity(element, globalBest) {
+		var mh = this,
+			velocity = element.__velocity__,
+			localBest = element.__localBest__,
+			localCoef = this.random.random() * this.localAcceleration,
+			globalCoef = this.random.random() * this.globalAcceleration;
+		return element.values.map(function (v, i) {
+			return velocity[i] * mh.inertia
+				+ localCoef * (localBest.values[i] - v)
+				+ globalCoef * (globalBest.values[i] - v);
+		});
+	},
+	
+	/** The method `nextElement` creates a new element which represents the position of a particle 
+	in the next iteration.
+	*/
+	nextElement: function nextElement(element, globalBest) {
+		var mh = this,
+			nextVelocity = this.nextVelocity(element, globalBest),
+			nextValues = element.values.map(function (v, i) {
+				return Math.max(element.minimumValue, Math.min(element.maximumValue, v + nextVelocity[i]));
+			}),
+			result = new element.constructor(nextValues);
+		return Future.when(result.evaluate()).then(function () {
+			result.__velocity__ = nextVelocity;
+			result.__localBest__ = mh.problem.compare(element.__localBest__, result) > 0 ? result : element.__localBest__;
+			return result;
+		});		
+	},
+	
+	/** Updating the optimization state means updating each particle velocity and recalculating 
+	their positions. The best position of the whole run is stored in the `__globalBest__` property,
+	and updated every time a new best position is achieved. If nothing fails, in the end the 
+	particles should converge at this position.
+	*/
+	update: function update() {
+		var mh = this,
+			globalBest = this.__globalBest__;
+		if (!globalBest) {
+			globalBest = this.__globalBest__ = this.state[0];
+		}
+		return Future.all(this.state.map(function (element) {
+			return mh.nextElement(element, globalBest);
+		})).then(function (elements) {
+			mh.state = elements;
+			elements.sort(mh.problem.compare.bind(mh.problem));
+			if (mh.problem.compare(mh.__globalBest__, elements[0]) > 0) {
+				mh.__globalBest__ = elements[0];
+			}
+			return mh;
+		});
+	},
+		
+	toString: function toString() {
+		return (this.constructor.name || 'ParticleSwarm') +'('+ JSON.stringify(this) +')';
+	}
+}); // declare ParticleSwarm.
+
+
 /** # Sum optimization problem
 
-A class of very simple problems that deal with optimizing the sum of the 
-elements' values. Probably the simplest optimization problem that can be 
-defined, included here for testing purposes.
+A class of very simple problems that deal with optimizing the sum of the elements' values. Probably 
+the simplest optimization problem that can be defined, included here for testing purposes.
 */
 problems.SumOptimization = declare(Problem, {
 	title: "Sum optimization",
 	description: "Very simple problem based on optimizing the elements' values sum.",
 
-	/** This very simple problem is based on optimizing the elements' values 
-	sum. The `target` number determines which way the optimization goes.
+	/** This very simple problem is based on optimizing the elements' values sum. The `target` 
+	number determines which way the optimization goes.
 	*/
 	constructor: function SumOptimization(params) {
 		Problem.call(this, params);
@@ -1077,16 +1161,14 @@ problems.SumOptimization = declare(Problem, {
 		}
 	}),
 	
-	/** A state `suffices(elements)` when the best element's values add up to 
-	the target value.
+	/** A state `suffices(elements)` when the best element's values add up to the target value.
 	*/
 	suffices: function suffices(elements) {
 		return iterable(elements[0].values).sum() === this.target;
 	},
 	
-	/** The comparison between elements depends on this problem's target. For
-	a `Infinity` maximization is applied, for `-Infinity` minimization, and for 
-	every other number approximation.
+	/** The comparison between elements depends on this problem's target. For a `Infinity` 
+	maximization is applied, for `-Infinity` minimization, and for every other number approximation.
 	*/
 	compare: function compare(element1, element2) {
 		return this.target === -Infinity ? this.minimization(element1, element2)
@@ -1098,17 +1180,16 @@ problems.SumOptimization = declare(Problem, {
 
 /** # _"Hello World"_ problem
 
-As it sounds, `HelloWorld` is a simple problem class, probably only useful for
-testing purposes.
+As it sounds, `HelloWorld` is a simple problem class, probably only useful for testing purposes.
 */
 problems.HelloWorld = declare(Problem, { 
 	title: "Hello world",
 	description: "Simple problem where each element is a string, and the "+
 		"optimization goes towards the target string.",
 	
-	/** In this simple problem each element is a string, and the optimization 
-	goes towards the target string. The string to match is specified by the 
-	`target` parameter (`"Hello world!"` by default).
+	/** In this simple problem each element is a string, and the optimization goes towards the 
+	target string. The string to match is specified by the `target` parameter (`"Hello world!"` by 
+	default).
 	*/	
 	constructor: function HelloWorld(params){
 		Problem.call(this, params);
@@ -1119,24 +1200,29 @@ problems.HelloWorld = declare(Problem, {
 			__target__ = iterable(target).map(function (c) {
 				return c.charCodeAt(0);
 			}).toArray();
-		// The elements` representation is _ad-hoc_.
+		/** The elements` representation is _ad-hoc_.
+		*/
 		this.representation = declare(Element, {
-			// The elements` `length` is equal to the length of the target string.
+			/** The elements` `length` is equal to the length of the target string.
+			*/
 			length: target.length,
-			// The elements` values must be between 32 (space) and 254.
+			/** The elements` values must be between 32 (space) and 254.
+			*/
 			minimumValue: 32,
 			maximumValue: 254,
-			// An element `suffices()` when its equal to the target string.
+			/** An element `suffices()` when its equal to the target string.
+			*/
 			suffices: function suffices() {
 				return this.mapping() === target;
 			},
-			// An element evaluation is equal to its distance from target string.
+			/** An element evaluation is equal to its distance from target string.
+			*/
 			evaluate: function evaluate() {
 				return this.evaluation = this.manhattanDistance(__target__, this.values);
 			},
-			// An element's values are always numbers. These are converted to a 
-			// string by converting each number to its corresponding Unicode 
-			// character.
+			/** An element's values are always numbers. These are converted to a string by 
+			converting each number to its corresponding Unicode character.
+			*/
 			mapping: function mapping() {
 				return iterable(this.values).map(function (n) {
 					return String.fromCharCode(n | 0);
@@ -1145,8 +1231,8 @@ problems.HelloWorld = declare(Problem, {
 		});
 	},
 	
-	/** Since elements' evaluation is a distance, this value must be minimized 
-	to guide the search towards the target string.
+	/** Since elements' evaluation is a distance, this value must be minimized to guide the search 
+	towards the target string.
 	*/
 	compare: Problem.prototype.minimization
 }); // declare HelloWorld.
@@ -1155,8 +1241,8 @@ problems.HelloWorld = declare(Problem, {
 /** # N queens puzzle problem
 
 A generalized version of the classic [8 queens puzzle](http://en.wikipedia.org/wiki/Eight_queens_puzzle),
-a problem of placing 8 chess queens on an 8x8 chessboard so that no two queens 
-may attack each other.
+a problem of placing 8 chess queens on an 8x8 chessboard so that no two queens may attack each 
+other.
 */
 problems.NQueensPuzzle = declare(Problem, { ////////////////////////////
 	title: "N-queens puzzle",
@@ -1168,16 +1254,18 @@ problems.NQueensPuzzle = declare(Problem, { ////////////////////////////
 	constructor: function NQueensPuzzle(params){
 		Problem.call(this, params);
 		initialize(this, params)
-			// + `N=8`: the number of queens and both dimensions of the board.
+			/** + `N=8`: the number of queens and both dimensions of the board.
+			*/
 			.integer('N', { coerce: true, defaultValue: 8 });
 		
 		var rowRange = Iterable.range(this.N).toArray();
-		/** The representation is an array of `N` positions, indicating the row of
-		the queen for each column.
+		/** The representation is an array of `N` positions, indicating the row of the queen for 
+		each column.
 		*/
 		this.representation = declare(Element, {
 			length: this.N,
-			// Its evaluation is the count of diagonals shared by queens pairwise.
+			/** Its evaluation is the count of diagonals shared by queens pairwise.
+			*/
 			evaluate: function evaluate() {
 				var rows = this.mapping(),
 					count = 0;
@@ -1190,7 +1278,8 @@ problems.NQueensPuzzle = declare(Problem, { ////////////////////////////
 				});
 				return this.evaluation = count;
 			},
-			// It is sufficient when no pair of queens share diagonals.
+			/** It is sufficient when no pair of queens share diagonals.
+			*/
 			suffices: function suffices() {
 				return this.evaluation === 0;
 			},
@@ -1200,26 +1289,26 @@ problems.NQueensPuzzle = declare(Problem, { ////////////////////////////
 		});
 	},
 	
-	// Of course, the number of shared diagonals must be minimized.
+	/** Of course, the number of shared diagonals must be minimized.
+	*/
 	compare: Problem.prototype.minimization
 }); // declare NQueensPuzzle
 
 
 /** # Knapsack problem
 
-The [Knapsack problem](http://en.wikipedia.org/wiki/Knapsack_problem) is a
-classic combinatorial optimization problem. Given a set of items, each with cost 
-and worth, a selection must be obtained (to go into the knapsack) so that the 
-total cost does not exceed a certain limit, while maximizing the total worth.
+The [Knapsack problem](http://en.wikipedia.org/wiki/Knapsack_problem) is a classic combinatorial 
+optimization problem. Given a set of items, each with cost and worth, a selection must be obtained 
+(to go into the knapsack) so that the total cost does not exceed a certain limit, while maximizing 
+the total worth.
 */
-problems.KnapsackProblem = declare(Problem, { ////////////////////////////
+problems.KnapsackProblem = declare(Problem, {
 	title: "Knapsack problem",
 	description: "Given a set of items with a cost and a worth, select a subset "+
 		" maximizing the worth sum but not exceeding a cost limit.",
 	
-	/** `items` is the superset of all candidate solutions. Must be an object 
-	with each item by name. Each item must have a cost and a worth, and may have 
-	an amount (1 by default).
+	/** `items` is the superset of all candidate solutions. Must be an object with each item by 
+	name. Each item must have a cost and a worth, and may have an amount (1 by default).
 	*/
 	items: {
 		itemA: { cost: 12, worth:  4 }, 
@@ -1229,32 +1318,32 @@ problems.KnapsackProblem = declare(Problem, { ////////////////////////////
 		itemE: { cost:  4, worth: 10 }
 	},
 	
-	/** The problem is based on a given a set of items, each with a cost and a 
-	worth. The solution is a subset of items with maximum worth sum that does 
-	not exceed a cost limit.
+	/** The problem is based on a given a set of items, each with a cost and a worth. The solution 
+	is a subset of items with maximum worth sum that does not exceed a cost limit.
 	
 	The parameters specific for this problem are:
 	*/	
 	constructor: function KnapsackProblem(params){
 		Problem.call(this, params);
 		initialize(this, params)
-			// + `limit=15` is the cost limit that candidate solution should not exceed.
+			/** + `limit=15` is the cost limit that candidate solution should not exceed.
+			*/
 			.number('limit', { coerce: true, defaultValue: 15 })
-			// + `defaultAmount=1` is the amount available for each item by default.
+			/** + `defaultAmount=1` is the amount available for each item by default.
+			*/
 			.integer('amount', { coerce: true, defaultValue: 1, minimum: 1 })
-			// + `items` is the set of items.
+			/** + `items` is the set of items.
+			*/
 			.object('items', { ignore: true });
 		
 		var problem = this;
-		/** The problem's representation is declared _ad hoc_. It is an array 
-		with a number for each item. This number holds the selected amount for 
-		each item (from 0 up to the item's amount).
+		/** The problem's representation is declared _ad hoc_. It is an array with a number for each
+		item. This number holds the selected amount for each item (from 0 up to the item's amount).
 		*/
 		this.representation = declare(Element, {
 			length: Object.keys(this.items).length,
-			/** All elements are evaluated by calculating the worth of all 
-			included items. If their cost is greater than the problem's limit,
-			the worth becomes negative.
+			/** All elements are evaluated by calculating the worth of all included items. If their 
+			cost is greater than the problem's limit, the worth becomes negative.
 			*/
 			evaluate: function evaluate() {
 				var selection = this.mapping(),
@@ -1268,8 +1357,8 @@ problems.KnapsackProblem = declare(Problem, { ////////////////////////////
 				});
 				return this.evaluation = cost > problem.limit ? -worth : worth;
 			},
-			/** All elements are mapped to an object with the selected amount
-			associated to each item.
+			/** All elements are mapped to an object with the selected amount associated to each 
+			item.
 			*/
 			mapping: function mapping() {
 				var selection = {},
@@ -1285,8 +1374,8 @@ problems.KnapsackProblem = declare(Problem, { ////////////////////////////
 		});
 	},
 	
-	/** The best selection of items is the one that maximizes worth, without
-	exceeding the cost limit.
+	/** The best selection of items is the one that maximizes worth, without exceeding the cost 
+	limit.
 	*/
 	compare: Problem.prototype.maximization
 }); // declare KnapsackProblem
