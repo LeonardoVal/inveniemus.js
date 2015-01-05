@@ -1,51 +1,46 @@
 ﻿/**	# Metaheuristic
 
-A [Metaheuristic](http://en.wikipedia.org/wiki/Metaheuristic) is an optimization
-algorithm (which can also be used for searching). This is the base class of all
-metaheuristic algorithms, and hence of all metaheuristic runs.
+A [Metaheuristic](http://en.wikipedia.org/wiki/Metaheuristic) is an optimization algorithm (which 
+can also be used for searching). This is the base class of all metaheuristic algorithms, and hence 
+of all metaheuristic runs.
 */
 var Metaheuristic = exports.Metaheuristic = declare({
 	/** Each metaheuristic has its own `logger`, to track its process.
 	*/
 	logger: new Logger('inveniemus', Logger.ROOT, 'INFO'),
 	
-	/** The constructor takes a `params` object with the metaheuristic 
-	parameters. Although the different algorithms have particular parameters of
-	their own, some apply to all.
+	/** The constructor takes a `params` object with the metaheuristic parameters. Although the 
+	different algorithms have particular parameters of their own, some apply to all.
 	*/
 	constructor: function Metaheuristic(params) {
 		initialize(this, params)
-		/** First, the definition of the `problem` this metaheuristic is meant
-		to solve.
+		/** First, the definition of the `problem` this metaheuristic is meant to solve.
 		*/
 			.object('problem', { defaultValue: null })
-		/** The optimization's `size` is the amount of candidate solutions the 
-		metaheuristic treats at each step. By default it is 100.
+		/** The optimization's `size` is the amount of candidate solutions the metaheuristic treats 
+		at each step. By default it is 100.
 		*/
 			.number('size', { defaultValue: 100, coerce: true })
-		/** The `state` is the array that holds the elements this metaheuristic 
-		handles at each step.
+		/** The `state` is the array that holds the elements this metaheuristic handles at each step.
 		*/
 			.array('state', { defaultValue: [] })
-		/** All optimizations perform a certain number of iterations or `steps`
-		(100 by default).
+		/** All optimizations perform a certain number of iterations or `steps` (100 by default).
 		*/
 			.number('steps', { defaultValue: 100, coerce: true })
-		/** The property `step` indicates the current iteration of this 
-		optimization, or a negative number if it has not started yet.
+		/** The property `step` indicates the current iteration of this optimization, or a negative 
+		number if it has not started yet.
 		*/
 			.integer('step', { defaultValue: -1, coerce: true })
-		/** Most metaheuristic are stochastic processes, hence the need for a
-		pseudo-random number generator. By default `base.Randomness.DEFAULT` is 
-		used, yet it is strongly advised to provide one.
+		/** Most metaheuristic are stochastic processes, hence the need for a pseudo-random number 
+		generator. By default `base.Randomness.DEFAULT` is used, yet it is strongly advised to 
+		provide one.
 		*/
 			.object('random', { defaultValue: Randomness.DEFAULT })
 		/** Metaheuristic's runs usually gather `statistics` about the process.
 		*/
 			.object('statistics', { defaultValue: new Statistics() })
 			.object('logger', { ignore: true });
-		/** For better customization the `events` handler emits the following
-		events: 
+		/** For better customization the `events` handler emits the following events: 
 		
 		+ `initiated` when the state has been initialized.
 		+ `updated` when the state has been expanded, evaluated and sieved.
@@ -62,11 +57,10 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		});
 	},
 	
-	// ## Basic workflow #######################################################
+	// ## Basic workflow ###########################################################################
 	
-	/**	`initiate(size=this.size)` builds and initiates this metaheuristic state 
-	with size new cursors. The elements are build using the `initial()` 
-	function.
+	/**	`initiate(size=this.size)` builds and initiates this metaheuristic state with size new 
+	cursors. The elements are build using the `initial()` function.
 	*/
 	initiate: function initiate(size) {
 		size = isNaN(size) ? this.size : +size >> 0;
@@ -78,11 +72,10 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		this.logger && this.logger.debug('State has been initiated. Nos coepimus.');
 	},
 	
-	/** `update()` updates this metaheuristic's state. It assumes the state has 
-	been initialized. The process may be asynchronous, so it returns a future.
-	The default implementation first expands the state by calling `expand()`, 
-	then evaluates the added elements by calling `evaluate()`, and finally 
-	removes the worst elements with `sieve()`.
+	/** `update()` updates this metaheuristic's state. It assumes the state has been initialized. 
+	The process may be asynchronous, so it returns a future. The default implementation first 
+	expands the state by calling `expand()`, then evaluates the added elements by calling 
+	`evaluate()`, and finally removes the worst elements with `sieve()`.
 	*/
 	update: function update() {
 		var mh = this;
@@ -94,8 +87,8 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		});
 	},
 	
-	/** `expand(expansion=[])` adds to this metaheuristic's state the given 
-	expansion. If none is given, `expansion()` is called to get new expansion.
+	/** `expand(expansion=[])` adds to this metaheuristic's state the given expansion. If none is 
+	given, `expansion()` is called to get new expansion.
 	*/
 	expand: function expand(expansion) {
 		expansion = expansion || this.expansion();
@@ -118,8 +111,8 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		this.logger && this.logger.debug('State has been expanded. Nos exploramus.');
 	},
 	
-	/** `expansion(size)` returns an array of new elements to add to the current 
-	state. The default implementation generates new random elements.		
+	/** `expansion(size)` returns an array of new elements to add to the current state. The default 
+	implementation generates new random elements.		
 	*/
 	expansion: function expansion(size) {
 		var expansionRate = isNaN(this.expansionRate) ? 0.5 : +this.expansionRate;
@@ -131,10 +124,9 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		return elems;
 	},
 	
-	/** `evaluate(elements)` evaluates all the elements in `state` with no 
-	evaluation, using its evaluation method. After that sorts the state with 
-	the `compare` method of the problem. Returns a future, regardless of the 
-	evaluation being asynchronous or not.
+	/** `evaluate(elements)` evaluates all the elements in `state` with no evaluation, using its 
+	evaluation method. After that sorts the state with the `compare` method of the problem. Returns 
+	a future, regardless of the evaluation being asynchronous or not.
 	*/
 	evaluate: function evaluate(elements) {
 		var mh = this,
@@ -157,9 +149,8 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		});
 	},
 	
-	/** `sieve(size=this.size)` cuts the current state down to the given size 
-	(or this.size by default). This is usually used after expanding and 
-	evaluating the state.
+	/** `sieve(size=this.size)` cuts the current state down to the given size (or this.size by 
+	default). This is usually used after expanding and evaluating the state.
 	*/
 	sieve: function sieve(size) {
 		size = isNaN(size) ? this.size : size | 0;
@@ -170,8 +161,8 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		this.logger && this.logger.debug('State has been sieved. Viam selectus est.');
 	},
 	
-	/** `finished()` termination criteria for this metaheuristic. By default it 
-	checks if the number of passed iterations is not greater than `steps`.
+	/** `finished()` termination criteria for this metaheuristic. By default it checks if the number 
+	of passed iterations is not greater than `steps`.
 	*/
 	finished: function finished() {
 		if (this.step >= this.steps || this.problem.suffices(this.state)) {
@@ -192,9 +183,8 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		return stat;
 	},
 	
-	/** `advance()` performs one step of the optimization. If the process has 
-	not been initialized, it does so. Returns a future if the run has not 
-	finished or null otherwise.
+	/** `advance()` performs one step of the optimization. If the process has not been initialized, 
+	it does so. Returns a future if the run has not finished or null otherwise.
 	*/
 	advance: function advance() {
 		var mh = this, 
@@ -219,8 +209,8 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		});
 	},
 	
-	/** `run()` returns a future that is resolved when the whole search process 
-	is finished. The value is the best cursor after the last step.
+	/** `run()` returns a future that is resolved when the whole search process is finished. The 
+	value is the best cursor after the last step.
 	*/
 	run: function run() {
 		var mh = this, 
@@ -234,15 +224,38 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		});
 	},
 
-	/** `reset()` reset the process to start over again. Basically cleans the 
-	statistics and sets the current `step` to -1.
+	/** `reset()` reset the process to start over again. Basically cleans the statistics and sets 
+	the current `step` to -1.
 	*/
 	reset: function reset() {
 		this.step = -1;
 		this.statistics.reset();
 	},
 	
-	// ## Utilities ############################################################
+	// ## State control ############################################################################
+	
+	/** The `nub` method eliminates repeated elements inside the state. Use responsibly, since this 
+	is an expensive operation. Returns the size of the resulting state.
+	*/
+	nub: function nub(precision) {
+		precision = isNaN(precision) ? 1e-15 : +precision;
+		this.state = iterable(this.state).nub(function (e1, e2) {
+			var values1 = e1.values,
+				values2 = e2.values,
+				len = values1.length;
+			if (len !== e2.values.length) {
+				return false;
+			} else for (var i = 0; i < len; ++i) {
+				if (Math.abs(values1[i] - values2[i]) > precision) {
+					return false;
+				}
+			}
+			return true;
+		}).toArray();
+		return this.state.length;
+	},
+	
+	// ## Utilities ################################################################################
 	
 	/** The default string representation of a Metaheuristic shows its 
 	constructor's name and its parameters.
