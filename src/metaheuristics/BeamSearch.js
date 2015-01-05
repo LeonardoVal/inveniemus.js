@@ -28,7 +28,7 @@ var BeamSearch = metaheuristics.BeamSearch = declare(Metaheuristic, {
 		});
 		return allSuccessors;
 	},
-		
+	
 	toString: function toString() {
 		return (this.constructor.name || 'BeamSearch') +'('+ JSON.stringify(this) +')';
 	}

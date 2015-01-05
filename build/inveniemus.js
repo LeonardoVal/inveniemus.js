@@ -106,11 +106,10 @@ var Element = exports.Element = declare({
 
 	/** Whether this element is a actual solution or not is decided by `suffices()`. It holds the 
 	implementation of the goal test in search problems. More complex criteria may be implemented in 
-	`Problem.suffices`. By default it checks if the values add up to zero, again only useful for
-	testing purposes.
+	`Problem.suffices`. By default it returns false.
 	*/
 	suffices: function suffices() {
-		return iterable(this.values).sum() === 0;
+		return false;
 	},
 	
 	/** Usually a numbers array is just too abstract to handle, and	another representation of the 
@@ -134,7 +133,7 @@ var Element = exports.Element = declare({
 	/** The element's `resolution` is the minimal difference between elements' evaluations, below 
 	which two evaluations are considered equal.
 	*/
-	resolution: 1 / Math.pow(2, 52),
+	resolution: 1e-15,
 	
 	/** The [Hamming distance](http://en.wikipedia.org/wiki/Hamming_distance) between two arrays is 
 	the number of positions at which corresponding components are different. Arrays are assumed to 
@@ -384,52 +383,47 @@ var problems = exports.problems = {};
 
 /**	# Metaheuristic
 
-A [Metaheuristic](http://en.wikipedia.org/wiki/Metaheuristic) is an optimization
-algorithm (which can also be used for searching). This is the base class of all
-metaheuristic algorithms, and hence of all metaheuristic runs.
+A [Metaheuristic](http://en.wikipedia.org/wiki/Metaheuristic) is an optimization algorithm (which 
+can also be used for searching). This is the base class of all metaheuristic algorithms, and hence 
+of all metaheuristic runs.
 */
 var Metaheuristic = exports.Metaheuristic = declare({
 	/** Each metaheuristic has its own `logger`, to track its process.
 	*/
 	logger: new Logger('inveniemus', Logger.ROOT, 'INFO'),
 	
-	/** The constructor takes a `params` object with the metaheuristic 
-	parameters. Although the different algorithms have particular parameters of
-	their own, some apply to all.
+	/** The constructor takes a `params` object with the metaheuristic parameters. Although the 
+	different algorithms have particular parameters of their own, some apply to all.
 	*/
 	constructor: function Metaheuristic(params) {
 		initialize(this, params)
-		/** First, the definition of the `problem` this metaheuristic is meant
-		to solve.
+		/** First, the definition of the `problem` this metaheuristic is meant to solve.
 		*/
 			.object('problem', { defaultValue: null })
-		/** The optimization's `size` is the amount of candidate solutions the 
-		metaheuristic treats at each step. By default it is 100.
+		/** The optimization's `size` is the amount of candidate solutions the metaheuristic treats 
+		at each step. By default it is 100.
 		*/
 			.number('size', { defaultValue: 100, coerce: true })
-		/** The `state` is the array that holds the elements this metaheuristic 
-		handles at each step.
+		/** The `state` is the array that holds the elements this metaheuristic handles at each step.
 		*/
 			.array('state', { defaultValue: [] })
-		/** All optimizations perform a certain number of iterations or `steps`
-		(100 by default).
+		/** All optimizations perform a certain number of iterations or `steps` (100 by default).
 		*/
 			.number('steps', { defaultValue: 100, coerce: true })
-		/** The property `step` indicates the current iteration of this 
-		optimization, or a negative number if it has not started yet.
+		/** The property `step` indicates the current iteration of this optimization, or a negative 
+		number if it has not started yet.
 		*/
 			.integer('step', { defaultValue: -1, coerce: true })
-		/** Most metaheuristic are stochastic processes, hence the need for a
-		pseudo-random number generator. By default `base.Randomness.DEFAULT` is 
-		used, yet it is strongly advised to provide one.
+		/** Most metaheuristic are stochastic processes, hence the need for a pseudo-random number 
+		generator. By default `base.Randomness.DEFAULT` is used, yet it is strongly advised to 
+		provide one.
 		*/
 			.object('random', { defaultValue: Randomness.DEFAULT })
 		/** Metaheuristic's runs usually gather `statistics` about the process.
 		*/
 			.object('statistics', { defaultValue: new Statistics() })
 			.object('logger', { ignore: true });
-		/** For better customization the `events` handler emits the following
-		events: 
+		/** For better customization the `events` handler emits the following events: 
 		
 		+ `initiated` when the state has been initialized.
 		+ `updated` when the state has been expanded, evaluated and sieved.
@@ -446,11 +440,10 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		});
 	},
 	
-	// ## Basic workflow #######################################################
+	// ## Basic workflow ###########################################################################
 	
-	/**	`initiate(size=this.size)` builds and initiates this metaheuristic state 
-	with size new cursors. The elements are build using the `initial()` 
-	function.
+	/**	`initiate(size=this.size)` builds and initiates this metaheuristic state with size new 
+	cursors. The elements are build using the `initial()` function.
 	*/
 	initiate: function initiate(size) {
 		size = isNaN(size) ? this.size : +size >> 0;
@@ -462,11 +455,10 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		this.logger && this.logger.debug('State has been initiated. Nos coepimus.');
 	},
 	
-	/** `update()` updates this metaheuristic's state. It assumes the state has 
-	been initialized. The process may be asynchronous, so it returns a future.
-	The default implementation first expands the state by calling `expand()`, 
-	then evaluates the added elements by calling `evaluate()`, and finally 
-	removes the worst elements with `sieve()`.
+	/** `update()` updates this metaheuristic's state. It assumes the state has been initialized. 
+	The process may be asynchronous, so it returns a future. The default implementation first 
+	expands the state by calling `expand()`, then evaluates the added elements by calling 
+	`evaluate()`, and finally removes the worst elements with `sieve()`.
 	*/
 	update: function update() {
 		var mh = this;
@@ -478,8 +470,8 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		});
 	},
 	
-	/** `expand(expansion=[])` adds to this metaheuristic's state the given 
-	expansion. If none is given, `expansion()` is called to get new expansion.
+	/** `expand(expansion=[])` adds to this metaheuristic's state the given expansion. If none is 
+	given, `expansion()` is called to get new expansion.
 	*/
 	expand: function expand(expansion) {
 		expansion = expansion || this.expansion();
@@ -502,8 +494,8 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		this.logger && this.logger.debug('State has been expanded. Nos exploramus.');
 	},
 	
-	/** `expansion(size)` returns an array of new elements to add to the current 
-	state. The default implementation generates new random elements.		
+	/** `expansion(size)` returns an array of new elements to add to the current state. The default 
+	implementation generates new random elements.		
 	*/
 	expansion: function expansion(size) {
 		var expansionRate = isNaN(this.expansionRate) ? 0.5 : +this.expansionRate;
@@ -515,10 +507,9 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		return elems;
 	},
 	
-	/** `evaluate(elements)` evaluates all the elements in `state` with no 
-	evaluation, using its evaluation method. After that sorts the state with 
-	the `compare` method of the problem. Returns a future, regardless of the 
-	evaluation being asynchronous or not.
+	/** `evaluate(elements)` evaluates all the elements in `state` with no evaluation, using its 
+	evaluation method. After that sorts the state with the `compare` method of the problem. Returns 
+	a future, regardless of the evaluation being asynchronous or not.
 	*/
 	evaluate: function evaluate(elements) {
 		var mh = this,
@@ -541,9 +532,8 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		});
 	},
 	
-	/** `sieve(size=this.size)` cuts the current state down to the given size 
-	(or this.size by default). This is usually used after expanding and 
-	evaluating the state.
+	/** `sieve(size=this.size)` cuts the current state down to the given size (or this.size by 
+	default). This is usually used after expanding and evaluating the state.
 	*/
 	sieve: function sieve(size) {
 		size = isNaN(size) ? this.size : size | 0;
@@ -554,8 +544,8 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		this.logger && this.logger.debug('State has been sieved. Viam selectus est.');
 	},
 	
-	/** `finished()` termination criteria for this metaheuristic. By default it 
-	checks if the number of passed iterations is not greater than `steps`.
+	/** `finished()` termination criteria for this metaheuristic. By default it checks if the number 
+	of passed iterations is not greater than `steps`.
 	*/
 	finished: function finished() {
 		if (this.step >= this.steps || this.problem.suffices(this.state)) {
@@ -576,9 +566,8 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		return stat;
 	},
 	
-	/** `advance()` performs one step of the optimization. If the process has 
-	not been initialized, it does so. Returns a future if the run has not 
-	finished or null otherwise.
+	/** `advance()` performs one step of the optimization. If the process has not been initialized, 
+	it does so. Returns a future if the run has not finished or null otherwise.
 	*/
 	advance: function advance() {
 		var mh = this, 
@@ -603,8 +592,8 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		});
 	},
 	
-	/** `run()` returns a future that is resolved when the whole search process 
-	is finished. The value is the best cursor after the last step.
+	/** `run()` returns a future that is resolved when the whole search process is finished. The 
+	value is the best cursor after the last step.
 	*/
 	run: function run() {
 		var mh = this, 
@@ -618,15 +607,38 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		});
 	},
 
-	/** `reset()` reset the process to start over again. Basically cleans the 
-	statistics and sets the current `step` to -1.
+	/** `reset()` reset the process to start over again. Basically cleans the statistics and sets 
+	the current `step` to -1.
 	*/
 	reset: function reset() {
 		this.step = -1;
 		this.statistics.reset();
 	},
 	
-	// ## Utilities ############################################################
+	// ## State control ############################################################################
+	
+	/** The `nub` method eliminates repeated elements inside the state. Use responsibly, since this 
+	is an expensive operation. Returns the size of the resulting state.
+	*/
+	nub: function nub(precision) {
+		precision = isNaN(precision) ? 1e-15 : +precision;
+		this.state = iterable(this.state).nub(function (e1, e2) {
+			var values1 = e1.values,
+				values2 = e2.values,
+				len = values1.length;
+			if (len !== e2.values.length) {
+				return false;
+			} else for (var i = 0; i < len; ++i) {
+				if (Math.abs(values1[i] - values2[i]) > precision) {
+					return false;
+				}
+			}
+			return true;
+		}).toArray();
+		return this.state.length;
+	},
+	
+	// ## Utilities ################################################################################
 	
 	/** The default string representation of a Metaheuristic shows its 
 	constructor's name and its parameters.
@@ -929,7 +941,7 @@ var BeamSearch = metaheuristics.BeamSearch = declare(Metaheuristic, {
 		});
 		return allSuccessors;
 	},
-		
+	
 	toString: function toString() {
 		return (this.constructor.name || 'BeamSearch') +'('+ JSON.stringify(this) +')';
 	}
@@ -1137,47 +1149,6 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 }); // declare ParticleSwarm.
 
 
-/** # Sum optimization problem
-
-A class of very simple problems that deal with optimizing the sum of the elements' values. Probably 
-the simplest optimization problem that can be defined, included here for testing purposes.
-*/
-problems.SumOptimization = declare(Problem, {
-	title: "Sum optimization",
-	description: "Very simple problem based on optimizing the elements' values sum.",
-
-	/** This very simple problem is based on optimizing the elements' values sum. The `target` 
-	number determines which way the optimization goes.
-	*/
-	constructor: function SumOptimization(params) {
-		Problem.call(this, params);
-		initialize(this, params)
-			.number('target', { coerce: true, defaultValue: -Infinity });
-	},
-	
-	representation: declare(Element, {
-		evaluate: function evaluate() {
-			return this.evaluation = iterable(this.values).sum();
-		}
-	}),
-	
-	/** A state `suffices(elements)` when the best element's values add up to the target value.
-	*/
-	suffices: function suffices(elements) {
-		return iterable(elements[0].values).sum() === this.target;
-	},
-	
-	/** The comparison between elements depends on this problem's target. For a `Infinity` 
-	maximization is applied, for `-Infinity` minimization, and for every other number approximation.
-	*/
-	compare: function compare(element1, element2) {
-		return this.target === -Infinity ? this.minimization(element1, element2)
-			: this.target === Infinity ? this.maximization(element1, element2)
-			: this.approximation(this.target, element1, element2);
-	}
-}); // declare SumOptimization.
-
-
 /** # _"Hello World"_ problem
 
 As it sounds, `HelloWorld` is a simple problem class, probably only useful for testing purposes.
@@ -1379,6 +1350,255 @@ problems.KnapsackProblem = declare(Problem, {
 	*/
 	compare: Problem.prototype.maximization
 }); // declare KnapsackProblem
+
+/** # Test beds
+
+Problem builder for test beds of algorithms in this library.
+*/
+
+/** The function `testbed` is a shortcut used to define the test problems.
+*/
+var testbed = problems.testbed = function testbed(spec) {
+	return declare(Problem, {
+		title: "",
+		description: "",
+		
+		constructor: function (params) {
+			Problem.call(this, params);
+			/** The representation of all testbeds must override the evaluation of the candidate 
+			solutions. The `length` is 2 by default.
+			*/
+			var problem = this;
+			this.representation = declare(Element, {
+				length: isNaN(spec.length) ? 2 : +spec.length,
+				
+				minimumValue: isNaN(spec.minimumValue) ? -(1 << 30) : +spec.minimumValue,
+				maximumValue: isNaN(spec.maximumValue) ? +(1 << 30) : +spec.maximumValue,
+				
+				evaluate: function evaluate() {
+					return this.evaluation = spec.evaluation(this.values);
+				}
+			});
+		},
+		
+		/** The optimization type is defined by `spec.target`. Minimization is assumed by default.
+		*/
+		compare: !spec.hasOwnProperty('target') || spec.target === -Infinity ? Problem.prototype.minimization
+			: spec.target === Infinity ? Problem.prototype.maximization 
+			: function compare(e1, e2) {
+				return this.aproximation(spec.target, e1, e2);
+			},
+		
+		/** If an optimum value is provided (`spec.optimumValue`) it is added to the termination
+		criteria.
+		*/
+		suffices: spec.hasOwnProperty('optimumValue') ? function suffices(elements) {
+			var best = elements[0];
+			return Math.abs(best.evaluation - spec.optimumValue) < best.resolution;
+		} : Problem.prototype.suffices,
+	}); // declare.
+}; // problems.testbed()
+
+/** Many testbed problems taken from:
+
++ [Test functions for optimization (Wikipedia)](http://en.wikipedia.org/wiki/Test_functions_for_optimization).
++ [Optimization Test Problems (SFU.ca)](http://www.sfu.ca/~ssurjano/optimization.html).
+*/
+problems.testbeds = {
+	/** The [Ackley's function](http://www.sfu.ca/~ssurjano/ackley.html) (in 2 dimensions) has an
+	global optimum surrounded by an outer region that is rather flat, yet with many local optima. 
+	*/
+	Ackley: function Ackley(length, a, b, c) {
+		a = isNaN(a) ? 20 : +a;
+		b = isNaN(b) ? 0.2 : +b;
+		c = isNaN(c) ? 2 * Math.PI : +c;
+		return testbed({
+			length: length,
+			target: -Infinity,
+			minimumValue: -32.768, 
+			maximumValue: +32.768,			
+			optimumValue: 0,			
+			evaluation: function evaluation(vs) {
+				var term1 = 0, term2 = 0, d = vs.length, v;
+				for (var i = 0; i < d; ++i) {
+					v = vs[i];
+					term1 += v * v;
+					term2 += Math.cos(c * v);
+				}
+				return -a * Math.exp(-b * Math.sqrt(term1 / d)) - Math.exp(term2 / d) + a + Math.exp(1);
+			}
+		});
+	},
+
+	/** The cross-in-tray is a function with many local optima, both minima and maxima. If minimized
+	it has 4 global minima.
+	*/
+	crossInTray: function crossInTray(target) {
+		target = isNaN(target) ? -Infinity : +target;
+		return testbed({
+			length: 2,
+			target: target,
+			minimumValue: -10,
+			maximumValue: +10,
+			evaluation: function evaluation(vs) {
+				var x = vs[0], y = vs[1];
+				return -0.0001 * Math.pow(
+					Math.abs(Math.sin(x) * Math.sin(y) * Math.exp(Math.abs(100 - Math.sqrt(x*x + y*y) / Math.PI))) + 1,
+					0.1);
+			}			
+		});
+	},
+	
+	/** The [Griewank function](http://www.sfu.ca/~ssurjano/griewank.html) has many local optima
+	regularly distributed.
+	*/
+	Griewank: function Griewank(length) {
+		return testbed({
+			length: length,
+			minimumValue: -600,
+			maximumValue: +600,
+			optimumValue: 0,
+			evaluation: function evaluation(vs) {
+				var sum = 0, prod = 1, len = vs.length, v;
+				for (var i = 0; i < len; ++i) {
+					v = vs[i];
+					sum += v * v / 4000;
+					prod *= Math.cos(v / Math.sqrt(i+1));
+				}
+				return sum - prod + 1;
+			}			
+		});
+	},
+	
+	/** The [Levy function](http://www.sfu.ca/~ssurjano/levy.html) is multimodal, with some 
+	difficult local minima regions.
+	*/
+	Levy: function Levy(length) {
+		return testbed({
+			length: length,
+			target: -Infinity,
+			minimumValue: -10,
+			maximumValue: +10,
+			optimumValue: 0,
+			evaluation: function evaluation(vs) {
+				var sum = 0, d = vs.length, 
+					w1 = 1 + (vs[0] - 1) / 4, wd = 1 + (vs[d-1] - 1) / 4, w;
+				for (var i = 1; i < d - 1; ++i) {
+					w = 1 + (vs[i] - 1) / 4;
+					sum += Math.pow(w - 1, 2) * (1 + 10 * Math.pow(Math.sin(Math.PI * w + 1), 2));
+				}
+				return Math.pow(Math.sin(Math.PI * w1), 2) + sum
+					+ Math.pow(wd - 1, 2) * (1 + Math.pow(Math.sin(2 * Math.PI * wd), 2));
+			}
+		});
+	},
+	
+	/** The [Rastrigin function](http://www.sfu.ca/~ssurjano/rastr.html) is highly multimodal yet
+	local minima are regularly distributed.
+	*/
+	Rastrigin: function Rastrigin(length) {
+		return testbed({
+			length: length,
+			target: -Infinity,
+			minimumValue: -5.12,
+			maximumValue: +5.12,
+			optimumValue: 0,
+			evaluation: function evaluation(vs) {
+				var result = 0, d = vs.length, v;
+				for (var i = 0; i < d; ++i) {
+					v = vs[i];
+					result += v * v - 10 * Math.cos(2 * Math.PI * v);
+				}
+				return 10 * d + result;
+			}
+		});
+	},
+	
+	/*** The [Rosenbrock function](http://en.wikipedia.org/wiki/Rosenbrock_function) is a function 
+	used as a performance test problem for optimization algorithms introduced by Howard H. 
+	Rosenbrock in 1960. The global minimum is inside a long, narrow, parabolic shaped flat valley. 
+	To find the valley is trivial, yet to converge to the global minimum (zero) is difficult.
+	*/
+	Rosenbrock: function Rosenbrock(length, a, b) {
+		a = isNaN(a) ? 1 : +a;
+		b = isNaN(b) ? 100 : +b;
+		return testbed({
+			length: length,
+			target: -Infinity,
+			optimumValue: 0,
+			evaluation: function evaluation(vs) {
+				var result = 0;
+				for (var i = 1; i < vs.length; ++i) {
+					result += b * Math.pow(vs[i-1] * vs[i-1] - vs[i], 2) + Math.pow(vs[i-1] - a, 2);
+				}
+				return result;
+			}
+		});
+	},
+	
+	/** The [Schwefel function](http://www.sfu.ca/~ssurjano/schwef.html) is a complex test with many
+	local optima.
+	*/
+	Schwefel: function Schwefel(length) {
+		return testbed({
+			length: length,
+			target: -Infinity,
+			minimumValue: -500,
+			maximumValue: +500,
+			optimumValue: 0,
+			evaluation: function evaluation(vs) {
+				var result = 0, d = vs.length, v;
+				for (var i = 0; i < d; ++i) {
+					v = vs[i];
+					result += v * Math.sin(Math.sqrt(Math.abs(v)));
+				}
+				return 418.9829 * d - result;
+			}
+		});
+	},
+	
+	/** The [sphere function](http://www.sfu.ca/~ssurjano/spheref.html) minimizes the sum of the
+	squares for every value in the input vector. It has as many local minima as dimensions the
+	search space has, but still only one global minimum (zero). 
+	*/
+	sphere: function sphere(length) {
+		return testbed({
+			length: length,
+			target: -Infinity,
+			optimumValue: 0,
+			evaluation: function evaluation(vs) {
+				var result = 0;
+				for (var i = 0; i < vs.length; ++i) {
+					result += vs[i] * vs[i];
+				}
+				return result;
+			}
+		});
+	},
+	
+	/** A very simple class of problems that deal with optimizing the sum of the elements' values. 
+	Probably the simplest optimization problem that can be defined. It has no local optima, and it
+	draws a simple and gentle slope towards to global optimum.
+	*/
+	sumOptimization: function sumOptimization(length, target) {
+		length = isNaN(length) ? 2 : Math.max(1, length|0);
+		target = isNaN(target) ? -Infinity : +target;
+		return testbed({
+			length: length,
+			target: target,
+			minimumValue:  0,
+			maximumValue: +1,
+			optimumValue: target === -Infinity ? 0 : target === +Infinity ? length : target,
+			evaluation: function evaluation(vs) {
+				var result = 0, len = vs.length;
+				for (var i = 0; i < len; ++i) {
+					result += vs[i];
+				}
+				return result;
+			}
+		});
+	}
+}; // problems.testbeds
 
 // See __prologue__.js
 	return exports;
