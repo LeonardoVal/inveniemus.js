@@ -13,10 +13,10 @@ module.exports = function(grunt) {
 		'src/metaheuristics/SimulatedAnnealing.js',
 		'src/metaheuristics/ParticleSwarm.js',
 	// Problems.
-		'src/problems/SumOptimization.js',
 		'src/problems/HelloWorld.js',
 		'src/problems/NQueensPuzzle.js',
 		'src/problems/KnapsackProblem.js',
+		'src/problems/testbeds.js',
 	// Fin.
 		'src/__epilogue__.js'];
 

@@ -32,7 +32,7 @@
 			if (params) {
 				code = 'function () {\n'+
 					'\treturn new inveniemus.'+ method +'({\n'+
-					'\t\tproblem: new inveniemus.problems.SumOptimization(),\n'+
+					'\t\tproblem: new (inveniemus.problems.testbeds.sumOptimization(10))(),\n'+
 					Object.keys(params).map(function (name) {
 						return '\t\t'+ name +': '+ params[name] +',\n';
 					}).join('') +
