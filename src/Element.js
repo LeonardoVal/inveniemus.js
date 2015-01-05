@@ -75,11 +75,10 @@ var Element = exports.Element = declare({
 
 	/** Whether this element is a actual solution or not is decided by `suffices()`. It holds the 
 	implementation of the goal test in search problems. More complex criteria may be implemented in 
-	`Problem.suffices`. By default it checks if the values add up to zero, again only useful for
-	testing purposes.
+	`Problem.suffices`. By default it returns false.
 	*/
 	suffices: function suffices() {
-		return iterable(this.values).sum() === 0;
+		return false;
 	},
 	
 	/** Usually a numbers array is just too abstract to handle, and	another representation of the 
@@ -103,7 +102,7 @@ var Element = exports.Element = declare({
 	/** The element's `resolution` is the minimal difference between elements' evaluations, below 
 	which two evaluations are considered equal.
 	*/
-	resolution: 1 / Math.pow(2, 52),
+	resolution: 1e-15,
 	
 	/** The [Hamming distance](http://en.wikipedia.org/wiki/Hamming_distance) between two arrays is 
 	the number of positions at which corresponding components are different. Arrays are assumed to 
