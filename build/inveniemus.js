@@ -1399,10 +1399,11 @@ var testbed = problems.testbed = function testbed(spec) {
 	}); // declare.
 }; // problems.testbed()
 
-/** Many testbed problems taken from:
-
-+ [Test functions for optimization (Wikipedia)](http://en.wikipedia.org/wiki/Test_functions_for_optimization).
-+ [Optimization Test Problems (SFU.ca)](http://www.sfu.ca/~ssurjano/optimization.html).
+/** Testbed problems taken from the web (e.g. 
+[1](http://en.wikipedia.org/wiki/Test_functions_for_optimization),
+[2](http://www.sfu.ca/~ssurjano/optimization.html), 
+[3](http://www-optima.amp.i.kyoto-u.ac.jp/member/student/hedar/Hedar_files/TestGO.htm)
+).
 */
 problems.testbeds = {
 	/** The [Ackley's function](http://www.sfu.ca/~ssurjano/ackley.html) (in 2 dimensions) has an
@@ -1489,6 +1490,53 @@ problems.testbeds = {
 				}
 				return Math.pow(Math.sin(Math.PI * w1), 2) + sum
 					+ Math.pow(wd - 1, 2) * (1 + Math.pow(Math.sin(2 * Math.PI * wd), 2));
+			}
+		});
+	},
+	
+	/** The [Michalewicz function](http://www.sfu.ca/~ssurjano/michal.html) is a multimodal function
+	with a number local minima equal to the factorial of the number of dimensions; and it has steep 
+	valleys and ridges.
+	*/
+	Michalewicz: function Michalewicz(length, m) {
+		m = isNaN(m) ? 10 : +m;
+		return testbed({
+			length: length,
+			target: -Infinity,
+			minimumValue: 0,
+			maximumValue: Math.PI,
+			evaluation: function evaluation(vs) {
+				var sum = 0, d = vs.length, v;
+				for (var i = 0; i < d; ++i) {
+					v = vs[i];
+					sum += Math.sin(v) * Math.pow(Math.sin((i+1) * v * v / Math.PI), 2 * m);
+				}
+				return -sum;
+			}
+		});
+	},
+	
+	/** [Perm(0,d,beta) function](http://www-optima.amp.i.kyoto-u.ac.jp/member/student/hedar/Hedar_files/TestGO_files/Page2545.htm).
+	*/
+	perm0: function perm0(d, beta) {
+		d = isNaN(d) ? 2 : Math.min(1, d|0);
+		beta = isNaN(beta) ? 0 : +beta;
+		return testbed({
+			length: d,
+			target: -Infinity,
+			minimumValue: -d,
+			maximumValue: +d,
+			optimumValue: 0,
+			evaluation: function evaluation(vs) {
+				var sum1 = 0, sum2, v;
+				for (var i = 0; i < d; ++i) {
+					sum2 = 0;
+					for (var j = 0; j < d; ++j) {
+						sum2 += (j+1 + beta) * (Math.pow(vs[j], i+1) - Math.pow(1 / (j+1), i+1));
+					}
+					sum1 += sum2 * sum2;
+				}
+				return sum1;
 			}
 		});
 	},
