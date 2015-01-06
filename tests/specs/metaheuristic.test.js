@@ -9,7 +9,6 @@
 		['HelloWorld', inveniemus.problems.HelloWorld],
 		['sumMinimization', inveniemus.problems.testbeds.sumOptimization(10, -Infinity)],
 		['sumMaximization', inveniemus.problems.testbeds.sumOptimization(10, +Infinity)],
-		['Ackley', inveniemus.problems.testbeds.Ackley()],
 		['Rosenbrock', inveniemus.problems.testbeds.Rosenbrock()]
 	])
 	.forEachApply(function (metaheuristic, testbed) {
