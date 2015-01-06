@@ -19,8 +19,8 @@ var testbed = problems.testbed = function testbed(spec) {
 			this.representation = declare(Element, {
 				length: isNaN(spec.length) ? 2 : +spec.length,
 				
-				minimumValue: isNaN(spec.minimumValue) ? -(1 << 30) : +spec.minimumValue,
-				maximumValue: isNaN(spec.maximumValue) ? +(1 << 30) : +spec.maximumValue,
+				minimumValue: isNaN(spec.minimumValue) ? -1e6 : +spec.minimumValue,
+				maximumValue: isNaN(spec.maximumValue) ? +1e6 : +spec.maximumValue,
 				
 				evaluate: function evaluate() {
 					return this.evaluation = spec.evaluation(this.values);
