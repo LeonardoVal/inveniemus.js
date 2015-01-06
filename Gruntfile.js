@@ -12,6 +12,7 @@ module.exports = function(grunt) {
 		'src/metaheuristics/BeamSearch.js',
 		'src/metaheuristics/SimulatedAnnealing.js',
 		'src/metaheuristics/ParticleSwarm.js',
+		'src/metaheuristics/DifferentialEvolution.js',
 	// Problems.
 		'src/problems/HelloWorld.js',
 		'src/problems/NQueensPuzzle.js',

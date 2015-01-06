@@ -220,6 +220,18 @@ var Element = exports.Element = declare({
 		return copy;
 	},
 	
+	/** Coerces all values in the given array to be within this element's valid range; i.e. between 
+	`minimumValue` and `maximumValue`. If no array is given, this element's `values` are used 
+	instead.
+	*/
+	clamp: function (values) {
+		values || (values = this.values);
+		for (var i = 0; i < values.length; ++i) {
+			values[i] = Math.min(this.maximumValue, Math.max(this.minimumValue, values[i]));
+		}
+		return values;
+	},
+	
 	// ## Mappings #################################################################################
 	
 	/** An array mapping builds an array of equal length of this element's `values`. Each value is 
@@ -1149,6 +1161,64 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 }); // declare ParticleSwarm.
 
 
+/** # Differential evolution
+
+[Differential evolution](http://en.wikipedia.org/wiki/Differential_evolution) .
+*/
+var DifferentialEvolution = metaheuristics.DifferentialEvolution = declare(Metaheuristic, {
+	/** The constructor takes the following parameters:
+	*/
+	constructor: function DifferentialEvolution(params) {
+		Metaheuristic.call(this, params);
+		initialize(this, params)
+			/** + `differentialWeight=1` is the coefficient (usually named `F`) in the crossover 
+			formula.
+			*/
+			.number('differentialWeight', { coerce: true, defaultValue: 1, minimum: 0, maximum: 2 })
+			/** + `crossoverProbability=30%` is the probability of getting a value from a crossover. 
+			*/
+			.number('crossoverProbability', { coerce: true, defaultValue: 0.3, minimum: 0, maximum: 1 })
+			/** Also, the state's size is constrained to a minimum of 4, because of how the 
+			crossover works.
+			*/
+			.integer('size', { coerce: true, defaultValue: 100, minimum: 4 });
+	},
+	
+	/** The expansion is quite simple. For each element `x` in the state a new one is generated. 
+	Three other elements are randomly selected from the state, named `a`, `b` and `c`. With a 
+	probability of `crossoverProbability`, the ith value of the new element results from 
+	`a[i] + F(b[i] - c[i])`, where `F` is the `differentialWeight`. The other values are copied from 
+	`x`, although it is assured that at least one of the new element's is calculated as shown 
+	before. 
+	*/
+	expansion: function expansion() {
+		var mh = this;
+		return this.state.map(function (element, elementIndex) {
+			var crossover = mh.random.choices(3, iterable(mh.state).filter(function (e, i) {
+					return i !== elementIndex;
+				})),
+				a = crossover[0].values,
+				b = crossover[1].values,
+				c = crossover[2].values,
+				randomIndex = mh.random.randomInt(element.length),
+				newValues = [];
+			for (var i = 0; i < element.length; ++i) {
+				newValues.push(Math.min(element.maximumValue, Math.max(element.minimumValue,
+					i === randomIndex || mh.random.randomBool(mh.crossoverProbability)
+						? a[i] + mh.differentialWeight * (b[i] - c[i])
+						: element.values[i]
+				)));
+			}
+			return new element.constructor(newValues);
+		});
+	},
+	
+	toString: function toString() {
+		return (this.constructor.name || 'DifferentialEvolution') +'('+ JSON.stringify(this) +')';
+	}
+}); // declare BeamSearch.
+
+
 /** # _"Hello World"_ problem
 
 As it sounds, `HelloWorld` is a simple problem class, probably only useful for testing purposes.
@@ -1372,8 +1442,8 @@ var testbed = problems.testbed = function testbed(spec) {
 			this.representation = declare(Element, {
 				length: isNaN(spec.length) ? 2 : +spec.length,
 				
-				minimumValue: isNaN(spec.minimumValue) ? -(1 << 30) : +spec.minimumValue,
-				maximumValue: isNaN(spec.maximumValue) ? +(1 << 30) : +spec.maximumValue,
+				minimumValue: isNaN(spec.minimumValue) ? -1e6 : +spec.minimumValue,
+				maximumValue: isNaN(spec.maximumValue) ? +1e6 : +spec.maximumValue,
 				
 				evaluate: function evaluate() {
 					return this.evaluation = spec.evaluation(this.values);

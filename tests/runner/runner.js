@@ -24,6 +24,7 @@
 			'metaheuristics.BeamSearch': { size: 20, steps: 50 },
 			'metaheuristics.SimulatedAnnealing': { delta: 0.1, size: 20, maximumTemperature: 0.1 },
 			'metaheuristics.ParticleSwarm': { size: 20, steps: 30 },
+			'metaheuristics.DifferentialEvolution': { size: 50, steps: 30 },
 		};
 		var exampleSelect = $('select');
 		exampleSelect.change(function () {
