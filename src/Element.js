@@ -189,6 +189,18 @@ var Element = exports.Element = declare({
 		return copy;
 	},
 	
+	/** Coerces all values in the given array to be within this element's valid range; i.e. between 
+	`minimumValue` and `maximumValue`. If no array is given, this element's `values` are used 
+	instead.
+	*/
+	clamp: function (values) {
+		values || (values = this.values);
+		for (var i = 0; i < values.length; ++i) {
+			values[i] = Math.min(this.maximumValue, Math.max(this.minimumValue, values[i]));
+		}
+		return values;
+	},
+	
 	// ## Mappings #################################################################################
 	
 	/** An array mapping builds an array of equal length of this element's `values`. Each value is 
