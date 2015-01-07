@@ -1,6 +1,9 @@
 ﻿/** # Differential evolution
 
-[Differential evolution](http://en.wikipedia.org/wiki/Differential_evolution) .
+[Differential evolution](http://en.wikipedia.org/wiki/Differential_evolution) is an evolutionary
+metaheuristic based on a particular form of crossover. This operator acts on individual values of
+each state, replacing the value with a combination of the corresponding value in three other 
+randomly chosen elements.
 */
 var DifferentialEvolution = metaheuristics.DifferentialEvolution = declare(Metaheuristic, {
 	/** The constructor takes the following parameters:
@@ -53,4 +56,4 @@ var DifferentialEvolution = metaheuristics.DifferentialEvolution = declare(Metah
 	toString: function toString() {
 		return (this.constructor.name || 'DifferentialEvolution') +'('+ JSON.stringify(this) +')';
 	}
-}); // declare BeamSearch.
+}); // declare DifferentialEvolution.
