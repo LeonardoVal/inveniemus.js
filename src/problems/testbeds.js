@@ -33,7 +33,7 @@ var testbed = problems.testbed = function testbed(spec) {
 		compare: !spec.hasOwnProperty('target') || spec.target === -Infinity ? Problem.prototype.minimization
 			: spec.target === Infinity ? Problem.prototype.maximization 
 			: function compare(e1, e2) {
-				return this.aproximation(spec.target, e1, e2);
+				return this.approximation(spec.target, e1, e2);
 			},
 		
 		/** If an optimum value is provided (`spec.optimumValue`) it is added to the termination
