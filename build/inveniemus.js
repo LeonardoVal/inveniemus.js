@@ -865,6 +865,23 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 			];
 		},
 		
+		/** + `twopointCrossover(parents)` given two parents returns an array of two new elements:
+		the first one with two parts of the first parent and one part of the second parent, and the 
+		second one assembled viceversa. The two cutpoints are chosen randomly.
+		*/
+		twopointCrossover: function twopointCrossover(parents) {
+			raiseIf(!Array.isArray(parents) || parents.length < 2, "A two parent array is required.");
+			var cut1 = this.random.randomInt(this.length - 1) + 1,
+				cut2 = this.random.randomInt(this.length - 1) + 1,
+				values0 = parents[0].values,
+				values1 = parents[1].values,
+				elementConstructor = this.problem.representation;
+			return [ 
+				new elementConstructor(values0.slice(0, cut1).concat(values1.slice(cut1, cut2)).concat(values0.slice(cut2))),
+				new elementConstructor(values1.slice(0, cut1).concat(values0.slice(cut1, cut2)).concat(values1.slice(cut2)))
+			];
+		},
+		
 		/** + `uniformCrossover(parents)` creates as many children as the given parents, with each
 		value taken randomly from any of the parents.
 		*/
@@ -926,6 +943,21 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 					element.values[i] + random.random() - random.random()
 				))
 			);
+		},
+		
+		/** + `recombination(element)` swaps two values of the element at random.
+		*/
+		recombination: function recombination(element) {
+			var values = element.values.slice(),
+				i1 = this.random.randomInt(element.length),
+				v1 = values[i1],
+				i2 = this.random.randomInt(element.length), v2;
+			if (i1 === i2) {
+				i2 = (i2 + 1) % element.length;
+			}
+			values[i1] = values[i2];
+			values[i2] = v1;
+			return new element.constructor(values);
 		}
 	}, // GeneticAlgorithm.mutations
 	
