@@ -61,11 +61,15 @@ var Element = exports.Element = declare({
 	*/
 	length: 10,
 
-	/** All numbers in an element's values range between `minimumValue` (0 by default) and 
-	`maximumValue` (1 by default).
+	/** All numbers in an element's values have a valid range between `minimumValue` (0 by default) 
+	and `maximumValue` (1 by default).
 	*/
-	minimumValue: 0,
-	maximumValue: 1,
+	minimumValue: function minimumValue(position) {
+		return 0;
+	},
+	maximumValue: function maximumValue(position) {
+		return 1;
+	},
 	
 	/** The pseudorandom number generator in the class property `random` is required by some of the
 	element's operations. Its equal to `base.Randomness.DEFAULT` by default.
@@ -75,8 +79,8 @@ var Element = exports.Element = declare({
 	/** One of this operations is `randomValue()`, which returns a random value between
 	`this.minimumValue` and `this.maximumValue`.
 	*/
-	randomValue: function randomValue() {
-		return this.random.random(this.minimumValue, this.maximumValue);
+	randomValue: function randomValue(position) {
+		return this.random.random(this.minimumValue(position), this.maximumValue(position));
 	},
 	
 	/** This method is used in `randomValues()` to calculate an array with random numbers, suitable
@@ -84,13 +88,18 @@ var Element = exports.Element = declare({
 	elements they handle.
 	*/
 	randomValues: function randomValues() {
-		var values = new Array(this.length),
-			offset = this.minimumValue,
-			factor = this.maximumValue - this.minimumValue;
+		var values = new Array(this.length);
 		for (var i = 0; i < this.length; i++) {
-			values[i] = this.random.random() * factor + offset;
+			values[i] = this.randomValue(i);
 		}
 		return values;
+	},
+	
+	/** A value in a position of the element is clamped when it is coerced between the element's 
+	valid value range for that position.
+	*/
+	clampValue: function (value, position) {
+		return Math.min(this.maximumValue(position), Math.max(this.minimumValue(position), value));
 	},
 	
 	// ## Basic operations #########################################################################
@@ -190,17 +199,19 @@ var Element = exports.Element = declare({
 	dimensional ball around this element's values with the given `radius` (1% by default). 
 	*/
 	neighbourhood: function neighbourhood(radius) {
-		radius = isNaN(radius) ? (this.maximumValue - this.minimumValue) / 100 : +radius;
 		var elems = [], 
 			values = this.values,
-			i, value;
+			i, d, value, minValue, maxValue;
 		for (i = 0; i < values.length; i++) {
-			value = values[i] + radius;
-			if (value <= this.maximumValue) {
+			minValue = this.minimumValue(i);
+			maxValue = this.maximumValue(i);
+			d = typeof(radius) === 'number' ? radius : Array.isArray(radius) ? radius[i] : (maxValue - minValue) / 100;
+			value = values[i] + d;
+			if (value <= maxValue) {
 				elems.push(this.modification(i, value));
 			}
-			value = values[i] - radius;
-			if (value >= this.minimumValue) {
+			value = values[i] - d;
+			if (value >= minValue) {
 				elems.push(this.modification(i, value));
 			}
 		}
@@ -214,7 +225,7 @@ var Element = exports.Element = declare({
 		var copy = new this.constructor(this.values), i, v;
 		for (i = 0; i < arguments.length; i += 2) {
 			v = +arguments[i + 1];
-			raiseIf(isNaN(v) || v < this.minimumValue || v > this.maximumValue, "Invalid value ", v, " for element.");
+			raiseIf(isNaN(v) || v < this.minimumValue(i) || v > this.maximumValue(i), "Invalid value ", v, " for element.");
 			copy.values[arguments[i] | 0] = +arguments[i + 1];
 		}
 		return copy;
@@ -227,7 +238,7 @@ var Element = exports.Element = declare({
 	clamp: function (values) {
 		values || (values = this.values);
 		for (var i = 0; i < values.length; ++i) {
-			values[i] = Math.min(this.maximumValue, Math.max(this.minimumValue, values[i]));
+			values[i] = this.clampValue(values[i], i);
 		}
 		return values;
 	},
@@ -819,7 +830,7 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 		being maximized.
 		*/
 		rouletteSelection: function rouletteSelection(count) { //FIXME
-			count = isNaN(count) ? 2 : +count;
+			count = isNaN(count) ? 2 : count |0;
 			var len = this.state.length,
 				evaluationStat = this.statistics.stat({key: 'evaluation', step: this.step}),
 				min = evaluationStat.minimum(),
@@ -840,7 +851,29 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 				selected = selected.concat(this.state.slice(0, count - selected.length));
 			}
 			return selected;
-		}
+		},
+		
+		/** + [`stochasticUniversalSamplingSelection(count)`](http://en.wikipedia.org/wiki/Stochastic_universal_sampling)
+		is a less biased version of the roulette selection method.
+		*/
+		stochasticUniversalSamplingSelection: function stochasticUniversalSamplingSelection(count) {
+			count = isNaN(count) ? 2 : count |0;
+			var state = this.state,
+				totalFitness = iterable(state).select('evaluation').sum(),
+				p = totalFitness / count;
+			return base.Iterable.iterate(function (x) { 
+				return x + p; 
+			}, this.random.randomInt(p), count).map(function (pointer) {
+				var sum = 0;
+				for (var i = 0; i < state.length; ++i) {
+					sum += state[i].evaluation;
+					if (sum >= pointer) {
+						return state[i];
+					}
+				}
+				return state[state.length - 1]; // Very improbable.
+			}).toArray();
+		},		
 	}, // GeneticAlgorithm.selections
 
 	/** ## Crossover methods #######################################################################
@@ -937,17 +970,15 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 		of its value, with a triangular distribution.
 		*/
 		singlepointBiasedMutation: function singlepointBiasedMutation(element) {
-			var random = this.random;
-			return element.modification(random.randomInt(element.length),
-				Math.max(element.minimumValue, Math.min(element.maximumValue, 
-					element.values[i] + random.random() - random.random()
-				))
-			);
+			var random = this.random, 
+				i = random.randomInt(element.length);
+			return element.modification(i, 
+				element.clampValue(element.values[i] + random.random() - random.random(), i));
 		},
 		
-		/** + `recombination(element)` swaps two values of the element at random.
+		/** + `recombinationMutation(element)` swaps two values of the element at random.
 		*/
-		recombination: function recombination(element) {
+		recombinationMutation: function recombinationMutation(element) {
 			var values = element.values.slice(),
 				i1 = this.random.randomInt(element.length),
 				v1 = values[i1],
@@ -1041,9 +1072,9 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 		var i = this.random.randomInt(element.values.length), 
 			v = element.values[i];
 		if (this.random.randomBool()) {
-			v = Math.min(element.maximumValue, v + radius);
+			v = Math.min(element.maximumValue(i), v + radius);
 		} else {
-			v = Math.max(element.minimumValue, v - radius);
+			v = Math.max(element.minimumValue(i), v - radius);
 		}
 		return element.modification(i, v);
 	},
@@ -1138,8 +1169,12 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 		Metaheuristic.prototype.initiate.call(this, size);
 		var mh = this;
 		this.state.forEach(function (element) {
-			var range = element.maximumValue - element.minimumValue
-			element.__velocity__ = mh.random.randoms(element.length, -range, range);
+			var range;
+			element.__velocity__ = new Array(element.length);
+			for (var i = 0; i < element.length; ++i) {
+				range = element.maximumValue(i) - element.minimumValue(i);
+				element.__velocity__[i] = mh.random.random(-range, range);
+			}
 			element.__localBest__ = element;
 		});
 	},
@@ -1166,7 +1201,7 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 		var mh = this,
 			nextVelocity = this.nextVelocity(element, globalBest),
 			nextValues = element.values.map(function (v, i) {
-				return Math.max(element.minimumValue, Math.min(element.maximumValue, v + nextVelocity[i]));
+				return element.clampValue(v + nextVelocity[i], i);
 			}),
 			result = new element.constructor(nextValues);
 		return Future.when(result.evaluate()).then(function () {
@@ -1250,11 +1285,11 @@ var DifferentialEvolution = metaheuristics.DifferentialEvolution = declare(Metah
 				randomIndex = mh.random.randomInt(element.length),
 				newValues = [];
 			for (var i = 0; i < element.length; ++i) {
-				newValues.push(Math.min(element.maximumValue, Math.max(element.minimumValue,
-					i === randomIndex || mh.random.randomBool(mh.crossoverProbability)
-						? a[i] + mh.differentialWeight * (b[i] - c[i])
-						: element.values[i]
-				)));
+				newValues.push(element.clampValue(
+					i === randomIndex || mh.random.randomBool(mh.crossoverProbability) 
+					? a[i] + mh.differentialWeight * (b[i] - c[i]) : element.values[i],
+					i
+				));
 			}
 			return new element.constructor(newValues);
 		});
@@ -1291,9 +1326,9 @@ var EvolutionStrategy = metaheuristics.EvolutionStrategy = declare(Metaheuristic
 	*/
 	mutant: function mutant(element) {
 		var random = this.random,
-			newValues = element.values.map(function (v) {
+			newValues = element.values.map(function (v, i) {
 				v += random.random() - random.random();
-				return Math.max(element.minimumValue, Math.min(element.maximumValue, v)); 
+				return element.clampValue(v, i); 
 			});
 		return new element.constructor(newValues);
 	},
@@ -1357,25 +1392,19 @@ var HarmonySearch = metaheuristics.HarmonySearch = declare(Metaheuristic, {
 	to `adjustProbability`.
 	*/
 	expansion: function expansion() {
-		var representation = this.problem.representation,
-			length = representation.prototype.length,
-			minimumValue = representation.prototype.minimumValue,
-			maximumValue = representation.prototype.maximumValue,
-			random = this.random,
+		var proto = this.state[0],
 			values = new Array(length);
-		for (var i = 0; i < length; ++i) {
-			if (random.randomBool(this.harmonyProbability)) {
+		for (var i = 0; i < proto.length; ++i) {
+			if (this.random.randomBool(this.harmonyProbability)) {
 				values[i] = this.random.choice(this.state).values[i];
-				if (random.randomBool(this.adjustProbability)) {
-					values[i] = Math.max(minimumValue, Math.min(maximumValue,
-						values[i] + random.choice([-1, +1]) * this.delta
-					));
+				if (this.random.randomBool(this.adjustProbability)) {
+					values[i] = proto.clampValue(values[i] + this.random.choice([-1, +1]) * this.delta, i);
 				}
 			} else {
-				values[i] = random.random(minimumValue, maximumValue);
+				values[i] = proto.randomValue(i);
 			}
 		}
-		return [new representation(values)];
+		return [new proto.constructor(values)];
 	},
 	
 	toString: function toString() {
@@ -1414,8 +1443,8 @@ problems.HelloWorld = declare(Problem, {
 			length: target.length,
 			/** The elements` values must be between 32 (space) and 254.
 			*/
-			minimumValue: 32,
-			maximumValue: 254,
+			minimumValue: function () { return 32; },
+			maximumValue: function () { return 254; },
 			/** An element `suffices()` when its equal to the target string.
 			*/
 			suffices: function suffices() {
@@ -1607,8 +1636,12 @@ var testbed = problems.testbed = function testbed(spec) {
 			this.representation = declare(Element, {
 				length: isNaN(spec.length) ? 2 : +spec.length,
 				
-				minimumValue: isNaN(spec.minimumValue) ? -1e6 : +spec.minimumValue,
-				maximumValue: isNaN(spec.maximumValue) ? +1e6 : +spec.maximumValue,
+				minimumValue: isNaN(spec.minimumValue) 
+					? function () { return -1e6; } 
+					: function () { return +spec.minimumValue; },
+				maximumValue: isNaN(spec.maximumValue) 
+					? function () { return +1e6; }
+					: function () { return +spec.maximumValue; },
 				
 				evaluate: function evaluate() {
 					return this.evaluation = spec.evaluation(this.values);
