@@ -43,11 +43,11 @@ var DifferentialEvolution = metaheuristics.DifferentialEvolution = declare(Metah
 				randomIndex = mh.random.randomInt(element.length),
 				newValues = [];
 			for (var i = 0; i < element.length; ++i) {
-				newValues.push(Math.min(element.maximumValue, Math.max(element.minimumValue,
-					i === randomIndex || mh.random.randomBool(mh.crossoverProbability)
-						? a[i] + mh.differentialWeight * (b[i] - c[i])
-						: element.values[i]
-				)));
+				newValues.push(element.clampValue(
+					i === randomIndex || mh.random.randomBool(mh.crossoverProbability) 
+					? a[i] + mh.differentialWeight * (b[i] - c[i]) : element.values[i],
+					i
+				));
 			}
 			return new element.constructor(newValues);
 		});

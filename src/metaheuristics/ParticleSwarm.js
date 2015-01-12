@@ -35,8 +35,12 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 		Metaheuristic.prototype.initiate.call(this, size);
 		var mh = this;
 		this.state.forEach(function (element) {
-			var range = element.maximumValue - element.minimumValue
-			element.__velocity__ = mh.random.randoms(element.length, -range, range);
+			var range;
+			element.__velocity__ = new Array(element.length);
+			for (var i = 0; i < element.length; ++i) {
+				range = element.maximumValue(i) - element.minimumValue(i);
+				element.__velocity__[i] = mh.random.random(-range, range);
+			}
 			element.__localBest__ = element;
 		});
 	},
@@ -63,7 +67,7 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 		var mh = this,
 			nextVelocity = this.nextVelocity(element, globalBest),
 			nextValues = element.values.map(function (v, i) {
-				return Math.max(element.minimumValue, Math.min(element.maximumValue, v + nextVelocity[i]));
+				return element.clampValue(v + nextVelocity[i], i);
 			}),
 			result = new element.constructor(nextValues);
 		return Future.when(result.evaluate()).then(function () {

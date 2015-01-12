@@ -90,7 +90,7 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 		being maximized.
 		*/
 		rouletteSelection: function rouletteSelection(count) { //FIXME
-			count = isNaN(count) ? 2 : +count;
+			count = isNaN(count) ? 2 : count |0;
 			var len = this.state.length,
 				evaluationStat = this.statistics.stat({key: 'evaluation', step: this.step}),
 				min = evaluationStat.minimum(),
@@ -111,7 +111,29 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 				selected = selected.concat(this.state.slice(0, count - selected.length));
 			}
 			return selected;
-		}
+		},
+		
+		/** + [`stochasticUniversalSamplingSelection(count)`](http://en.wikipedia.org/wiki/Stochastic_universal_sampling)
+		is a less biased version of the roulette selection method.
+		*/
+		stochasticUniversalSamplingSelection: function stochasticUniversalSamplingSelection(count) {
+			count = isNaN(count) ? 2 : count |0;
+			var state = this.state,
+				totalFitness = iterable(state).select('evaluation').sum(),
+				p = totalFitness / count;
+			return base.Iterable.iterate(function (x) { 
+				return x + p; 
+			}, this.random.randomInt(p), count).map(function (pointer) {
+				var sum = 0;
+				for (var i = 0; i < state.length; ++i) {
+					sum += state[i].evaluation;
+					if (sum >= pointer) {
+						return state[i];
+					}
+				}
+				return state[state.length - 1]; // Very improbable.
+			}).toArray();
+		},		
 	}, // GeneticAlgorithm.selections
 
 	/** ## Crossover methods #######################################################################
@@ -208,17 +230,15 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 		of its value, with a triangular distribution.
 		*/
 		singlepointBiasedMutation: function singlepointBiasedMutation(element) {
-			var random = this.random;
-			return element.modification(random.randomInt(element.length),
-				Math.max(element.minimumValue, Math.min(element.maximumValue, 
-					element.values[i] + random.random() - random.random()
-				))
-			);
+			var random = this.random, 
+				i = random.randomInt(element.length);
+			return element.modification(i, 
+				element.clampValue(element.values[i] + random.random() - random.random(), i));
 		},
 		
-		/** + `recombination(element)` swaps two values of the element at random.
+		/** + `recombinationMutation(element)` swaps two values of the element at random.
 		*/
-		recombination: function recombination(element) {
+		recombinationMutation: function recombinationMutation(element) {
 			var values = element.values.slice(),
 				i1 = this.random.randomInt(element.length),
 				v1 = values[i1],

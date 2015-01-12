@@ -28,25 +28,19 @@ var HarmonySearch = metaheuristics.HarmonySearch = declare(Metaheuristic, {
 	to `adjustProbability`.
 	*/
 	expansion: function expansion() {
-		var representation = this.problem.representation,
-			length = representation.prototype.length,
-			minimumValue = representation.prototype.minimumValue,
-			maximumValue = representation.prototype.maximumValue,
-			random = this.random,
+		var proto = this.state[0],
 			values = new Array(length);
-		for (var i = 0; i < length; ++i) {
-			if (random.randomBool(this.harmonyProbability)) {
+		for (var i = 0; i < proto.length; ++i) {
+			if (this.random.randomBool(this.harmonyProbability)) {
 				values[i] = this.random.choice(this.state).values[i];
-				if (random.randomBool(this.adjustProbability)) {
-					values[i] = Math.max(minimumValue, Math.min(maximumValue,
-						values[i] + random.choice([-1, +1]) * this.delta
-					));
+				if (this.random.randomBool(this.adjustProbability)) {
+					values[i] = proto.clampValue(values[i] + this.random.choice([-1, +1]) * this.delta, i);
 				}
 			} else {
-				values[i] = random.random(minimumValue, maximumValue);
+				values[i] = proto.randomValue(i);
 			}
 		}
-		return [new representation(values)];
+		return [new proto.constructor(values)];
 	},
 	
 	toString: function toString() {

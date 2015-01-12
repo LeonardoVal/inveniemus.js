@@ -35,9 +35,9 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 		var i = this.random.randomInt(element.values.length), 
 			v = element.values[i];
 		if (this.random.randomBool()) {
-			v = Math.min(element.maximumValue, v + radius);
+			v = Math.min(element.maximumValue(i), v + radius);
 		} else {
-			v = Math.max(element.minimumValue, v - radius);
+			v = Math.max(element.minimumValue(i), v - radius);
 		}
 		return element.modification(i, v);
 	},

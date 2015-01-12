@@ -28,8 +28,8 @@ problems.HelloWorld = declare(Problem, {
 			length: target.length,
 			/** The elements` values must be between 32 (space) and 254.
 			*/
-			minimumValue: 32,
-			maximumValue: 254,
+			minimumValue: function () { return 32; },
+			maximumValue: function () { return 254; },
 			/** An element `suffices()` when its equal to the target string.
 			*/
 			suffices: function suffices() {
