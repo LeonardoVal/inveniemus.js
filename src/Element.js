@@ -30,11 +30,15 @@ var Element = exports.Element = declare({
 	*/
 	length: 10,
 
-	/** All numbers in an element's values range between `minimumValue` (0 by default) and 
-	`maximumValue` (1 by default).
+	/** All numbers in an element's values have a valid range between `minimumValue` (0 by default) 
+	and `maximumValue` (1 by default).
 	*/
-	minimumValue: 0,
-	maximumValue: 1,
+	minimumValue: function minimumValue(position) {
+		return 0;
+	},
+	maximumValue: function maximumValue(position) {
+		return 1;
+	},
 	
 	/** The pseudorandom number generator in the class property `random` is required by some of the
 	element's operations. Its equal to `base.Randomness.DEFAULT` by default.
@@ -44,8 +48,8 @@ var Element = exports.Element = declare({
 	/** One of this operations is `randomValue()`, which returns a random value between
 	`this.minimumValue` and `this.maximumValue`.
 	*/
-	randomValue: function randomValue() {
-		return this.random.random(this.minimumValue, this.maximumValue);
+	randomValue: function randomValue(position) {
+		return this.random.random(this.minimumValue(position), this.maximumValue(position));
 	},
 	
 	/** This method is used in `randomValues()` to calculate an array with random numbers, suitable
@@ -53,13 +57,18 @@ var Element = exports.Element = declare({
 	elements they handle.
 	*/
 	randomValues: function randomValues() {
-		var values = new Array(this.length),
-			offset = this.minimumValue,
-			factor = this.maximumValue - this.minimumValue;
+		var values = new Array(this.length);
 		for (var i = 0; i < this.length; i++) {
-			values[i] = this.random.random() * factor + offset;
+			values[i] = this.randomValue(i);
 		}
 		return values;
+	},
+	
+	/** A value in a position of the element is clamped when it is coerced between the element's 
+	valid value range for that position.
+	*/
+	clampValue: function (value, position) {
+		return Math.min(this.maximumValue(position), Math.max(this.minimumValue(position), value));
 	},
 	
 	// ## Basic operations #########################################################################
@@ -159,17 +168,19 @@ var Element = exports.Element = declare({
 	dimensional ball around this element's values with the given `radius` (1% by default). 
 	*/
 	neighbourhood: function neighbourhood(radius) {
-		radius = isNaN(radius) ? (this.maximumValue - this.minimumValue) / 100 : +radius;
 		var elems = [], 
 			values = this.values,
-			i, value;
+			i, d, value, minValue, maxValue;
 		for (i = 0; i < values.length; i++) {
-			value = values[i] + radius;
-			if (value <= this.maximumValue) {
+			minValue = this.minimumValue(i);
+			maxValue = this.maximumValue(i);
+			d = typeof(radius) === 'number' ? radius : Array.isArray(radius) ? radius[i] : (maxValue - minValue) / 100;
+			value = values[i] + d;
+			if (value <= maxValue) {
 				elems.push(this.modification(i, value));
 			}
-			value = values[i] - radius;
-			if (value >= this.minimumValue) {
+			value = values[i] - d;
+			if (value >= minValue) {
 				elems.push(this.modification(i, value));
 			}
 		}
@@ -183,7 +194,7 @@ var Element = exports.Element = declare({
 		var copy = new this.constructor(this.values), i, v;
 		for (i = 0; i < arguments.length; i += 2) {
 			v = +arguments[i + 1];
-			raiseIf(isNaN(v) || v < this.minimumValue || v > this.maximumValue, "Invalid value ", v, " for element.");
+			raiseIf(isNaN(v) || v < this.minimumValue(i) || v > this.maximumValue(i), "Invalid value ", v, " for element.");
 			copy.values[arguments[i] | 0] = +arguments[i + 1];
 		}
 		return copy;
@@ -196,7 +207,7 @@ var Element = exports.Element = declare({
 	clamp: function (values) {
 		values || (values = this.values);
 		for (var i = 0; i < values.length; ++i) {
-			values[i] = Math.min(this.maximumValue, Math.max(this.minimumValue, values[i]));
+			values[i] = this.clampValue(values[i], i);
 		}
 		return values;
 	},
