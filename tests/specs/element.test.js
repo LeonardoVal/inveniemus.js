@@ -3,6 +3,25 @@
 
 // Evaluation utilities. ///////////////////////////////////////////////////////
 	describe('Element', function () {
+		it("constructor", function () {
+			var elem = new Element();
+			expect(typeof elem.length).toBe('number');
+			expect(Array.isArray(elem.values)).toBe(true);
+			expect(elem.values.length).toBe(elem.length);
+		}); // it "constructor"
+	
+		it("value ranges", function () {
+			var elem = new Element();
+			for (var i = 0; i < elem.length; ++i) {
+				expect(typeof elem.minimumValue(i)).toBe('number');
+				expect(typeof elem.maximumValue(i)).toBe('number');
+				expect(elem.randomValue(i)).not.toBeLessThan(elem.minimumValue(i));
+				expect(elem.randomValue(i)).not.toBeGreaterThan(elem.maximumValue(i));
+				expect(elem.clampValue(elem.minimumValue(i) - 1)).toBe(elem.minimumValue(i));
+				expect(elem.clampValue(elem.maximumValue(i) + 1)).toBe(elem.maximumValue(i));
+			}
+		}); // it "value ranges"
+	
 		it("hamming distance", function () {
 			var hammingDistance = Element.prototype.hammingDistance;
 			expect(hammingDistance).toBeOfType('function');
