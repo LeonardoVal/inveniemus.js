@@ -40,6 +40,7 @@ var HarmonySearch = metaheuristics.HarmonySearch = declare(Metaheuristic, {
 				values[i] = proto.randomValue(i);
 			}
 		}
+		this.onExpand();
 		return [new proto.constructor(values)];
 	},
 	

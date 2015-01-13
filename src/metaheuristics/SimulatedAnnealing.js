@@ -85,7 +85,9 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 				return mh.random.randomBool(p) ? neighbour : elem;
 			});
 		})).then(function (elems) {
-			return mh.state = elems;
+			mh.state = elems;
+			mh.onUpdate();
+			return elems;
 		});
 	},
 

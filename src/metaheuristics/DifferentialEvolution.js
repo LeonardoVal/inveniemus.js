@@ -32,25 +32,27 @@ var DifferentialEvolution = metaheuristics.DifferentialEvolution = declare(Metah
 	before. 
 	*/
 	expansion: function expansion() {
-		var mh = this;
-		return this.state.map(function (element, elementIndex) {
-			var crossover = mh.random.choices(3, iterable(mh.state).filter(function (e, i) {
-					return i !== elementIndex;
-				})),
-				a = crossover[0].values,
-				b = crossover[1].values,
-				c = crossover[2].values,
-				randomIndex = mh.random.randomInt(element.length),
-				newValues = [];
-			for (var i = 0; i < element.length; ++i) {
-				newValues.push(element.clampValue(
-					i === randomIndex || mh.random.randomBool(mh.crossoverProbability) 
-					? a[i] + mh.differentialWeight * (b[i] - c[i]) : element.values[i],
-					i
-				));
-			}
-			return new element.constructor(newValues);
-		});
+		var mh = this,
+			result = this.state.map(function (element, elementIndex) {
+				var crossover = mh.random.choices(3, iterable(mh.state).filter(function (e, i) {
+						return i !== elementIndex;
+					})),
+					a = crossover[0].values,
+					b = crossover[1].values,
+					c = crossover[2].values,
+					randomIndex = mh.random.randomInt(element.length),
+					newValues = [];
+				for (var i = 0; i < element.length; ++i) {
+					newValues.push(element.clampValue(
+						i === randomIndex || mh.random.randomBool(mh.crossoverProbability) 
+						? a[i] + mh.differentialWeight * (b[i] - c[i]) : element.values[i],
+						i
+					));
+				}
+				return new element.constructor(newValues);
+			});
+		this.onExpand();
+		return result;
 	},
 	
 	toString: function toString() {

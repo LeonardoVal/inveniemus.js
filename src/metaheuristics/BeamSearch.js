@@ -26,6 +26,7 @@ var BeamSearch = metaheuristics.BeamSearch = declare(Metaheuristic, {
 		this.state.forEach(function (element) {
 			allSuccessors = allSuccessors.concat(successors(element));
 		});
+		this.onExpand();
 		return allSuccessors;
 	},
 	

@@ -49,6 +49,7 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 				newElements.push(child);
 			}
 		}
+		this.onExpand();
 		return newElements;
 	},
 	

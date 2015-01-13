@@ -50,6 +50,7 @@ var EvolutionStrategy = metaheuristics.EvolutionStrategy = declare(Metaheuristic
 		this.state.forEach(function (element) {
 			newElements = newElements.concat(mh.mutants(element));
 		});
+		this.onExpand();
 		return newElements;
 	},
 	

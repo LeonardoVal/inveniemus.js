@@ -446,17 +446,6 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		*/
 			.object('statistics', { defaultValue: new Statistics() })
 			.object('logger', { ignore: true });
-		/** For better customization the `events` handler emits the following events: 
-		
-		+ `initiated` when the state has been initialized.
-		+ `updated` when the state has been expanded, evaluated and sieved.
-		+ `expanded` after new elements are added to the state.
-		+ `evaluated` after the elements in the state are evaluated.
-		+ `sieved` after elements are removed from the state.
-		+ `advanced` when one full iteration is completed.
-		+ `analyzed` after the statistics are calculated.
-		+ `finished` when the run finishes.
-		*/
 		this.events = new Events({ 
 			events: ["initiated", "updated", "expanded", "evaluated", "sieved", 
 				"advanced", "analyzed", "finished"]
@@ -474,8 +463,7 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		for (var i = 0; i < size; i++) {
 			this.state[i] = new this.problem.representation(); // Element with random values.
 		}
-		this.events.emit('initiated', this);
-		this.logger && this.logger.debug('State has been initiated. Nos coepimus.');
+		this.onInitiate();
 	},
 	
 	/** `update()` updates this metaheuristic's state. It assumes the state has been initialized. 
@@ -488,7 +476,7 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		this.expand();
 		return this.evaluate().then(function () {
 			mh.sieve();
-			mh.events.emit('updated', this);
+			mh.onUpdate();
 			return mh;
 		});
 	},
@@ -513,8 +501,7 @@ var Metaheuristic = exports.Metaheuristic = declare({
 			});
 			this.state = expanded;
 		}
-		this.events.emit('expanded', this);
-		this.logger && this.logger.debug('State has been expanded. Nos exploramus.');
+		this.onExpand();
 	},
 	
 	/** `expansion(size)` returns an array of new elements to add to the current state. The default 
@@ -549,8 +536,7 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		)).then(function (results) {
 			elements.sort(mh.problem.compare.bind(mh.problem));
 			evalTime.addTime();
-			mh.events.emit('evaluated', this);
-			mh.logger && mh.logger.debug('Evaluated and sorted ', results.length, ' elements. Appretiatus sunt.');
+			mh.onEvaluate(results);
 			return elements;
 		});
 	},
@@ -563,8 +549,7 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		if (this.state.length > size) {
 			this.state = this.state.slice(0, this.size);
 		}
-		this.events.emit('sieved', this);
-		this.logger && this.logger.debug('State has been sieved. Viam selectus est.');
+		this.onSieve();
 	},
 	
 	/** `finished()` termination criteria for this metaheuristic. By default it checks if the number 
@@ -572,7 +557,6 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	*/
 	finished: function finished() {
 		if (this.step >= this.steps || this.problem.suffices(this.state)) {
-			this.events.emit('finished', this);
 			return true;
 		}
 		return false;
@@ -585,7 +569,7 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		this.state.forEach(function (element) {
 			stat.add(element.evaluation, element);
 		});
-		this.events.emit('analyzed', this);
+		this.onAnalyze();
 		return stat;
 	},
 	
@@ -609,8 +593,7 @@ var Metaheuristic = exports.Metaheuristic = declare({
 			mh.step = isNaN(mh.step) || +mh.step < 0 ? 0 : +mh.step + 1;
 			mh.analyze(); // Calculate the state's stats after updating it.
 			stepTime.addTime();
-			mh.events.emit('advanced', this);
-			mh.logger && mh.logger.info('Step ', mh.step , ' has been completed. Nos proficimus.');
+			mh.onAdvance();
 			return mh;
 		});
 	},
@@ -625,7 +608,7 @@ var Metaheuristic = exports.Metaheuristic = declare({
 			return !mh.finished();
 		}
 		return Future.doWhile(advance, continues).then(function () {
-			mh.logger && mh.logger.info('Finished. Nos invenerunt!');
+			mh.onFinish();
 			return mh.state[0]; // Return the best cursor.
 		});
 	},
@@ -659,6 +642,66 @@ var Metaheuristic = exports.Metaheuristic = declare({
 			return true;
 		}).toArray();
 		return this.state.length;
+	},
+	
+	/** ## Events ##################################################################################
+	
+	For better customization the `events` handler emits the following events: 
+		
+	+ `initiated` when the state has been initialized.
+	*/
+	onInitiate: function onInitiate() {
+		this.events.emit('initiated', this);
+		this.logger && this.logger.debug('State has been initiated. Nos coepimus.');
+	},
+	
+	/** + `updated` when the state has been expanded, evaluated and sieved.
+	*/
+	onUpdate: function onUpdate() {
+		this.events.emit('updated', this);
+		this.logger && this.logger.debug('State has been updated. Mutatis mutandis.');
+	},
+	
+	/** + `expanded` after new elements are added to the state.
+	*/
+	onExpand: function onExpand() {
+		this.events.emit('expanded', this);
+		this.logger && this.logger.debug('State has been expanded. Nos exploramus.');
+	},
+	
+	/** + `evaluated` after the elements in the state are evaluated.
+	*/
+	onEvaluate: function onEvaluate(elements) {
+		this.events.emit('evaluated', this);
+		this.logger && this.logger.debug('Evaluated and sorted ', elements.length, ' elements. Appretiatus sunt.');
+	},
+	
+	/** + `sieved` after elements are removed from the state.
+	*/
+	onSieve: function onSieve() {
+		this.events.emit('sieved', this);
+		this.logger && this.logger.debug('State has been sieved. Haec est viam.');
+	},
+	
+	/** + `advanced` when one full iteration is completed.
+	*/
+	onAdvance: function onAdvance() {
+		this.events.emit('advanced', this);
+		this.logger && this.logger.debug('Step ', this.step , ' has been completed. Nos proficimus.');
+	},
+	
+	/** + `analyzed` after the statistics are calculated.
+	*/
+	onAnalyze: function onAnalyze() {
+		this.events.emit('analyzed', this);
+		this.logger && this.logger.debug('Statistics have been gathered. Haec sunt numeri.');
+	},
+	
+	/** + `finished` when the run finishes.
+	*/
+	onFinish: function onFinish() {
+		this.events.emit('finished', this);
+		this.logger && this.logger.debug('Finished. Nos invenerunt!');
 	},
 	
 	// ## Utilities ################################################################################
@@ -716,6 +759,7 @@ var HillClimbing = metaheuristics.HillClimbing = declare(Metaheuristic, {
 		})).then(function (elems) {
 			mh.state = elems;
 			mh.__localOptima__ = localOptima;
+			mh.onUpdate();
 		});
 	},
 		
@@ -789,6 +833,7 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 				newElements.push(child);
 			}
 		}
+		this.onExpand();
 		return newElements;
 	},
 	
@@ -1026,6 +1071,7 @@ var BeamSearch = metaheuristics.BeamSearch = declare(Metaheuristic, {
 		this.state.forEach(function (element) {
 			allSuccessors = allSuccessors.concat(successors(element));
 		});
+		this.onExpand();
 		return allSuccessors;
 	},
 	
@@ -1122,7 +1168,9 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 				return mh.random.randomBool(p) ? neighbour : elem;
 			});
 		})).then(function (elems) {
-			return mh.state = elems;
+			mh.state = elems;
+			mh.onUpdate();
+			return elems;
 		});
 	},
 
@@ -1167,16 +1215,18 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 	*/
 	initiate: function initiate(size) {
 		Metaheuristic.prototype.initiate.call(this, size);
-		var mh = this;
-		this.state.forEach(function (element) {
-			var range;
-			element.__velocity__ = new Array(element.length);
-			for (var i = 0; i < element.length; ++i) {
-				range = element.maximumValue(i) - element.minimumValue(i);
-				element.__velocity__[i] = mh.random.random(-range, range);
-			}
-			element.__localBest__ = element;
-		});
+		var mh = this,
+			result = this.state.forEach(function (element) {
+				var range;
+				element.__velocity__ = new Array(element.length);
+				for (var i = 0; i < element.length; ++i) {
+					range = element.maximumValue(i) - element.minimumValue(i);
+					element.__velocity__[i] = mh.random.random(-range, range);
+				}
+				element.__localBest__ = element;
+			});
+		this.onInitiate();
+		return result;
 	},
 	
 	/** The method `nextVelocity` calculates the velocity of the particle for the next iteration.
@@ -1230,6 +1280,7 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 			if (mh.problem.compare(mh.__globalBest__, elements[0]) > 0) {
 				mh.__globalBest__ = elements[0];
 			}
+			mh.onUpdate();
 			return mh;
 		});
 	},
@@ -1274,25 +1325,27 @@ var DifferentialEvolution = metaheuristics.DifferentialEvolution = declare(Metah
 	before. 
 	*/
 	expansion: function expansion() {
-		var mh = this;
-		return this.state.map(function (element, elementIndex) {
-			var crossover = mh.random.choices(3, iterable(mh.state).filter(function (e, i) {
-					return i !== elementIndex;
-				})),
-				a = crossover[0].values,
-				b = crossover[1].values,
-				c = crossover[2].values,
-				randomIndex = mh.random.randomInt(element.length),
-				newValues = [];
-			for (var i = 0; i < element.length; ++i) {
-				newValues.push(element.clampValue(
-					i === randomIndex || mh.random.randomBool(mh.crossoverProbability) 
-					? a[i] + mh.differentialWeight * (b[i] - c[i]) : element.values[i],
-					i
-				));
-			}
-			return new element.constructor(newValues);
-		});
+		var mh = this,
+			result = this.state.map(function (element, elementIndex) {
+				var crossover = mh.random.choices(3, iterable(mh.state).filter(function (e, i) {
+						return i !== elementIndex;
+					})),
+					a = crossover[0].values,
+					b = crossover[1].values,
+					c = crossover[2].values,
+					randomIndex = mh.random.randomInt(element.length),
+					newValues = [];
+				for (var i = 0; i < element.length; ++i) {
+					newValues.push(element.clampValue(
+						i === randomIndex || mh.random.randomBool(mh.crossoverProbability) 
+						? a[i] + mh.differentialWeight * (b[i] - c[i]) : element.values[i],
+						i
+					));
+				}
+				return new element.constructor(newValues);
+			});
+		this.onExpand();
+		return result;
 	},
 	
 	toString: function toString() {
@@ -1353,6 +1406,7 @@ var EvolutionStrategy = metaheuristics.EvolutionStrategy = declare(Metaheuristic
 		this.state.forEach(function (element) {
 			newElements = newElements.concat(mh.mutants(element));
 		});
+		this.onExpand();
 		return newElements;
 	},
 	
@@ -1404,6 +1458,7 @@ var HarmonySearch = metaheuristics.HarmonySearch = declare(Metaheuristic, {
 				values[i] = proto.randomValue(i);
 			}
 		}
+		this.onExpand();
 		return [new proto.constructor(values)];
 	},
 	

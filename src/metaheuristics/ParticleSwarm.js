@@ -33,16 +33,18 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 	*/
 	initiate: function initiate(size) {
 		Metaheuristic.prototype.initiate.call(this, size);
-		var mh = this;
-		this.state.forEach(function (element) {
-			var range;
-			element.__velocity__ = new Array(element.length);
-			for (var i = 0; i < element.length; ++i) {
-				range = element.maximumValue(i) - element.minimumValue(i);
-				element.__velocity__[i] = mh.random.random(-range, range);
-			}
-			element.__localBest__ = element;
-		});
+		var mh = this,
+			result = this.state.forEach(function (element) {
+				var range;
+				element.__velocity__ = new Array(element.length);
+				for (var i = 0; i < element.length; ++i) {
+					range = element.maximumValue(i) - element.minimumValue(i);
+					element.__velocity__[i] = mh.random.random(-range, range);
+				}
+				element.__localBest__ = element;
+			});
+		this.onInitiate();
+		return result;
 	},
 	
 	/** The method `nextVelocity` calculates the velocity of the particle for the next iteration.
@@ -96,6 +98,7 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 			if (mh.problem.compare(mh.__globalBest__, elements[0]) > 0) {
 				mh.__globalBest__ = elements[0];
 			}
+			mh.onUpdate();
 			return mh;
 		});
 	},
