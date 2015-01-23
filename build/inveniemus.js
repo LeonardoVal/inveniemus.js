@@ -50,9 +50,12 @@ var Element = exports.Element = declare({
 	*/
 	constructor: function Element(values, evaluation) {
 		if (typeof values === 'undefined') {
-			this.values = this.randomValues();
+			this.values = this.random.randoms(this.length);
 		} else {
-			this.values = values.slice(); // Makes a shallow copy.
+			this.values = values.map(function (value, i) {
+				raiseIf(isNaN(value), "Value #", i, " for element is NaN!");
+				return Math.min(1, Math.max(0, +value));
+			});
 		}
 		this.evaluation = +evaluation;
 	},
@@ -61,46 +64,10 @@ var Element = exports.Element = declare({
 	*/
 	length: 10,
 
-	/** All numbers in an element's values have a valid range between `minimumValue` (0 by default) 
-	and `maximumValue` (1 by default).
-	*/
-	minimumValue: function minimumValue(position) {
-		return 0;
-	},
-	maximumValue: function maximumValue(position) {
-		return 1;
-	},
-	
 	/** The pseudorandom number generator in the class property `random` is required by some of the
 	element's operations. Its equal to `base.Randomness.DEFAULT` by default.
 	*/
 	random: Randomness.DEFAULT,
-	
-	/** One of this operations is `randomValue()`, which returns a random value between
-	`this.minimumValue` and `this.maximumValue`.
-	*/
-	randomValue: function randomValue(position) {
-		return this.random.random(this.minimumValue(position), this.maximumValue(position));
-	},
-	
-	/** This method is used in `randomValues()` to calculate an array with random numbers, suitable
-	to be used as an element's `values`. Many metaheuristics require random initiation of the
-	elements they handle.
-	*/
-	randomValues: function randomValues() {
-		var values = new Array(this.length);
-		for (var i = 0; i < this.length; i++) {
-			values[i] = this.randomValue(i);
-		}
-		return values;
-	},
-	
-	/** A value in a position of the element is clamped when it is coerced between the element's 
-	valid value range for that position.
-	*/
-	clampValue: function (value, position) {
-		return Math.min(this.maximumValue(position), Math.max(this.minimumValue(position), value));
-	},
 	
 	// ## Basic operations #########################################################################
 	
@@ -201,17 +168,15 @@ var Element = exports.Element = declare({
 	neighbourhood: function neighbourhood(radius) {
 		var elems = [], 
 			values = this.values,
-			i, d, value, minValue, maxValue;
+			i, d, value;
 		for (i = 0; i < values.length; i++) {
-			minValue = this.minimumValue(i);
-			maxValue = this.maximumValue(i);
-			d = typeof(radius) === 'number' ? radius : Array.isArray(radius) ? radius[i] : (maxValue - minValue) / 100;
+			d = typeof(radius) === 'number' ? radius : Array.isArray(radius) ? radius[i] : 1 / 100;
 			value = values[i] + d;
-			if (value <= maxValue) {
+			if (value <= 1) {
 				elems.push(this.modification(i, value));
 			}
 			value = values[i] - d;
-			if (value >= minValue) {
+			if (value >= 0) {
 				elems.push(this.modification(i, value));
 			}
 		}
@@ -225,29 +190,19 @@ var Element = exports.Element = declare({
 		var copy = new this.constructor(this.values), i, v;
 		for (i = 0; i < arguments.length; i += 2) {
 			v = +arguments[i + 1];
-			raiseIf(isNaN(v) || v < this.minimumValue(i) || v > this.maximumValue(i), "Invalid value ", v, " for element.");
+			raiseIf(isNaN(v) || v < 0 || v > 1, "Invalid value ", v, " for element.");
 			copy.values[arguments[i] | 0] = +arguments[i + 1];
 		}
 		return copy;
-	},
-	
-	/** Coerces all values in the given array to be within this element's valid range; i.e. between 
-	`minimumValue` and `maximumValue`. If no array is given, this element's `values` are used 
-	instead.
-	*/
-	clamp: function (values) {
-		values || (values = this.values);
-		for (var i = 0; i < values.length; ++i) {
-			values[i] = this.clampValue(values[i], i);
-		}
-		return values;
 	},
 	
 	// ## Mappings #################################################################################
 	
 	/** An array mapping builds an array of equal length of this element's `values`. Each value is 
 	used to index the corresponding items argument. If there are less arguments than the element's 
-	`length`, the last one is used for the rest of the values. 
+	`length`, the last one is used for the rest of the values.
+	
+	Warning! This method assumes this element's values are in the range [0,1].
 	*/
 	arrayMapping: function arrayMapping() {
 		var args = arguments, 
@@ -261,12 +216,27 @@ var Element = exports.Element = declare({
 	
 	/** A set mapping builds an array of equal length of this element's `values`. Each value is used 
 	to select one item. Items are not selected more than once. 
+	
+	Warning! This method assumes this element's values are in the range [0,1].
 	*/
 	setMapping: function setMapping(items) {
 		raiseIf(!Array.isArray(items), "Element.setMapping() expects an array argument.");
 		items = items.slice(); // Shallow copy.
 		return this.values.map(function (v, i) {
 			return items.splice(v * items.length | 0, 1)[0];
+		});
+	},
+	
+	/** A range mapping builds an array of equal length of this element's `values`. Each value is 
+	translated from [0,1] to the corresponding range.
+	*/
+	rangeMapping: function rangeMapping() {
+		var args = arguments, 
+			lastRange = args[args.length - 1];
+		raiseIf(args.length < 1, "Element.rangeMapping() expects at least one argument.");
+		return this.values.map(function (v, i) {
+			var range = args.length > i ? args[i] : lastRange;
+			return v * (range[1] - range[0]) + range[0];
 		});
 	},
 	
@@ -355,11 +325,10 @@ var Problem = exports.Problem = declare({
 		return this.minimization(element1, element2);
 	},
 		
-	/** When a set of elements is sufficient, the search/optimization ends. The
-	method `suffices(elements)` returns `true` if inside the elements array 
-	there are enough actual solutions to this problem. It holds the 
-	implementation of the goal test in search problems. By default calls the 
-	`suffice` method of the first element (assumed to be the best one).
+	/** When a set of elements is sufficient, the search/optimization ends. The method 
+	`suffices(elements)` returns `true` if inside the elements array there are enough actual 
+	solutions to this problem. It holds the implementation of the goal test in search problems. By 
+	default calls the `suffice` method of the first element (assumed to be the best one).
 	*/
 	suffices: function suffices(elements) {
 		return elements[0].suffices();
@@ -556,10 +525,7 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	of passed iterations is not greater than `steps`.
 	*/
 	finished: function finished() {
-		if (this.step >= this.steps || this.problem.suffices(this.state)) {
-			return true;
-		}
-		return false;
+		return this.step >= this.steps || this.problem.suffices(this.state);
 	},
 
 	/** `analyze()` updates the process' statistics.
@@ -706,8 +672,8 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	
 	// ## Utilities ################################################################################
 	
-	/** The default string representation of a Metaheuristic shows its 
-	constructor's name and its parameters.
+	/** The default string representation of a Metaheuristic shows its constructor's name and its 
+	parameters.
 	*/
 	toString: function toString() {
 		return (this.constructor.name || 'Metaheuristic') +"("+ JSON.stringify(this) +")";
@@ -992,7 +958,7 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 		random value.
 		*/
 		singlepointUniformMutation: function singlepointUniformMutation(element) {
-			return element.modification(this.random.randomInt(element.length), element.randomValue());
+			return element.modification(this.random.randomInt(element.length), this.random.random());
 		},
 			
 		/** + `uniformMutation(maxPoints=Infinity)` builds a mutation function that makes at least 
@@ -1005,7 +971,7 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 				var times = maxPoints;
 				element = new element.constructor(element.values); // Copy element.
 				do {
-					element.values[this.random.randomInt(element.length)] = element.randomValue();
+					element.values[this.random.randomInt(element.length)] = this.random.random();
 				} while (this.random.randomBool(this.mutationRate) && --times > 0);
 				return element;
 			};
@@ -1017,8 +983,7 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 		singlepointBiasedMutation: function singlepointBiasedMutation(element) {
 			var random = this.random, 
 				i = random.randomInt(element.length);
-			return element.modification(i, 
-				element.clampValue(element.values[i] + random.random() - random.random(), i));
+			return element.modification(i, element.values[i] + random.random() - random.random());
 		},
 		
 		/** + `recombinationMutation(element)` swaps two values of the element at random.
@@ -1118,9 +1083,9 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 		var i = this.random.randomInt(element.values.length), 
 			v = element.values[i];
 		if (this.random.randomBool()) {
-			v = Math.min(element.maximumValue(i), v + radius);
+			v = Math.min(1, v + radius);
 		} else {
-			v = Math.max(element.minimumValue(i), v - radius);
+			v = Math.max(0, v - radius);
 		}
 		return element.modification(i, v);
 	},
@@ -1168,6 +1133,7 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 				return mh.random.randomBool(p) ? neighbour : elem;
 			});
 		})).then(function (elems) {
+			elems.sort(mh.problem.compare.bind(mh.problem));
 			mh.state = elems;
 			mh.onUpdate();
 			return elems;
@@ -1217,11 +1183,9 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 		Metaheuristic.prototype.initiate.call(this, size);
 		var mh = this,
 			result = this.state.forEach(function (element) {
-				var range;
 				element.__velocity__ = new Array(element.length);
 				for (var i = 0; i < element.length; ++i) {
-					range = element.maximumValue(i) - element.minimumValue(i);
-					element.__velocity__[i] = mh.random.random(-range, range);
+					element.__velocity__[i] = mh.random.random(-1, +1);
 				}
 				element.__localBest__ = element;
 			});
@@ -1251,7 +1215,7 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 		var mh = this,
 			nextVelocity = this.nextVelocity(element, globalBest),
 			nextValues = element.values.map(function (v, i) {
-				return element.clampValue(v + nextVelocity[i], i);
+				return v + nextVelocity[i];
 			}),
 			result = new element.constructor(nextValues);
 		return Future.when(result.evaluate()).then(function () {
@@ -1336,11 +1300,9 @@ var DifferentialEvolution = metaheuristics.DifferentialEvolution = declare(Metah
 					randomIndex = mh.random.randomInt(element.length),
 					newValues = [];
 				for (var i = 0; i < element.length; ++i) {
-					newValues.push(element.clampValue(
-						i === randomIndex || mh.random.randomBool(mh.crossoverProbability) 
-						? a[i] + mh.differentialWeight * (b[i] - c[i]) : element.values[i],
-						i
-					));
+					newValues.push(i === randomIndex || mh.random.randomBool(mh.crossoverProbability) 
+						? a[i] + mh.differentialWeight * (b[i] - c[i])
+						: element.values[i]);
 				}
 				return new element.constructor(newValues);
 			});
@@ -1380,8 +1342,7 @@ var EvolutionStrategy = metaheuristics.EvolutionStrategy = declare(Metaheuristic
 	mutant: function mutant(element) {
 		var random = this.random,
 			newValues = element.values.map(function (v, i) {
-				v += random.random() - random.random();
-				return element.clampValue(v, i); 
+				return v + random.random() - random.random();
 			});
 		return new element.constructor(newValues);
 	},
@@ -1452,10 +1413,10 @@ var HarmonySearch = metaheuristics.HarmonySearch = declare(Metaheuristic, {
 			if (this.random.randomBool(this.harmonyProbability)) {
 				values[i] = this.random.choice(this.state).values[i];
 				if (this.random.randomBool(this.adjustProbability)) {
-					values[i] = proto.clampValue(values[i] + this.random.choice([-1, +1]) * this.delta, i);
+					values[i] = values[i] + this.random.choice([-1, +1]) * this.delta;
 				}
 			} else {
-				values[i] = proto.randomValue(i);
+				values[i] = this.random.random();
 			}
 		}
 		this.onExpand();
@@ -1466,6 +1427,94 @@ var HarmonySearch = metaheuristics.HarmonySearch = declare(Metaheuristic, {
 		return (this.constructor.name || 'HarmonySearch') +'('+ JSON.stringify(this) +')';
 	}
 }); // declare HarmonySearch.
+
+
+/** # Distribution estimation
+
+This is a simple implementation of a [estimation of distributionalgorithm]
+(http://en.wikipedia.org/wiki/Estimation_of_distribution_algorithm). This stochastic optimization 
+methods try to estimate a probabilistic model for the characteristics of the better candidate 
+solutions. At each step many individual are randomly generated based on the current model. After all
+have been evaluated, the model is adjusted.
+
+The statistical model in this implementation is an histogram for each dimension (i.e. value of the
+element representing the candidate solution). Dimensions are assumed to be independent of each 
+other.
+*/
+var DistributionEstimation = metaheuristics.DistributionEstimation = declare(Metaheuristic, {
+	/** The constructor takes the following parameters:
+	*/
+	constructor: function DistributionEstimation(params) {
+		Metaheuristic.call(this, params);
+		initialize(this, params)
+			/** + `histogramWidth=10` is the amounts of ranges the value domain is split in order
+			to calculate the histograms.
+			*/
+			.integer('histogramWidth', { coerce: true, defaultValue: 10, minimum: 1 });
+	},
+	
+	/** New elements to add to the state in the `expansion` are build from the `histograms`
+	calculated from said state.
+	*/
+	expansion: function expansion(size) {
+		var mh = this,
+			expansionRate = isNaN(this.expansionRate) ? 0.5 : +this.expansionRate,
+			histograms = this.histograms(); // Get the current histogram of the state.
+		size = isNaN(size) ? Math.floor(expansionRate * this.size) : size |0;
+		return base.Iterable.repeat(null, size).map(function () {
+			return mh.elementFromHistograms(histograms);
+		}).toArray();
+	},
+	
+	/** The `histograms` have the frequencies of value ranges in the current state.
+	*/
+	histograms: function histograms(state) {
+		state || (state = this.state);
+		var histogramWidth = this.histogramWidth,
+			size = this.state.length,
+			emptyCount = base.Iterable.repeat(0, histogramWidth).toArray(),
+			length = this.problem.representation.prototype.length,
+			counts = base.Iterable.iterate(function (v) {
+				return v.slice(); // Shallow copy.
+			}, emptyCount, length).toArray();
+		state.forEach(function (element) {
+			element.values.forEach(function (value, i) {
+				var bar = Math.min(histogramWidth - 1, Math.floor(element.values[i] * histogramWidth));
+				counts[i][bar]++;
+			});
+		});
+		return counts.map(function (v) { // Turn counts into frequencies.
+			return v.map(function (v) {
+				return v / size;
+			}); 
+		});
+	},
+	
+	/** The method `elementFromHistogram` is used to make these new random elements.
+	*/
+	elementFromHistograms: function elementFromHistogram(histograms, representation) {
+		representation || (representation = this.problem.representation);
+		var length = histograms.length,
+			values = new Array(length),
+			random = this.random,
+			histogram, r;
+		for (var i = 0; i < length; ++i) {
+			histogram = histograms[i];
+			r = random.random();
+			for (var j = 0; j <= histogram.length; ++j) {
+				if (j === histogram.length || (r -= histogram[j]) <= 0) {
+					values[i] = Math.min(1, Math.max(0, (j + random.random()) / histogram.length));
+					break;
+				}
+			}
+		}
+		return new representation(values);
+	},
+	
+	toString: function toString() {
+		return (this.constructor.name || 'DistributionEstimation') +'('+ JSON.stringify(this) +')';
+	}
+}); // declare DistributionEstimation.
 
 
 /** # _"Hello World"_ problem
@@ -1496,26 +1545,25 @@ problems.HelloWorld = declare(Problem, {
 			/** The elements` `length` is equal to the length of the target string.
 			*/
 			length: target.length,
-			/** The elements` values must be between 32 (space) and 254.
-			*/
-			minimumValue: function () { return 32; },
-			maximumValue: function () { return 254; },
+			
 			/** An element `suffices()` when its equal to the target string.
 			*/
 			suffices: function suffices() {
 				return this.mapping() === target;
 			},
+			
 			/** An element evaluation is equal to its distance from target string.
 			*/
 			evaluate: function evaluate() {
-				return this.evaluation = this.manhattanDistance(__target__, this.values);
+				return this.evaluation = this.manhattanDistance(__target__, this.rangeMapping([32, 254]));
 			},
+			
 			/** An element's values are always numbers. These are converted to a string by 
 			converting each number to its corresponding Unicode character.
 			*/
 			mapping: function mapping() {
-				return iterable(this.values).map(function (n) {
-					return String.fromCharCode(n | 0);
+				return this.rangeMapping([32, 254]).map(function (n) {
+					return String.fromCharCode(n |0);
 				}).join('');
 			}
 		});
@@ -1527,148 +1575,6 @@ problems.HelloWorld = declare(Problem, {
 	compare: Problem.prototype.minimization
 }); // declare HelloWorld.
 
-
-/** # N queens puzzle problem
-
-A generalized version of the classic [8 queens puzzle](http://en.wikipedia.org/wiki/Eight_queens_puzzle),
-a problem of placing 8 chess queens on an 8x8 chessboard so that no two queens may attack each 
-other.
-*/
-problems.NQueensPuzzle = declare(Problem, { ////////////////////////////
-	title: "N-queens puzzle",
-	description: "Generalized version of the classic problem of placing "+
-		"8 chess queens on an 8x8 chessboard so that no two queens attack each other.",
-	
-	/** The constructor takes only one particular parameter:
-	*/	
-	constructor: function NQueensPuzzle(params){
-		Problem.call(this, params);
-		initialize(this, params)
-			/** + `N=8`: the number of queens and both dimensions of the board.
-			*/
-			.integer('N', { coerce: true, defaultValue: 8 });
-		
-		var rowRange = Iterable.range(this.N).toArray();
-		/** The representation is an array of `N` positions, indicating the row of the queen for 
-		each column.
-		*/
-		this.representation = declare(Element, {
-			length: this.N,
-			/** Its evaluation is the count of diagonals shared by queens pairwise.
-			*/
-			evaluate: function evaluate() {
-				var rows = this.mapping(),
-					count = 0;
-				rows.forEach(function (row, i) {
-					for (var j = 1; i + j < rows.length; j++) {
-						if (rows[j] == row + j || rows[j] == row - j) {
-							count++;
-						}
-					}
-				});
-				return this.evaluation = count;
-			},
-			/** It is sufficient when no pair of queens share diagonals.
-			*/
-			suffices: function suffices() {
-				return this.evaluation === 0;
-			},
-			mapping: function mapping() {
-				return this.setMapping(rowRange);
-			}
-		});
-	},
-	
-	/** Of course, the number of shared diagonals must be minimized.
-	*/
-	compare: Problem.prototype.minimization
-}); // declare NQueensPuzzle
-
-
-/** # Knapsack problem
-
-The [Knapsack problem](http://en.wikipedia.org/wiki/Knapsack_problem) is a classic combinatorial 
-optimization problem. Given a set of items, each with cost and worth, a selection must be obtained 
-(to go into the knapsack) so that the total cost does not exceed a certain limit, while maximizing 
-the total worth.
-*/
-problems.KnapsackProblem = declare(Problem, {
-	title: "Knapsack problem",
-	description: "Given a set of items with a cost and a worth, select a subset "+
-		" maximizing the worth sum but not exceeding a cost limit.",
-	
-	/** `items` is the superset of all candidate solutions. Must be an object with each item by 
-	name. Each item must have a cost and a worth, and may have an amount (1 by default).
-	*/
-	items: {
-		itemA: { cost: 12, worth:  4 }, 
-		itemB: { cost:  2, worth:  2 }, 
-		itemC: { cost:  1, worth:  2 }, 
-		itemD: { cost:  1, worth:  1 },
-		itemE: { cost:  4, worth: 10 }
-	},
-	
-	/** The problem is based on a given a set of items, each with a cost and a worth. The solution 
-	is a subset of items with maximum worth sum that does not exceed a cost limit.
-	
-	The parameters specific for this problem are:
-	*/	
-	constructor: function KnapsackProblem(params){
-		Problem.call(this, params);
-		initialize(this, params)
-			/** + `limit=15` is the cost limit that candidate solution should not exceed.
-			*/
-			.number('limit', { coerce: true, defaultValue: 15 })
-			/** + `defaultAmount=1` is the amount available for each item by default.
-			*/
-			.integer('amount', { coerce: true, defaultValue: 1, minimum: 1 })
-			/** + `items` is the set of items.
-			*/
-			.object('items', { ignore: true });
-		
-		var problem = this;
-		/** The problem's representation is declared _ad hoc_. It is an array with a number for each
-		item. This number holds the selected amount for each item (from 0 up to the item's amount).
-		*/
-		this.representation = declare(Element, {
-			length: Object.keys(this.items).length,
-			/** All elements are evaluated by calculating the worth of all included items. If their 
-			cost is greater than the problem's limit, the worth becomes negative.
-			*/
-			evaluate: function evaluate() {
-				var selection = this.mapping(),
-					worth = 0,
-					cost = 0;
-				Object.keys(selection).forEach(function (name) {
-					var item = problem.items[name],
-						amount = selection[name];
-					worth += item.worth * amount;
-					cost += item.cost * amount;
-				});
-				return this.evaluation = cost > problem.limit ? -worth : worth;
-			},
-			/** All elements are mapped to an object with the selected amount associated to each 
-			item.
-			*/
-			mapping: function mapping() {
-				var selection = {},
-					keys = Object.keys(problem.items);
-				keys.sort();
-				iterable(this.values).zip(keys).forEach(function (pair) {
-					var item = problem.items[pair[1]],
-						amount = pair[0] * (1 + (+item.amount || 1)) | 0;
-					selection[pair[1]] = amount;
-				});
-				return selection;
-			}
-		});
-	},
-	
-	/** The best selection of items is the one that maximizes worth, without exceeding the cost 
-	limit.
-	*/
-	compare: Problem.prototype.maximization
-}); // declare KnapsackProblem
 
 /** # Test beds
 
@@ -1687,19 +1593,14 @@ var testbed = problems.testbed = function testbed(spec) {
 			/** The representation of all testbeds must override the evaluation of the candidate 
 			solutions. The `length` is 2 by default.
 			*/
-			var problem = this;
+			var problem = this,
+				minimumValue = isNaN(spec.minimumValue) ? -1e6 : +spec.minimumValue,
+				maximumValue = isNaN(spec.maximumValue) ? +1e6 : +spec.maximumValue;
 			this.representation = declare(Element, {
-				length: isNaN(spec.length) ? 2 : +spec.length,
-				
-				minimumValue: isNaN(spec.minimumValue) 
-					? function () { return -1e6; } 
-					: function () { return +spec.minimumValue; },
-				maximumValue: isNaN(spec.maximumValue) 
-					? function () { return +1e6; }
-					: function () { return +spec.maximumValue; },
+				length: isNaN(spec.length) ? 2 : +spec.length,				
 				
 				evaluate: function evaluate() {
-					return this.evaluation = spec.evaluation(this.values);
+					return this.evaluation = spec.evaluation(this.rangeMapping([minimumValue, maximumValue]));
 				}
 			});
 		},
@@ -1970,6 +1871,276 @@ problems.testbeds = {
 		});
 	}
 }; // problems.testbeds
+
+/** # N queens puzzle problem
+
+A generalized version of the classic [8 queens puzzle](http://en.wikipedia.org/wiki/Eight_queens_puzzle),
+a problem of placing 8 chess queens on an 8x8 chessboard so that no two queens may attack each 
+other.
+*/
+problems.NQueensPuzzle = declare(Problem, { ////////////////////////////
+	title: "N-queens puzzle",
+	description: "Generalized version of the classic problem of placing "+
+		"8 chess queens on an 8x8 chessboard so that no two queens attack each other.",
+	
+	/** The constructor takes only one particular parameter:
+	*/	
+	constructor: function NQueensPuzzle(params){
+		Problem.call(this, params);
+		initialize(this, params)
+			/** + `N=8`: the number of queens and both dimensions of the board.
+			*/
+			.integer('N', { coerce: true, defaultValue: 8 });
+		
+		var rowRange = Iterable.range(this.N).toArray();
+		/** The representation is an array of `N` positions, indicating the row of the queen for 
+		each column.
+		*/
+		this.representation = declare(Element, {
+			length: this.N,
+			/** Its evaluation is the count of diagonals shared by queens pairwise.
+			*/
+			evaluate: function evaluate() {
+				var rows = this.mapping(),
+					count = 0;
+				rows.forEach(function (row, i) {
+					for (var j = 1; i + j < rows.length; j++) {
+						if (rows[j] == row + j || rows[j] == row - j) {
+							count++;
+						}
+					}
+				});
+				return this.evaluation = count;
+			},
+			/** It is sufficient when no pair of queens share diagonals.
+			*/
+			suffices: function suffices() {
+				return this.evaluation === 0;
+			},
+			mapping: function mapping() {
+				return this.setMapping(rowRange);
+			}
+		});
+	},
+	
+	/** Of course, the number of shared diagonals must be minimized.
+	*/
+	compare: Problem.prototype.minimization
+}); // declare NQueensPuzzle
+
+
+/** # Knapsack problem
+
+The [Knapsack problem](http://en.wikipedia.org/wiki/Knapsack_problem) is a classic combinatorial 
+optimization problem. Given a set of items, each with cost and worth, a selection must be obtained 
+(to go into the knapsack) so that the total cost does not exceed a certain limit, while maximizing 
+the total worth.
+*/
+problems.KnapsackProblem = declare(Problem, {
+	title: "Knapsack problem",
+	description: "Given a set of items with a cost and a worth, select a subset "+
+		" maximizing the worth sum but not exceeding a cost limit.",
+	
+	/** `items` is the superset of all candidate solutions. Must be an object with each item by 
+	name. Each item must have a cost and a worth, and may have an amount (1 by default).
+	*/
+	items: {
+		itemA: { cost: 12, worth:  4 }, 
+		itemB: { cost:  2, worth:  2 }, 
+		itemC: { cost:  1, worth:  2 }, 
+		itemD: { cost:  1, worth:  1 },
+		itemE: { cost:  4, worth: 10 }
+	},
+	
+	/** The problem is based on a given a set of items, each with a cost and a worth. The solution 
+	is a subset of items with maximum worth sum that does not exceed a cost limit.
+	
+	The parameters specific for this problem are:
+	*/	
+	constructor: function KnapsackProblem(params){
+		Problem.call(this, params);
+		initialize(this, params)
+			/** + `limit=15` is the cost limit that candidate solution should not exceed.
+			*/
+			.number('limit', { coerce: true, defaultValue: 15 })
+			/** + `defaultAmount=1` is the amount available for each item by default.
+			*/
+			.integer('amount', { coerce: true, defaultValue: 1, minimum: 1 })
+			/** + `items` is the set of items.
+			*/
+			.object('items', { ignore: true });
+		
+		var problem = this;
+		/** The problem's representation is declared _ad hoc_. It is an array with a number for each
+		item. This number holds the selected amount for each item (from 0 up to the item's amount).
+		*/
+		this.representation = declare(Element, {
+			length: Object.keys(this.items).length,
+			/** All elements are evaluated by calculating the worth of all included items. If their 
+			cost is greater than the problem's limit, the worth becomes negative.
+			*/
+			evaluate: function evaluate() {
+				var selection = this.mapping(),
+					worth = 0,
+					cost = 0;
+				Object.keys(selection).forEach(function (name) {
+					var item = problem.items[name],
+						amount = selection[name];
+					worth += item.worth * amount;
+					cost += item.cost * amount;
+				});
+				return this.evaluation = cost > problem.limit ? -worth : worth;
+			},
+			/** All elements are mapped to an object with the selected amount associated to each 
+			item.
+			*/
+			mapping: function mapping() {
+				var selection = {},
+					keys = Object.keys(problem.items);
+				keys.sort();
+				iterable(this.values).zip(keys).forEach(function (pair) {
+					var item = problem.items[pair[1]],
+						amount = pair[0] * (1 + (+item.amount || 1)) | 0;
+					selection[pair[1]] = amount;
+				});
+				return selection;
+			}
+		});
+	},
+	
+	/** The best selection of items is the one that maximizes worth, without exceeding the cost 
+	limit.
+	*/
+	compare: Problem.prototype.maximization
+}); // declare KnapsackProblem
+
+/** # Association rules.
+
+Association rules are relations between variables found in databases. Many methods have been 
+researched to automatically search for interesting rules in large data sets.
+
+For further information, see:
+
++ Agrawal, R.; Imieliński, T.; Swami, A. [_"Mining association rules between sets of items in large 
+	databases"_](http://dl.acm.org/citation.cfm?doid=170035.170072). Proceedings of the 1993 ACM 
+	SIGMOD international conference on Management of data.
+	
++ Sergey Brin, Rajeev Motwani, Jeffrey D. Ullman, and Shalom Tsur. [_"Dynamic itemset counting and 
+	implication rules for market basket data"_](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.25.3707).
+	SIGMOD 1997, Proceedings ACM SIGMOD International Conference on Management of Data.
+*/
+var AssociationRule = problems.AssociationRule = declare(Element, {
+	constructor: function AssociationRule(values) {
+		Element.call(this, values);
+	},
+	
+	// ## Evaluation ###############################################################################
+	
+	/** This method checks if the given `record` complies with this rule's `antecedent`. It is not
+	implemented by default, so it should be overriden.
+	*/
+	antecedent: base.objects.unimplemented('AssociationRule', 'antecedent'),
+	
+	/** This method checks if the given `record` complies with this rule's `consequent`. It is not
+	implemented by default, so it should be overriden.
+	*/
+	consequent: base.objects.unimplemented('AssociationRule', 'consequent'),
+	
+	/** Given a `dataset` (a sequence of records) the `measures` of this association rule
+	include the usual statistics:
+	
+	+ `antecedentCount`, `consequentCount`, `ruleCount` are the numbers of records that comply with
+		this rules's antecedent, consequent and both.
+	+ `antecedentSupport`, `consequentSupport`, `ruleSupport` are the same numbers as before but 
+		divided by the total number of records.
+	+ `confidence` can be interpreted as an estimation of _P(C|A)_ for rules _A -> C_.
+	+ `lift` is the ratio of the observed support to that expected if A and C were independent.
+	+ `conviction` is the ratio of the expected frequency that A occurs without C.
+	+ `leverage` measures the difference of A and C appearing together in the data set and what 
+		would be expected if X and Y where statistically dependent.
+	*/
+	measures: function measures(dataset) {
+		var element = this,
+			result = {},
+			totalCount = 0, antecedentCount = 0, consequentCount = 0, ruleCount = 0;
+		iterable(dataset).forEach(function (record) {
+			if (element.antecedent(record)) {
+				++antecedentCount;
+				if (element.consequent(record)) {
+					++consequentCount;
+					++ruleCount;
+				}
+			} else if (element.consequent(record)) {
+				++consequentCount;
+			}
+			++totalCount;
+		});
+		result.antecedentCount = antecedentCount;
+		result.consequentCount = consequentCount;
+		result.ruleCount = ruleCount;
+		result.antecedentSupport = totalCount > 0 ? antecedentCount / totalCount : 0,
+		result.consequentSupport = totalCount > 0 ? consequentCount / totalCount : 0,
+		result.ruleSupport = totalCount > 0 ? ruleCount / totalCount : 0,
+		result.confidence = antecedentCount > 0 ? ruleCount / antecedentCount : 0;
+		result.lift = result.consequentSupport > 0 ? result.confidence / result.consequentSupport : 0;
+		result.conviction = result.consequentSupport > 0 && result.confidence < 1 ? (1 - result.consequentSupport) / (1 - result.confidence) : 0;
+		result.leverage = result.ruleSupport - result.antecedentSupport * result.consequentSupport;
+		return result;
+	}, 
+	
+	/** By default, the evaluation uses the rule's confidence. It assumes the elements has a 
+	`dataset` member. Measures are cached in `this.__measures__`.
+	*/
+	evaluate: function evaluate() {
+		if (!this.__measures__) {
+			this.__measures__ = this.measures(this.dataset);
+		}
+		this.evaluation = this.__measures__.confidence;
+		return this.evaluation;
+	},
+	
+	// ## Utilities ################################################################################
+
+	/** The method `booleanRules` builds a representation for classic association rules, which treat
+	each record as a set of `keys`. Each position in the element's values tells if the corresponding
+	key belongs to the rule's antecedent or consequent; or neither. Empty antecedents and 
+	consequents always evaluate to false.
+	*/
+	'static booleanRules': function booleanRules(keys) {
+		var parent = this;
+		return declare(parent, {
+			length: keys.length,
+			
+			constructor: function (values) {
+				parent.call(this, values);
+				var aks = this.__antecedentKeys__ = [], // Cache rule's keys.
+					cks = this.__consequentKeys__ = [];
+				this.arrayMapping([0,1,2]).forEach(function (v, i) {
+					switch (v) {
+						case 1: aks.push(keys[i]); break;
+						case 2: cks.push(keys[i]); break;
+					}
+				});
+			},
+			
+			__checkKeys__: function __checkKeys__(keys, record) {
+				return keys.length > 0 && iterable(keys).all(function (key) {
+					return !!record[key];
+				});
+			},
+			
+			antecedent: function antecedent(record) {
+				return this.__checkKeys__(this.__antecedentKeys__, record);
+			},
+			
+			consequent: function consequent(record) {
+				return this.__checkKeys__(this.__consequentKeys__, record);
+			}
+		});
+	},
+	
+}); // declare AssociationRule.
+
 
 // See __prologue__.js
 	return exports;

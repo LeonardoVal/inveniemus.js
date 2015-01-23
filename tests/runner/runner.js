@@ -27,6 +27,7 @@
 			'metaheuristics.DifferentialEvolution': { size: 50, steps: 30 },
 			'metaheuristics.EvolutionStrategy': { size: 10, steps: 30, mutantCount: 5 },
 			'metaheuristics.HarmonySearch': { size: 30, steps: 200 },
+			'metaheuristics.DistributionEstimation': { size: 50, steps: 50 },
 		};
 		var exampleSelect = $('select');
 		exampleSelect.change(function () {
