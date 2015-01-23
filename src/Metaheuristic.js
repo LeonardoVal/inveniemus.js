@@ -150,10 +150,7 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	of passed iterations is not greater than `steps`.
 	*/
 	finished: function finished() {
-		if (this.step >= this.steps || this.problem.suffices(this.state)) {
-			return true;
-		}
-		return false;
+		return this.step >= this.steps || this.problem.suffices(this.state);
 	},
 
 	/** `analyze()` updates the process' statistics.
@@ -300,8 +297,8 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	
 	// ## Utilities ################################################################################
 	
-	/** The default string representation of a Metaheuristic shows its 
-	constructor's name and its parameters.
+	/** The default string representation of a Metaheuristic shows its constructor's name and its 
+	parameters.
 	*/
 	toString: function toString() {
 		return (this.constructor.name || 'Metaheuristic') +"("+ JSON.stringify(this) +")";
