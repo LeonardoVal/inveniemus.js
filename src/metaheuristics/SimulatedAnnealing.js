@@ -35,9 +35,9 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 		var i = this.random.randomInt(element.values.length), 
 			v = element.values[i];
 		if (this.random.randomBool()) {
-			v = Math.min(element.maximumValue(i), v + radius);
+			v = Math.min(1, v + radius);
 		} else {
-			v = Math.max(element.minimumValue(i), v - radius);
+			v = Math.max(0, v - radius);
 		}
 		return element.modification(i, v);
 	},
@@ -85,6 +85,7 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 				return mh.random.randomBool(p) ? neighbour : elem;
 			});
 		})).then(function (elems) {
+			elems.sort(mh.problem.compare.bind(mh.problem));
 			mh.state = elems;
 			mh.onUpdate();
 			return elems;
