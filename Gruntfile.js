@@ -15,11 +15,13 @@ module.exports = function(grunt) {
 		'src/metaheuristics/DifferentialEvolution.js',
 		'src/metaheuristics/EvolutionStrategy.js',
 		'src/metaheuristics/HarmonySearch.js',
+		'src/metaheuristics/DistributionEstimation.js',
 	// Problems.
 		'src/problems/HelloWorld.js',
+		'src/problems/testbeds.js',
 		'src/problems/NQueensPuzzle.js',
 		'src/problems/KnapsackProblem.js',
-		'src/problems/testbeds.js',
+		'src/problems/associationRules.js',
 	// Fin.
 		'src/__epilogue__.js'];
 
