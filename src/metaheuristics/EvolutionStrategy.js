@@ -24,8 +24,7 @@ var EvolutionStrategy = metaheuristics.EvolutionStrategy = declare(Metaheuristic
 	mutant: function mutant(element) {
 		var random = this.random,
 			newValues = element.values.map(function (v, i) {
-				v += random.random() - random.random();
-				return element.clampValue(v, i); 
+				return v + random.random() - random.random();
 			});
 		return new element.constructor(newValues);
 	},

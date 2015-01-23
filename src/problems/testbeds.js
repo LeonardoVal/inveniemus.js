@@ -15,19 +15,14 @@ var testbed = problems.testbed = function testbed(spec) {
 			/** The representation of all testbeds must override the evaluation of the candidate 
 			solutions. The `length` is 2 by default.
 			*/
-			var problem = this;
+			var problem = this,
+				minimumValue = isNaN(spec.minimumValue) ? -1e6 : +spec.minimumValue,
+				maximumValue = isNaN(spec.maximumValue) ? +1e6 : +spec.maximumValue;
 			this.representation = declare(Element, {
-				length: isNaN(spec.length) ? 2 : +spec.length,
-				
-				minimumValue: isNaN(spec.minimumValue) 
-					? function () { return -1e6; } 
-					: function () { return +spec.minimumValue; },
-				maximumValue: isNaN(spec.maximumValue) 
-					? function () { return +1e6; }
-					: function () { return +spec.maximumValue; },
+				length: isNaN(spec.length) ? 2 : +spec.length,				
 				
 				evaluate: function evaluate() {
-					return this.evaluation = spec.evaluation(this.values);
+					return this.evaluation = spec.evaluation(this.rangeMapping([minimumValue, maximumValue]));
 				}
 			});
 		},

@@ -208,7 +208,7 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 		random value.
 		*/
 		singlepointUniformMutation: function singlepointUniformMutation(element) {
-			return element.modification(this.random.randomInt(element.length), element.randomValue());
+			return element.modification(this.random.randomInt(element.length), this.random.random());
 		},
 			
 		/** + `uniformMutation(maxPoints=Infinity)` builds a mutation function that makes at least 
@@ -221,7 +221,7 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 				var times = maxPoints;
 				element = new element.constructor(element.values); // Copy element.
 				do {
-					element.values[this.random.randomInt(element.length)] = element.randomValue();
+					element.values[this.random.randomInt(element.length)] = this.random.random();
 				} while (this.random.randomBool(this.mutationRate) && --times > 0);
 				return element;
 			};
@@ -233,8 +233,7 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 		singlepointBiasedMutation: function singlepointBiasedMutation(element) {
 			var random = this.random, 
 				i = random.randomInt(element.length);
-			return element.modification(i, 
-				element.clampValue(element.values[i] + random.random() - random.random(), i));
+			return element.modification(i, element.values[i] + random.random() - random.random());
 		},
 		
 		/** + `recombinationMutation(element)` swaps two values of the element at random.

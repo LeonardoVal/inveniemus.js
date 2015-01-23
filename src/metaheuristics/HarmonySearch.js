@@ -34,10 +34,10 @@ var HarmonySearch = metaheuristics.HarmonySearch = declare(Metaheuristic, {
 			if (this.random.randomBool(this.harmonyProbability)) {
 				values[i] = this.random.choice(this.state).values[i];
 				if (this.random.randomBool(this.adjustProbability)) {
-					values[i] = proto.clampValue(values[i] + this.random.choice([-1, +1]) * this.delta, i);
+					values[i] = values[i] + this.random.choice([-1, +1]) * this.delta;
 				}
 			} else {
-				values[i] = proto.randomValue(i);
+				values[i] = this.random.random();
 			}
 		}
 		this.onExpand();

@@ -26,26 +26,25 @@ problems.HelloWorld = declare(Problem, {
 			/** The elements` `length` is equal to the length of the target string.
 			*/
 			length: target.length,
-			/** The elements` values must be between 32 (space) and 254.
-			*/
-			minimumValue: function () { return 32; },
-			maximumValue: function () { return 254; },
+			
 			/** An element `suffices()` when its equal to the target string.
 			*/
 			suffices: function suffices() {
 				return this.mapping() === target;
 			},
+			
 			/** An element evaluation is equal to its distance from target string.
 			*/
 			evaluate: function evaluate() {
-				return this.evaluation = this.manhattanDistance(__target__, this.values);
+				return this.evaluation = this.manhattanDistance(__target__, this.rangeMapping([32, 254]));
 			},
+			
 			/** An element's values are always numbers. These are converted to a string by 
 			converting each number to its corresponding Unicode character.
 			*/
 			mapping: function mapping() {
-				return iterable(this.values).map(function (n) {
-					return String.fromCharCode(n | 0);
+				return this.rangeMapping([32, 254]).map(function (n) {
+					return String.fromCharCode(n |0);
 				}).join('');
 			}
 		});
