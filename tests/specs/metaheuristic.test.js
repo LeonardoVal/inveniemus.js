@@ -6,36 +6,34 @@
 		return typeof mh === 'function' && mh.prototype instanceof inveniemus.Metaheuristic;
 	}))
 	.product([
-		['HelloWorld', inveniemus.problems.HelloWorld],
 		['sumMinimization', inveniemus.problems.testbeds.sumOptimization(10, -Infinity)],
 		['sumMaximization', inveniemus.problems.testbeds.sumOptimization(10, +Infinity)],
-		['Rosenbrock', inveniemus.problems.testbeds.Rosenbrock()]
+		['sumApproximation', inveniemus.problems.testbeds.sumOptimization(10, Math.PI)],
 	])
 	.forEachApply(function (metaheuristic, testbed) {
 		var metaheuristicName = metaheuristic[0],
-			testbedName = testbed[0];
+			testbedName = testbed[0],
+			SIZE = 30,
+			STEPS = 10;
 		metaheuristic = metaheuristic[1];
 		testbed = testbed[1];
 		describe(metaheuristicName +" with "+ testbedName, function () {
 			async_it(": basic test.", function () {
-				var mh = new metaheuristic({ problem: new testbed(), size: 10, steps: 5, logger: null }),
-					runBest, stepBest;
-				mh.events.on('onStep', function () {
-					expect(mh.state.length).toBe(size);
+				var mh = new metaheuristic({ 
+					problem: new testbed(), 
+					size: SIZE, 
+					steps: STEPS, 
+					logger: null
+				});
+				mh.events.on('advanced', function () {
+					expect(mh.step).not.toBeGreaterThan(STEPS);
+					expect(mh.state.length).toBe(SIZE);
 					var stepBest = mh.state[0];
-					expect(stepBest).toBeDefined();
-					expect(Array.isArray(stepBest.values)).toBe(true);
-					expect(stepBest.values.length).toBe(stepBest.length);
-					if (mh.step > 0) {
-						expect(mh.step).not.toBeGreaterThen(steps);
-						expect(isNaN(stepBest.evaluation)).toBe(false);
-						if (runBest) { // Check if the search is actually improving the best element.
-							expect(mh.problem.compare(runBest, stepBest)).not.toBeLessThan(0);
-						}
-						runBest = stepBest;
-					} else {
-						runBest = null; // Clean because the metaheuristic has been reset.
-					}
+					mh.state.forEach(function (elem) {
+						expect(elem instanceof mh.problem.representation).toBe(true); // All elements should inherit from Element.
+						expect(isNaN(elem.evaluation)).toBe(false); // All elements should be evaluated.
+						expect(mh.problem.compare(stepBest, elem)).not.toBeGreaterThan(0); // Elements should be properly sorted.
+					});
 				});
 				return mh.run();
 			});
