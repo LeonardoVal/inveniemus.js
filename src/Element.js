@@ -19,9 +19,12 @@ var Element = exports.Element = declare({
 	*/
 	constructor: function Element(values, evaluation) {
 		if (typeof values === 'undefined') {
-			this.values = this.randomValues();
+			this.values = this.random.randoms(this.length);
 		} else {
-			this.values = values.slice(); // Makes a shallow copy.
+			this.values = values.map(function (value, i) {
+				raiseIf(isNaN(value), "Value #", i, " for element is NaN!");
+				return Math.min(1, Math.max(0, +value));
+			});
 		}
 		this.evaluation = +evaluation;
 	},
@@ -30,46 +33,10 @@ var Element = exports.Element = declare({
 	*/
 	length: 10,
 
-	/** All numbers in an element's values have a valid range between `minimumValue` (0 by default) 
-	and `maximumValue` (1 by default).
-	*/
-	minimumValue: function minimumValue(position) {
-		return 0;
-	},
-	maximumValue: function maximumValue(position) {
-		return 1;
-	},
-	
 	/** The pseudorandom number generator in the class property `random` is required by some of the
 	element's operations. Its equal to `base.Randomness.DEFAULT` by default.
 	*/
 	random: Randomness.DEFAULT,
-	
-	/** One of this operations is `randomValue()`, which returns a random value between
-	`this.minimumValue` and `this.maximumValue`.
-	*/
-	randomValue: function randomValue(position) {
-		return this.random.random(this.minimumValue(position), this.maximumValue(position));
-	},
-	
-	/** This method is used in `randomValues()` to calculate an array with random numbers, suitable
-	to be used as an element's `values`. Many metaheuristics require random initiation of the
-	elements they handle.
-	*/
-	randomValues: function randomValues() {
-		var values = new Array(this.length);
-		for (var i = 0; i < this.length; i++) {
-			values[i] = this.randomValue(i);
-		}
-		return values;
-	},
-	
-	/** A value in a position of the element is clamped when it is coerced between the element's 
-	valid value range for that position.
-	*/
-	clampValue: function (value, position) {
-		return Math.min(this.maximumValue(position), Math.max(this.minimumValue(position), value));
-	},
 	
 	// ## Basic operations #########################################################################
 	
@@ -170,17 +137,15 @@ var Element = exports.Element = declare({
 	neighbourhood: function neighbourhood(radius) {
 		var elems = [], 
 			values = this.values,
-			i, d, value, minValue, maxValue;
+			i, d, value;
 		for (i = 0; i < values.length; i++) {
-			minValue = this.minimumValue(i);
-			maxValue = this.maximumValue(i);
-			d = typeof(radius) === 'number' ? radius : Array.isArray(radius) ? radius[i] : (maxValue - minValue) / 100;
+			d = typeof(radius) === 'number' ? radius : Array.isArray(radius) ? radius[i] : 1 / 100;
 			value = values[i] + d;
-			if (value <= maxValue) {
+			if (value <= 1) {
 				elems.push(this.modification(i, value));
 			}
 			value = values[i] - d;
-			if (value >= minValue) {
+			if (value >= 0) {
 				elems.push(this.modification(i, value));
 			}
 		}
@@ -194,29 +159,19 @@ var Element = exports.Element = declare({
 		var copy = new this.constructor(this.values), i, v;
 		for (i = 0; i < arguments.length; i += 2) {
 			v = +arguments[i + 1];
-			raiseIf(isNaN(v) || v < this.minimumValue(i) || v > this.maximumValue(i), "Invalid value ", v, " for element.");
+			raiseIf(isNaN(v) || v < 0 || v > 1, "Invalid value ", v, " for element.");
 			copy.values[arguments[i] | 0] = +arguments[i + 1];
 		}
 		return copy;
-	},
-	
-	/** Coerces all values in the given array to be within this element's valid range; i.e. between 
-	`minimumValue` and `maximumValue`. If no array is given, this element's `values` are used 
-	instead.
-	*/
-	clamp: function (values) {
-		values || (values = this.values);
-		for (var i = 0; i < values.length; ++i) {
-			values[i] = this.clampValue(values[i], i);
-		}
-		return values;
 	},
 	
 	// ## Mappings #################################################################################
 	
 	/** An array mapping builds an array of equal length of this element's `values`. Each value is 
 	used to index the corresponding items argument. If there are less arguments than the element's 
-	`length`, the last one is used for the rest of the values. 
+	`length`, the last one is used for the rest of the values.
+	
+	Warning! This method assumes this element's values are in the range [0,1].
 	*/
 	arrayMapping: function arrayMapping() {
 		var args = arguments, 
@@ -230,12 +185,27 @@ var Element = exports.Element = declare({
 	
 	/** A set mapping builds an array of equal length of this element's `values`. Each value is used 
 	to select one item. Items are not selected more than once. 
+	
+	Warning! This method assumes this element's values are in the range [0,1].
 	*/
 	setMapping: function setMapping(items) {
 		raiseIf(!Array.isArray(items), "Element.setMapping() expects an array argument.");
 		items = items.slice(); // Shallow copy.
 		return this.values.map(function (v, i) {
 			return items.splice(v * items.length | 0, 1)[0];
+		});
+	},
+	
+	/** A range mapping builds an array of equal length of this element's `values`. Each value is 
+	translated from [0,1] to the corresponding range.
+	*/
+	rangeMapping: function rangeMapping() {
+		var args = arguments, 
+			lastRange = args[args.length - 1];
+		raiseIf(args.length < 1, "Element.rangeMapping() expects at least one argument.");
+		return this.values.map(function (v, i) {
+			var range = args.length > i ? args[i] : lastRange;
+			return v * (range[1] - range[0]) + range[0];
 		});
 	},
 	
