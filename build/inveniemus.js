@@ -38,7 +38,8 @@ their candidate solutions.
 */
 var Element = exports.Element = declare({
 	/** All elements are defined by an array of numbers (i.e. the element's `values`, random numbers
-	by default) and an `evaluation` (`NaN` by default).
+	by default) and an `evaluation` (`NaN` by default). The element's values are coerced to be in 
+	the [0,1] range.
 	
 	The `values` store all data about the candidate solution this element represents. This may 
 	appear to abstract and stark, but it helps	to separate the problem definition from the search
@@ -184,16 +185,16 @@ var Element = exports.Element = declare({
 	},
 	
 	/** The method `modification(index, value, ...)` returns a new and unevaluated copy of this 
-	element, with its values modified as specified.
+	element, with its values modified as specified. Values are always coerced to the [0,1] range.
 	*/
 	modification: function modification() {
-		var copy = new this.constructor(this.values), i, v;
+		var newValues = this.values.slice(), i, v;
 		for (i = 0; i < arguments.length; i += 2) {
 			v = +arguments[i + 1];
-			raiseIf(isNaN(v) || v < 0 || v > 1, "Invalid value ", v, " for element.");
-			copy.values[arguments[i] | 0] = +arguments[i + 1];
+			raiseIf(isNaN(v), "Invalid value ", v, " for element.");
+			newValues[arguments[i] |0] = Math.min(1, Math.max(0, v));
 		}
-		return copy;
+		return new this.constructor(newValues);
 	},
 	
 	// ## Mappings #################################################################################
@@ -723,6 +724,7 @@ var HillClimbing = metaheuristics.HillClimbing = declare(Metaheuristic, {
 				return best;
 			});			
 		})).then(function (elems) {
+			elems.sort(mh.problem.compare.bind(mh.problem));
 			mh.state = elems;
 			mh.__localOptima__ = localOptima;
 			mh.onUpdate();
@@ -1136,7 +1138,7 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 			elems.sort(mh.problem.compare.bind(mh.problem));
 			mh.state = elems;
 			mh.onUpdate();
-			return elems;
+			return mh;
 		});
 	},
 
@@ -1450,7 +1452,7 @@ var DistributionEstimation = metaheuristics.DistributionEstimation = declare(Met
 			/** + `histogramWidth=10` is the amounts of ranges the value domain is split in order
 			to calculate the histograms.
 			*/
-			.integer('histogramWidth', { coerce: true, defaultValue: 10, minimum: 1 });
+			.integer('histogramWidth', { coerce: true, defaultValue: 10, minimum: 2 });
 	},
 	
 	/** New elements to add to the state in the `expansion` are build from the `histograms`
@@ -1468,15 +1470,17 @@ var DistributionEstimation = metaheuristics.DistributionEstimation = declare(Met
 	
 	/** The `histograms` have the frequencies of value ranges in the current state.
 	*/
-	histograms: function histograms(state) {
-		state || (state = this.state);
-		var histogramWidth = this.histogramWidth,
-			size = this.state.length,
+	histograms: function histograms() {
+		return DistributionEstimation.histograms(this.state, this.histogramWidth, 
+			this.problem.representation.prototype.length);
+	},
+	
+	'static histograms': function histograms(state, histogramWidth, histogramCount) {
+		var size = state.length,
 			emptyCount = base.Iterable.repeat(0, histogramWidth).toArray(),
-			length = this.problem.representation.prototype.length,
 			counts = base.Iterable.iterate(function (v) {
 				return v.slice(); // Shallow copy.
-			}, emptyCount, length).toArray();
+			}, emptyCount, histogramCount).toArray();
 		state.forEach(function (element) {
 			element.values.forEach(function (value, i) {
 				var bar = Math.min(histogramWidth - 1, Math.floor(element.values[i] * histogramWidth));
@@ -1492,11 +1496,13 @@ var DistributionEstimation = metaheuristics.DistributionEstimation = declare(Met
 	
 	/** The method `elementFromHistogram` is used to make these new random elements.
 	*/
-	elementFromHistograms: function elementFromHistogram(histograms, representation) {
-		representation || (representation = this.problem.representation);
+	elementFromHistograms: function elementFromHistogram(histograms) {
+		return DistributionEstimation.elementFromHistograms(histograms, this.problem.representation, this.random);
+	},
+	
+	'static elementFromHistograms': function elementFromHistogram(histograms, representation, random) {
 		var length = histograms.length,
 			values = new Array(length),
-			random = this.random,
 			histogram, r;
 		for (var i = 0; i < length; ++i) {
 			histogram = histograms[i];
@@ -1511,11 +1517,178 @@ var DistributionEstimation = metaheuristics.DistributionEstimation = declare(Met
 		return new representation(values);
 	},
 	
+	// ## Estimation of distribution as a problem. #################################################
+	
+	/** A `histogramProblem` is the problem of finding histograms that would generate good candidate
+	solutions for a given `problem`.
+	*/
+	'static histogramProblem': function histogramProblem(problem, size, histogramWidth) {
+		size = isNaN(size) ? 30 : Math.max(1, size |0);
+		histogramWidth = isNaN(histogramWidth) ? 10 : Math.max(2, histogramWidth |0);
+		var elementLength = problem.representation.prototype.length,
+			elementFromHistograms = this.elementFromHistograms;
+		return new Problem({
+			/** Each element of this problem represents an histogram for elements of the given
+			`problem`. The argument `histogramWidth` defines how many ranges each histogram has.
+			*/
+			representation: declare(Element, {
+				length: elementLength * histogramWidth,
+				
+				random: problem.random,
+				
+				/** The evaluation of the elements is the average evaluation of `size` elements 
+				generated from the histogram that this element represents.
+				*/
+				evaluate: function evaluate() {
+					var element = this,
+						histograms = this.mapping(),
+						elements = base.Iterable.repeat(null, size).map(function () {
+							return elementFromHistograms(histograms, problem.representation, problem.random);
+						});
+					return Future.all(iterable(elements).map(function (e) {
+						return Future.when(e.evaluate());
+					})).then(function (evaluations) {
+						return element.evaluation = iterable(evaluations).sum() / evaluations.length;
+					});
+				},
+				
+				/** The `mapping` simply assembles the histograms and normalizes its frequencies.
+				*/
+				mapping: function mapping() {
+					var histograms = [], histogram, sum;
+					for (var i = 0; i < elementLength; ++i) {
+						histogram = this.values.slice(i * histogramWidth, (i+1) * histogramWidth);
+						sum = iterable(histogram).sum();
+						histograms[i] = histogram.map(function (f) { // Normalization
+							return f / sum;
+						});
+					}
+					return histograms;
+				}
+			}),
+			
+			/** The comparison function is the same as the original problem's.
+			*/
+			compare: problem.compare
+		});
+	},
+	
+	// ## Other ####################################################################################
+	
 	toString: function toString() {
 		return (this.constructor.name || 'DistributionEstimation') +'('+ JSON.stringify(this) +')';
 	}
 }); // declare DistributionEstimation.
 
+
+/** # Gradient descent
+
+[Gradient descent](http://en.wikipedia.org/wiki/Gradient_descent) is an iterative optimization 
+method, similar to Hill Climbing. The candidate solution is treated as a point in a multidimensional
+search space, and the gradient that the function being optimized defines in said domain is used to
+move the current solution in the steepest direction.
+*/
+var GradientDescent = metaheuristics.GradientDescent = declare(Metaheuristic, {
+	/** The constructor takes the following parameters:
+	*/
+	constructor: function HillClimbing(params) {
+		Metaheuristic.call(this, params);
+		initialize(this, params)
+		/** + `delta=0.01`: the maximum distance considered by gradient estimators.
+		*/
+			.number('delta', { coerce: true, defaultValue: 0.01 })
+		/** + `size=1`: the state's size is 1 by default. This may be increased, resulting in many 
+		parallel descents.
+		*/
+			.integer('size', { coerce: true, defaultValue: 1, minimum: 1 });
+	},
+	
+	/** A `gradient` is the vector for the direction of steepest descent (or ascent) of the function 
+	to be optimized at the given `element`. If the function is not differentiable an approximation
+	can be used. Since estimators may require element evaluation, which can be asynchronous, it must
+	be considered that this function may return a future.
+	
+	The default implementation is based on the finite difference method proposed by [Kiefer and 
+	Wolfowitz](http://projecteuclid.org/euclid.aoms/1177729392).
+	*/
+	gradient: function gradient(element) {
+		return this.gradientFiniteDifferences(element);
+	},
+	
+	/** The `rate` is a number by which the gradient is multiplied before adding it to the current 
+	point to advance to the next step. The default implementation returns `1/step`, as [Kiefer and 
+	Wolfowitz suggest](http://projecteuclid.org/euclid.aoms/1177729392).
+	*/
+	rate: function rate(step) {
+		step = isNaN(step) ? this.step : step |0;
+		return 1 / Math.max(1, step);
+	},
+	
+	/** The `estimatorWidth` is a number used by some gradient estimators. By default it returns 
+	`step^(-1/3) * delta`, similar to what [Kiefer and Wolfowitz suggest](http://projecteuclid.org/euclid.aoms/1177729392).
+	*/
+	estimatorWidth: function estimatorWidth(step, delta) {
+		step = isNaN(step) ? this.step : step |0;
+		delta = isNaN(delta) ? this.delta : +delta;
+		return Math.pow(Math.max(1, step), -1/3) * delta;
+	},
+	
+	/** In the `update`, each element in the state is moved in the search domain. The movement is 
+	set by its gradient in the direction of the optimization. The distance is defined by the `rate`
+	for the current step.
+	*/
+	update: function update() {
+		var mh = this,
+			rate = this.rate(this.step);
+		return Future.all(this.state.map(function (elem) {
+			return Future.then(mh.gradient(elem), function (gradient) {
+				var newValues = gradient.map(function (gradientValue, i) {
+					return elem.values[i] - gradientValue * rate;
+				});
+				return new elem.constructor(newValues);
+			});
+		})).then(function (elems) {
+			return mh.evaluate(elems);
+		}).then(function (elems) {
+			mh.state = elems;
+			mh.onUpdate();
+			return mh;
+		});
+	},
+	
+	// ## Gradient estimators ######################################################################
+	
+	/** A gradient estimator at the given `element` by finite differences.
+	*/
+	gradientFiniteDifferences: function gradientFiniteDifferences(element, width) {
+		width = isNaN(width) ? this.estimatorWidth() : +width;
+		var mh = this;
+		return Future.all(element.values.map(function (value, i) {
+			var left = element.modification(i, value - width),
+				right = element.modification(i, value + width);
+			return Future.then(left.evaluate(), function (leftEvaluation) {
+				return Future.then(right.evaluate(), function (rightEvaluation) {
+					var comp = mh.problem.compare(left, right);
+					comp = comp === 0 ? comp : comp > 0 ? 1 : -1;
+					return (leftEvaluation - rightEvaluation) * comp / 2 / width;
+				});
+			});
+		}));
+	},
+	
+	/** A gradient estimator at the given `element` for [Simultaneous Perturbation Stochastic 
+	Approximation](http://www.jhuapl.edu/SPSA/).
+	*/
+	gradientSimultaneousPerturbation: function gradientSimultaneousPerturbation(width, element) {
+		throw new Error('GradientDescent.gradientSimultaneousPerturbation() is not implemented!');//TODO
+	},
+	
+	// ## Other ####################################################################################
+	
+	toString: function toString() {
+		return (this.constructor.name || 'GradientDescent') +'('+ JSON.stringify(this) +')';
+	}
+}); // declare GradientDescent.
 
 /** # _"Hello World"_ problem
 
@@ -1584,26 +1757,22 @@ Problem builder for test beds of algorithms in this library.
 /** The function `testbed` is a shortcut used to define the test problems.
 */
 var testbed = problems.testbed = function testbed(spec) {
-	return declare(Problem, {
-		title: "",
-		description: "",
+	var minimumValue = isNaN(spec.minimumValue) ? -1e6 : +spec.minimumValue,
+		maximumValue = isNaN(spec.maximumValue) ? +1e6 : +spec.maximumValue;
+	return new Problem({
+		title: spec.title +"",
+		description: spec.description +"",
 		
-		constructor: function (params) {
-			Problem.call(this, params);
-			/** The representation of all testbeds must override the evaluation of the candidate 
-			solutions. The `length` is 2 by default.
-			*/
-			var problem = this,
-				minimumValue = isNaN(spec.minimumValue) ? -1e6 : +spec.minimumValue,
-				maximumValue = isNaN(spec.maximumValue) ? +1e6 : +spec.maximumValue;
-			this.representation = declare(Element, {
-				length: isNaN(spec.length) ? 2 : +spec.length,				
+		/** The representation of all testbeds must override the evaluation of the candidate 
+		solutions. The `length` is 2 by default.
+		*/
+		representation: declare(Element, {
+			length: isNaN(spec.length) ? 2 : +spec.length,				
 				
-				evaluate: function evaluate() {
-					return this.evaluation = spec.evaluation(this.rangeMapping([minimumValue, maximumValue]));
-				}
-			});
-		},
+			evaluate: function evaluate() {
+				return this.evaluation = spec.evaluation(this.rangeMapping([minimumValue, maximumValue]));
+			}
+		}),
 		
 		/** The optimization type is defined by `spec.target`. Minimization is assumed by default.
 		*/
@@ -1620,7 +1789,7 @@ var testbed = problems.testbed = function testbed(spec) {
 			var best = elements[0];
 			return Math.abs(best.evaluation - spec.optimumValue) < best.resolution;
 		} : Problem.prototype.suffices,
-	}); // declare.
+	});
 }; // problems.testbed()
 
 /** Testbed problems taken from the web (e.g. 
