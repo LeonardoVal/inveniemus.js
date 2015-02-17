@@ -88,7 +88,7 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 			elems.sort(mh.problem.compare.bind(mh.problem));
 			mh.state = elems;
 			mh.onUpdate();
-			return elems;
+			return mh;
 		});
 	},
 
