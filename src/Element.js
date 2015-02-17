@@ -7,7 +7,8 @@ their candidate solutions.
 */
 var Element = exports.Element = declare({
 	/** All elements are defined by an array of numbers (i.e. the element's `values`, random numbers
-	by default) and an `evaluation` (`NaN` by default).
+	by default) and an `evaluation` (`NaN` by default). The element's values are coerced to be in 
+	the [0,1] range.
 	
 	The `values` store all data about the candidate solution this element represents. This may 
 	appear to abstract and stark, but it helps	to separate the problem definition from the search
@@ -153,16 +154,16 @@ var Element = exports.Element = declare({
 	},
 	
 	/** The method `modification(index, value, ...)` returns a new and unevaluated copy of this 
-	element, with its values modified as specified.
+	element, with its values modified as specified. Values are always coerced to the [0,1] range.
 	*/
 	modification: function modification() {
-		var copy = new this.constructor(this.values), i, v;
+		var newValues = this.values.slice(), i, v;
 		for (i = 0; i < arguments.length; i += 2) {
 			v = +arguments[i + 1];
-			raiseIf(isNaN(v) || v < 0 || v > 1, "Invalid value ", v, " for element.");
-			copy.values[arguments[i] | 0] = +arguments[i + 1];
+			raiseIf(isNaN(v), "Invalid value ", v, " for element.");
+			newValues[arguments[i] |0] = Math.min(1, Math.max(0, v));
 		}
-		return copy;
+		return new this.constructor(newValues);
 	},
 	
 	// ## Mappings #################################################################################
