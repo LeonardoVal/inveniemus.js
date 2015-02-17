@@ -20,7 +20,7 @@
 		describe(metaheuristicName +" with "+ testbedName, function () {
 			async_it(": basic test.", function () {
 				var mh = new metaheuristic({ 
-					problem: new testbed(), 
+					problem: testbed, 
 					size: SIZE, 
 					steps: STEPS, 
 					logger: null

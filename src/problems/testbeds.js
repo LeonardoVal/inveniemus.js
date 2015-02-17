@@ -6,26 +6,22 @@ Problem builder for test beds of algorithms in this library.
 /** The function `testbed` is a shortcut used to define the test problems.
 */
 var testbed = problems.testbed = function testbed(spec) {
-	return declare(Problem, {
-		title: "",
-		description: "",
+	var minimumValue = isNaN(spec.minimumValue) ? -1e6 : +spec.minimumValue,
+		maximumValue = isNaN(spec.maximumValue) ? +1e6 : +spec.maximumValue;
+	return new Problem({
+		title: spec.title +"",
+		description: spec.description +"",
 		
-		constructor: function (params) {
-			Problem.call(this, params);
-			/** The representation of all testbeds must override the evaluation of the candidate 
-			solutions. The `length` is 2 by default.
-			*/
-			var problem = this,
-				minimumValue = isNaN(spec.minimumValue) ? -1e6 : +spec.minimumValue,
-				maximumValue = isNaN(spec.maximumValue) ? +1e6 : +spec.maximumValue;
-			this.representation = declare(Element, {
-				length: isNaN(spec.length) ? 2 : +spec.length,				
+		/** The representation of all testbeds must override the evaluation of the candidate 
+		solutions. The `length` is 2 by default.
+		*/
+		representation: declare(Element, {
+			length: isNaN(spec.length) ? 2 : +spec.length,				
 				
-				evaluate: function evaluate() {
-					return this.evaluation = spec.evaluation(this.rangeMapping([minimumValue, maximumValue]));
-				}
-			});
-		},
+			evaluate: function evaluate() {
+				return this.evaluation = spec.evaluation(this.rangeMapping([minimumValue, maximumValue]));
+			}
+		}),
 		
 		/** The optimization type is defined by `spec.target`. Minimization is assumed by default.
 		*/
@@ -42,7 +38,7 @@ var testbed = problems.testbed = function testbed(spec) {
 			var best = elements[0];
 			return Math.abs(best.evaluation - spec.optimumValue) < best.resolution;
 		} : Problem.prototype.suffices,
-	}); // declare.
+	});
 }; // problems.testbed()
 
 /** Testbed problems taken from the web (e.g. 
