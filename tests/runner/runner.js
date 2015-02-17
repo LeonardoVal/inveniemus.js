@@ -28,6 +28,7 @@
 			'metaheuristics.EvolutionStrategy': { size: 10, steps: 30, mutantCount: 5 },
 			'metaheuristics.HarmonySearch': { size: 30, steps: 200 },
 			'metaheuristics.DistributionEstimation': { size: 50, steps: 50 },
+			'metaheuristics.GradientDescent': { size: 1, steps: 20 },
 		};
 		var exampleSelect = $('select');
 		exampleSelect.change(function () {
@@ -36,7 +37,7 @@
 			if (params) {
 				code = 'function () {\n'+
 					'\treturn new inveniemus.'+ method +'({\n'+
-					'\t\tproblem: new (inveniemus.problems.testbeds.sumOptimization(10))(),\n'+
+					'\t\tproblem: inveniemus.problems.testbeds.sumOptimization(10),\n'+
 					Object.keys(params).map(function (name) {
 						return '\t\t'+ name +': '+ params[name] +',\n';
 					}).join('') +

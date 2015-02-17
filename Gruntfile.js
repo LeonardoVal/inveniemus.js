@@ -16,6 +16,7 @@ module.exports = function(grunt) {
 		'src/metaheuristics/EvolutionStrategy.js',
 		'src/metaheuristics/HarmonySearch.js',
 		'src/metaheuristics/DistributionEstimation.js',
+		'src/metaheuristics/GradientDescent.js',
 	// Problems.
 		'src/problems/HelloWorld.js',
 		'src/problems/testbeds.js',
