@@ -152,10 +152,10 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 			var cut = this.random.randomInt(this.length - 1) + 1,
 				values0 = parents[0].values,
 				values1 = parents[1].values,
-				elementConstructor = this.problem.representation;
+				ElementConstructor = this.problem.representation;
 			return [ 
-				new elementConstructor(values0.slice(0, cut).concat(values1.slice(cut))),
-				new elementConstructor(values1.slice(0, cut).concat(values0.slice(cut)))
+				new ElementConstructor(values0.slice(0, cut).concat(values1.slice(cut))),
+				new ElementConstructor(values1.slice(0, cut).concat(values0.slice(cut)))
 			];
 		},
 		
@@ -169,10 +169,10 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 				cut2 = this.random.randomInt(this.length - 1) + 1,
 				values0 = parents[0].values,
 				values1 = parents[1].values,
-				elementConstructor = this.problem.representation;
+				ElementConstructor = this.problem.representation;
 			return [ 
-				new elementConstructor(values0.slice(0, cut1).concat(values1.slice(cut1, cut2)).concat(values0.slice(cut2))),
-				new elementConstructor(values1.slice(0, cut1).concat(values0.slice(cut1, cut2)).concat(values1.slice(cut2)))
+				new ElementConstructor(values0.slice(0, cut1).concat(values1.slice(cut1, cut2)).concat(values0.slice(cut2))),
+				new ElementConstructor(values1.slice(0, cut1).concat(values0.slice(cut1, cut2)).concat(values1.slice(cut2)))
 			];
 		},
 		
@@ -180,9 +180,9 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 		value taken randomly from any of the parents.
 		*/
 		uniformCrossover: function uniformCrossover(parents, count) {
+			count = isNaN(count) ? parents.length : count|0;
 			var result = [],
-				count = isNaN(count) ? parents.length : count|0,
-				representation = this.problem.representation,
+				Representation = this.problem.representation,
 				length = representation.prototype.length,
 				random = this.random,
 				values;
@@ -191,7 +191,7 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 				for (var j = 0; j < length; ++j) {
 					values.push(random.choice(parents).values[j]);
 				}
-				result.push(new representation(values));
+				result.push(new Representation(values));
 			}
 			return result;
 		}

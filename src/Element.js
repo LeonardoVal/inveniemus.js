@@ -119,8 +119,8 @@ var Element = exports.Element = declare({
 			error = iterable(data).map(function (datum) {
 				length++;
 				return Math.pow(datum[0] - f.apply(this, datum.slice(1)), 2);
-			}).sum()
-		return length == 0 ? 0 : Math.sqrt(error / length);
+			}).sum();
+		return length === 0 ? 0 : Math.sqrt(error / length);
 	},
 
 	// ## Expansions ###############################################################################

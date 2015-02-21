@@ -62,9 +62,9 @@ var AssociationRule = problems.AssociationRule = declare(Element, {
 		result.antecedentCount = antecedentCount;
 		result.consequentCount = consequentCount;
 		result.ruleCount = ruleCount;
-		result.antecedentSupport = totalCount > 0 ? antecedentCount / totalCount : 0,
-		result.consequentSupport = totalCount > 0 ? consequentCount / totalCount : 0,
-		result.ruleSupport = totalCount > 0 ? ruleCount / totalCount : 0,
+		result.antecedentSupport = totalCount > 0 ? antecedentCount / totalCount : 0;
+		result.consequentSupport = totalCount > 0 ? consequentCount / totalCount : 0;
+		result.ruleSupport = totalCount > 0 ? ruleCount / totalCount : 0;
 		result.confidence = antecedentCount > 0 ? ruleCount / antecedentCount : 0;
 		result.lift = result.consequentSupport > 0 ? result.confidence / result.consequentSupport : 0;
 		result.conviction = result.consequentSupport > 0 && result.confidence < 1 ? (1 - result.consequentSupport) / (1 - result.confidence) : 0;

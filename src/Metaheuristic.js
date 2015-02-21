@@ -81,7 +81,9 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	expand: function expand(expansion) {
 		expansion = expansion || this.expansion();
 		if (expansion.length < 1) {
-			this.logger && this.logger.warn("Expansion is empty");
+			if (this.logger) {
+				this.logger.warn("Expansion is empty");
+			}
 		} else {
 			var expanded = this.state.concat(expansion),
 				len = expanded.length;
@@ -243,56 +245,72 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	*/
 	onInitiate: function onInitiate() {
 		this.events.emit('initiated', this);
-		this.logger && this.logger.debug('State has been initiated. Nos coepimus.');
+		if (this.logger) {
+			this.logger.debug('State has been initiated. Nos coepimus.');
+		}
 	},
 	
 	/** + `updated` when the state has been expanded, evaluated and sieved.
 	*/
 	onUpdate: function onUpdate() {
 		this.events.emit('updated', this);
-		this.logger && this.logger.debug('State has been updated. Mutatis mutandis.');
+		if (this.logger) {
+			this.logger.debug('State has been updated. Mutatis mutandis.');
+		}
 	},
 	
 	/** + `expanded` after new elements are added to the state.
 	*/
 	onExpand: function onExpand() {
 		this.events.emit('expanded', this);
-		this.logger && this.logger.debug('State has been expanded. Nos exploramus.');
+		if (this.logger) {
+			this.logger.debug('State has been expanded. Nos exploramus.');
+		}
 	},
 	
 	/** + `evaluated` after the elements in the state are evaluated.
 	*/
 	onEvaluate: function onEvaluate(elements) {
 		this.events.emit('evaluated', this);
-		this.logger && this.logger.debug('Evaluated and sorted ', elements.length, ' elements. Appretiatus sunt.');
+		if (this.logger) {
+			this.logger.debug('Evaluated and sorted ', elements.length, ' elements. Appretiatus sunt.');
+		}
 	},
 	
 	/** + `sieved` after elements are removed from the state.
 	*/
 	onSieve: function onSieve() {
 		this.events.emit('sieved', this);
-		this.logger && this.logger.debug('State has been sieved. Haec est viam.');
+		if (this.logger) {
+			this.logger.debug('State has been sieved. Haec est viam.');
+		}
 	},
 	
 	/** + `advanced` when one full iteration is completed.
 	*/
 	onAdvance: function onAdvance() {
 		this.events.emit('advanced', this);
-		this.logger && this.logger.debug('Step ', this.step , ' has been completed. Nos proficimus.');
+		if (this.logger) {
+			this.logger.debug('Step ', this.step , ' has been completed. Nos proficimus.');
+		}
 	},
 	
 	/** + `analyzed` after the statistics are calculated.
 	*/
 	onAnalyze: function onAnalyze() {
 		this.events.emit('analyzed', this);
-		this.logger && this.logger.debug('Statistics have been gathered. Haec sunt numeri.');
+		if (this.logger) {
+			this.logger.debug('Statistics have been gathered. Haec sunt numeri.');
+		}
 	},
 	
 	/** + `finished` when the run finishes.
 	*/
 	onFinish: function onFinish() {
 		this.events.emit('finished', this);
-		this.logger && this.logger.debug('Finished. Nos invenerunt!');
+		if (this.logger) {
+			this.logger.debug('Finished. Nos invenerunt!');
+		}
 	},
 	
 	// ## Utilities ################################################################################

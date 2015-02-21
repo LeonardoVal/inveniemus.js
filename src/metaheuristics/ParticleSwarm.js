@@ -54,9 +54,9 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 			localCoef = this.random.random() * this.localAcceleration,
 			globalCoef = this.random.random() * this.globalAcceleration;
 		return element.values.map(function (v, i) {
-			return velocity[i] * mh.inertia
-				+ localCoef * (localBest.values[i] - v)
-				+ globalCoef * (globalBest.values[i] - v);
+			return velocity[i] * mh.inertia +
+				localCoef * (localBest.values[i] - v) +
+				globalCoef * (globalBest.values[i] - v);
 		});
 	},
 	

@@ -67,7 +67,7 @@ var DistributionEstimation = metaheuristics.DistributionEstimation = declare(Met
 		return DistributionEstimation.elementFromHistograms(histograms, this.problem.representation, this.random);
 	},
 	
-	'static elementFromHistograms': function elementFromHistogram(histograms, representation, random) {
+	'static elementFromHistograms': function elementFromHistogram(histograms, Representation, random) {
 		var length = histograms.length,
 			values = new Array(length),
 			histogram, r;
@@ -81,7 +81,7 @@ var DistributionEstimation = metaheuristics.DistributionEstimation = declare(Met
 				}
 			}
 		}
-		return new representation(values);
+		return new Representation(values);
 	},
 	
 	// ## Estimation of distribution as a problem. #################################################

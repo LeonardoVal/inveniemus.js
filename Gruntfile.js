@@ -39,6 +39,15 @@ module.exports = function(grunt) {
 				}
 			},
 		},
+		jshint: { //////////////////////////////////////////////////////////////
+			build: {
+				options: { // Check <http://jshint.com/docs/options/>.
+					loopfunc: true,
+					boss: true
+				},
+				src: ['build/<%= pkg.name %>.js'],
+			},
+		},
 		karma: { ///////////////////////////////////////////////////////////////
 			options: {
 				configFile: 'tests/karma.conf.js'
@@ -98,6 +107,7 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-docker');
 	grunt.loadNpmTasks('grunt-bowercopy');
+	grunt.loadNpmTasks('grunt-contrib-jshint');
 	
 // Custom tasks. ///////////////////////////////////////////////////////////////
 	grunt.registerTask('bower-json', 'Writes <bower.json> based on <package.json>.', function() {
@@ -129,9 +139,8 @@ module.exports = function(grunt) {
 	}); // bower-json.
 	
 // Register tasks. /////////////////////////////////////////////////////////////
-	grunt.registerTask('compile', ['concat_sourcemap:build', 'uglify:build']);
-	grunt.registerTask('build', ['concat_sourcemap:build', 
-		'karma:build', 'uglify:build', 'docker:build']);
+	grunt.registerTask('compile', ['concat_sourcemap:build', 'jshint:build', 'uglify:build']);
+	grunt.registerTask('build', ['compile', 'karma:build', 'docker:build']);
 	grunt.registerTask('default', ['build']);
 	grunt.registerTask('test', ['concat_sourcemap:build', 'karma:build',
 		'karma:chrome', 'karma:firefox', 'karma:opera', 'karma:iexplore']);

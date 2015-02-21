@@ -1,7 +1,6 @@
 /** Package wrapper and layout.
 */
-"use strict";
-(function (global, init) { // Universal Module Definition.
+(function (global, init) { "use strict"; // Universal Module Definition.
 	if (typeof define === 'function' && define.amd) {
 		define(['creatartis-base'], init); // AMD module.
 	} else if (typeof module === 'object' && module.exports) {
@@ -9,7 +8,7 @@
 	} else { // Browser or web worker (probably).
 		global.inveniemus = init(global.base);
 	}
-})(this, function __init__(base){
+})(this, function __init__(base){ "use strict";
 // Import synonyms. ////////////////////////////////////////////////////////////
 	var declare = base.declare,
 		initialize = base.initialize,
@@ -150,8 +149,8 @@ var Element = exports.Element = declare({
 			error = iterable(data).map(function (datum) {
 				length++;
 				return Math.pow(datum[0] - f.apply(this, datum.slice(1)), 2);
-			}).sum()
-		return length == 0 ? 0 : Math.sqrt(error / length);
+			}).sum();
+		return length === 0 ? 0 : Math.sqrt(error / length);
 	},
 
 	// ## Expansions ###############################################################################
@@ -457,7 +456,9 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	expand: function expand(expansion) {
 		expansion = expansion || this.expansion();
 		if (expansion.length < 1) {
-			this.logger && this.logger.warn("Expansion is empty");
+			if (this.logger) {
+				this.logger.warn("Expansion is empty");
+			}
 		} else {
 			var expanded = this.state.concat(expansion),
 				len = expanded.length;
@@ -619,56 +620,72 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	*/
 	onInitiate: function onInitiate() {
 		this.events.emit('initiated', this);
-		this.logger && this.logger.debug('State has been initiated. Nos coepimus.');
+		if (this.logger) {
+			this.logger.debug('State has been initiated. Nos coepimus.');
+		}
 	},
 	
 	/** + `updated` when the state has been expanded, evaluated and sieved.
 	*/
 	onUpdate: function onUpdate() {
 		this.events.emit('updated', this);
-		this.logger && this.logger.debug('State has been updated. Mutatis mutandis.');
+		if (this.logger) {
+			this.logger.debug('State has been updated. Mutatis mutandis.');
+		}
 	},
 	
 	/** + `expanded` after new elements are added to the state.
 	*/
 	onExpand: function onExpand() {
 		this.events.emit('expanded', this);
-		this.logger && this.logger.debug('State has been expanded. Nos exploramus.');
+		if (this.logger) {
+			this.logger.debug('State has been expanded. Nos exploramus.');
+		}
 	},
 	
 	/** + `evaluated` after the elements in the state are evaluated.
 	*/
 	onEvaluate: function onEvaluate(elements) {
 		this.events.emit('evaluated', this);
-		this.logger && this.logger.debug('Evaluated and sorted ', elements.length, ' elements. Appretiatus sunt.');
+		if (this.logger) {
+			this.logger.debug('Evaluated and sorted ', elements.length, ' elements. Appretiatus sunt.');
+		}
 	},
 	
 	/** + `sieved` after elements are removed from the state.
 	*/
 	onSieve: function onSieve() {
 		this.events.emit('sieved', this);
-		this.logger && this.logger.debug('State has been sieved. Haec est viam.');
+		if (this.logger) {
+			this.logger.debug('State has been sieved. Haec est viam.');
+		}
 	},
 	
 	/** + `advanced` when one full iteration is completed.
 	*/
 	onAdvance: function onAdvance() {
 		this.events.emit('advanced', this);
-		this.logger && this.logger.debug('Step ', this.step , ' has been completed. Nos proficimus.');
+		if (this.logger) {
+			this.logger.debug('Step ', this.step , ' has been completed. Nos proficimus.');
+		}
 	},
 	
 	/** + `analyzed` after the statistics are calculated.
 	*/
 	onAnalyze: function onAnalyze() {
 		this.events.emit('analyzed', this);
-		this.logger && this.logger.debug('Statistics have been gathered. Haec sunt numeri.');
+		if (this.logger) {
+			this.logger.debug('Statistics have been gathered. Haec sunt numeri.');
+		}
 	},
 	
 	/** + `finished` when the run finishes.
 	*/
 	onFinish: function onFinish() {
 		this.events.emit('finished', this);
-		this.logger && this.logger.debug('Finished. Nos invenerunt!');
+		if (this.logger) {
+			this.logger.debug('Finished. Nos invenerunt!');
+		}
 	},
 	
 	// ## Utilities ################################################################################
@@ -904,10 +921,10 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 			var cut = this.random.randomInt(this.length - 1) + 1,
 				values0 = parents[0].values,
 				values1 = parents[1].values,
-				elementConstructor = this.problem.representation;
+				ElementConstructor = this.problem.representation;
 			return [ 
-				new elementConstructor(values0.slice(0, cut).concat(values1.slice(cut))),
-				new elementConstructor(values1.slice(0, cut).concat(values0.slice(cut)))
+				new ElementConstructor(values0.slice(0, cut).concat(values1.slice(cut))),
+				new ElementConstructor(values1.slice(0, cut).concat(values0.slice(cut)))
 			];
 		},
 		
@@ -921,10 +938,10 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 				cut2 = this.random.randomInt(this.length - 1) + 1,
 				values0 = parents[0].values,
 				values1 = parents[1].values,
-				elementConstructor = this.problem.representation;
+				ElementConstructor = this.problem.representation;
 			return [ 
-				new elementConstructor(values0.slice(0, cut1).concat(values1.slice(cut1, cut2)).concat(values0.slice(cut2))),
-				new elementConstructor(values1.slice(0, cut1).concat(values0.slice(cut1, cut2)).concat(values1.slice(cut2)))
+				new ElementConstructor(values0.slice(0, cut1).concat(values1.slice(cut1, cut2)).concat(values0.slice(cut2))),
+				new ElementConstructor(values1.slice(0, cut1).concat(values0.slice(cut1, cut2)).concat(values1.slice(cut2)))
 			];
 		},
 		
@@ -932,9 +949,9 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 		value taken randomly from any of the parents.
 		*/
 		uniformCrossover: function uniformCrossover(parents, count) {
+			count = isNaN(count) ? parents.length : count|0;
 			var result = [],
-				count = isNaN(count) ? parents.length : count|0,
-				representation = this.problem.representation,
+				Representation = this.problem.representation,
 				length = representation.prototype.length,
 				random = this.random,
 				values;
@@ -943,7 +960,7 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 				for (var j = 0; j < length; ++j) {
 					values.push(random.choice(parents).values[j]);
 				}
-				result.push(new representation(values));
+				result.push(new Representation(values));
 			}
 			return result;
 		}
@@ -1204,9 +1221,9 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 			localCoef = this.random.random() * this.localAcceleration,
 			globalCoef = this.random.random() * this.globalAcceleration;
 		return element.values.map(function (v, i) {
-			return velocity[i] * mh.inertia
-				+ localCoef * (localBest.values[i] - v)
-				+ globalCoef * (globalBest.values[i] - v);
+			return velocity[i] * mh.inertia +
+				localCoef * (localBest.values[i] - v) +
+				globalCoef * (globalBest.values[i] - v);
 		});
 	},
 	
@@ -1302,9 +1319,9 @@ var DifferentialEvolution = metaheuristics.DifferentialEvolution = declare(Metah
 					randomIndex = mh.random.randomInt(element.length),
 					newValues = [];
 				for (var i = 0; i < element.length; ++i) {
-					newValues.push(i === randomIndex || mh.random.randomBool(mh.crossoverProbability) 
-						? a[i] + mh.differentialWeight * (b[i] - c[i])
-						: element.values[i]);
+					newValues.push(i === randomIndex || mh.random.randomBool(mh.crossoverProbability) ?
+						a[i] + mh.differentialWeight * (b[i] - c[i]) :
+						element.values[i]);
 				}
 				return new element.constructor(newValues);
 			});
@@ -1500,7 +1517,7 @@ var DistributionEstimation = metaheuristics.DistributionEstimation = declare(Met
 		return DistributionEstimation.elementFromHistograms(histograms, this.problem.representation, this.random);
 	},
 	
-	'static elementFromHistograms': function elementFromHistogram(histograms, representation, random) {
+	'static elementFromHistograms': function elementFromHistogram(histograms, Representation, random) {
 		var length = histograms.length,
 			values = new Array(length),
 			histogram, r;
@@ -1514,7 +1531,7 @@ var DistributionEstimation = metaheuristics.DistributionEstimation = declare(Met
 				}
 			}
 		}
-		return new representation(values);
+		return new Representation(values);
 	},
 	
 	// ## Estimation of distribution as a problem. #################################################
@@ -1881,8 +1898,8 @@ problems.testbeds = {
 					w = 1 + (vs[i] - 1) / 4;
 					sum += Math.pow(w - 1, 2) * (1 + 10 * Math.pow(Math.sin(Math.PI * w + 1), 2));
 				}
-				return Math.pow(Math.sin(Math.PI * w1), 2) + sum
-					+ Math.pow(wd - 1, 2) * (1 + Math.pow(Math.sin(2 * Math.PI * wd), 2));
+				return Math.pow(Math.sin(Math.PI * w1), 2) + sum +
+					Math.pow(wd - 1, 2) * (1 + Math.pow(Math.sin(2 * Math.PI * wd), 2));
 			}
 		});
 	},
@@ -2247,9 +2264,9 @@ var AssociationRule = problems.AssociationRule = declare(Element, {
 		result.antecedentCount = antecedentCount;
 		result.consequentCount = consequentCount;
 		result.ruleCount = ruleCount;
-		result.antecedentSupport = totalCount > 0 ? antecedentCount / totalCount : 0,
-		result.consequentSupport = totalCount > 0 ? consequentCount / totalCount : 0,
-		result.ruleSupport = totalCount > 0 ? ruleCount / totalCount : 0,
+		result.antecedentSupport = totalCount > 0 ? antecedentCount / totalCount : 0;
+		result.consequentSupport = totalCount > 0 ? consequentCount / totalCount : 0;
+		result.ruleSupport = totalCount > 0 ? ruleCount / totalCount : 0;
 		result.confidence = antecedentCount > 0 ? ruleCount / antecedentCount : 0;
 		result.lift = result.consequentSupport > 0 ? result.confidence / result.consequentSupport : 0;
 		result.conviction = result.consequentSupport > 0 && result.confidence < 1 ? (1 - result.consequentSupport) / (1 - result.confidence) : 0;

@@ -130,8 +130,8 @@ problems.testbeds = {
 					w = 1 + (vs[i] - 1) / 4;
 					sum += Math.pow(w - 1, 2) * (1 + 10 * Math.pow(Math.sin(Math.PI * w + 1), 2));
 				}
-				return Math.pow(Math.sin(Math.PI * w1), 2) + sum
-					+ Math.pow(wd - 1, 2) * (1 + Math.pow(Math.sin(2 * Math.PI * wd), 2));
+				return Math.pow(Math.sin(Math.PI * w1), 2) + sum +
+					Math.pow(wd - 1, 2) * (1 + Math.pow(Math.sin(2 * Math.PI * wd), 2));
 			}
 		});
 	},
