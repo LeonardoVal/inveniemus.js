@@ -24,9 +24,9 @@
 // Library layout. /////////////////////////////////////////////////////////////
 	var exports = {
 		__name__: 'inveniemus',
-		__init__: __init__
+		__init__: __init__,
+		__dependencies__: [base]
 	};
-	__init__.dependencies = {'creatartis-base': base};
 
 /**	# Element
 
