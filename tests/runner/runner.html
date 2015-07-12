@@ -8,9 +8,9 @@
 	<title>Inveniemus runner.</title>
 	<meta charset="UTF-8"/>
 	<link rel="stylesheet" type="text/css" href="runner.css"/>
-	<script type="text/javascript" src="../../lib/require.js"></script>
-	<script type="text/javascript" src="../../lib/jquery.js"></script>
-	<script type="text/javascript" src="../../lib/dygraph-combined.js"></script>
+	<script type="text/javascript" src="../lib/require.js"></script>
+	<script type="text/javascript" src="../lib/jquery.js"></script>
+	<script type="text/javascript" src="../lib/dygraph-combined.js"></script>
 </head>
 <body onload="main();">
 	<h3>Inveniemus runner.</h3> 
@@ -36,9 +36,9 @@
 	<script type="text/javascript">
 function main() { 
 	require.config({
-		paths: { 
-			'creatartis-base': '../../lib/creatartis-base', 
-			inveniemus: '../../build/inveniemus' 
+		paths: {
+			'creatartis-base': '../lib/creatartis-base', 
+			'inveniemus': '../lib/inveniemus' 
 		}
 	});
 	require(['runner'], function (runner) {

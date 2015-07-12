@@ -15,8 +15,9 @@ module.exports = function(config) {
     files: [
       'tests/karma-tester.js',
       {pattern: 'tests/specs/*.test.js', included: false},
-      {pattern: 'build/inveniemus.js', included: false},
-      {pattern: 'lib/creatartis-base.js', included: false},
+      {pattern: 'tests/lib/inveniemus.js', included: false},
+      {pattern: 'tests/lib/creatartis-base.js', included: false},
+	  {pattern: 'tests/lib/sermat.js', included: false},
     ],
 
     // list of files to exclude
@@ -25,7 +26,7 @@ module.exports = function(config) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-		'build/inveniemus.js': ['sourcemap'] // Source map loader.
+		'tests/lib/inveniemus.js': ['sourcemap'] // Source map loader.
 	},
 
     // test results reporter to use

@@ -138,11 +138,30 @@ module.exports = function(grunt) {
 		grunt.file.write('bower.json', JSON.stringify(bowerJSON, null, '\t'), { encoding: 'utf8' });
 	}); // bower-json.
 	
+	// Custom tasks ////////////////////////////////////////////////////////////////////////////////////
+	grunt.registerTask('test-lib', 'Copies libraries for the testing facilities to use.', function() {
+		var path = require('path'),
+			pkg = grunt.config.get('pkg');
+		grunt.log.writeln("Copied to tests/lib/: "+ [
+			'node_modules/requirejs/require.js',
+			'node_modules/creatartis-base/build/creatartis-base.js',
+			'node_modules/creatartis-base/build/creatartis-base.js.map',
+			'node_modules/sermat/build/sermat.js',
+			'node_modules/sermat/build/sermat.js.map',
+			'build/'+ pkg.name +'.js', 
+			'build/'+ pkg.name +'.js.map'
+		].map(function (fileToCopy) {
+			var baseName = path.basename(fileToCopy);
+			grunt.file.copy('./'+ fileToCopy, './tests/lib/'+ baseName);
+			return baseName;
+		}).join(", ") +".");
+	}); // test-lib
+	
 // Register tasks. /////////////////////////////////////////////////////////////
 	grunt.registerTask('compile', ['concat_sourcemap:build', 'jshint:build', 'uglify:build']);
-	grunt.registerTask('build', ['compile', 'karma:build', 'docker:build']);
+	grunt.registerTask('test', ['compile', 'test-lib', 'karma:build']); 
+	grunt.registerTask('test-all', ['test', 'karma:chrome', 'karma:firefox', 'karma:opera', 'karma:iexplore']);
+	grunt.registerTask('build', ['test', 'docker:build']);
 	grunt.registerTask('default', ['build']);
-	grunt.registerTask('test', ['concat_sourcemap:build', 'karma:build',
-		'karma:chrome', 'karma:firefox', 'karma:opera', 'karma:iexplore']);
 	grunt.registerTask('lib', ['bowercopy:lib']);
 };

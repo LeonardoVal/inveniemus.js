@@ -1,1 +1,0 @@
-﻿Dygraphs (http://dygraphs.com) is not handled with Bower, because the packaged downloads the whole repository and yet does not provide the combined and minified version. So it has been downloaded directly from <http://dygraphs.com/1.0.1/dygraph-combined.js>.

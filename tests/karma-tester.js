@@ -32,8 +32,9 @@ function async_it(desc, func) { // Future friendly version of it().
 require.config({ // Configure RequireJS.
 	baseUrl: '/base', // Karma serves files under /base, which is the basePath from your config file
 	paths: {
-		'creatartis-base': '/base/lib/creatartis-base',
-		inveniemus: '/base/build/inveniemus'
+		'sermat': '/base/tests/lib/sermat',
+		'creatartis-base': '/base/tests/lib/creatartis-base',
+		'inveniemus': '/base/tests/lib/inveniemus'
 	}
 });
 require(Object.keys(window.__karma__.files) // Dynamically load all test files

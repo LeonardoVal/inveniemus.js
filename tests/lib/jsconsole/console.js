@@ -144,7 +144,7 @@ function post(cmd, blind, response /* passed in when echoing from remote console
     el.className = 'response';
     span.innerHTML = response[1];
 
-    if (response[0] != 'info') prettyPrint([span]);
+    //if (response[0] != 'info') prettyPrint([span]);
     el.appendChild(span);
 
     li.className = response[0];
@@ -174,7 +174,7 @@ function log(msg, className) {
       div = document.createElement('div');
 
   div.innerHTML = msg;
-  prettyPrint([div]);
+  //prettyPrint([div]);
   li.className = className || 'log';
   li.innerHTML = '<span class="gutter"></span>';
   li.appendChild(div);

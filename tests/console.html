@@ -2,21 +2,21 @@
 <html><head>
 	<title>Inveniemus console.</title>
 	<meta charset="UTF-8"/>
-	<script src="../lib/require.js"></script>
+	<script src="lib/require.js"></script>
 </head><body onload="main();">
 	<script type="text/javascript"> "use strict";
 function main() {
 	require.config({ 
 		paths: {
-			"creatartis-base": "../lib/creatartis-base",
-			"inveniemus": "../build/inveniemus"
+			"creatartis-base": "lib/creatartis-base",
+			"inveniemus": "lib/inveniemus"
 		},
 	});
 	require(['creatartis-base', 'inveniemus'], function (base, inveniemus) {
 		window.base = base;
 		window.inveniemus = inveniemus;
 		(function (s){ // See: <http://jsconsole.com>.
-			s.src = 'jsconsole/inject.js';
+			s.src = 'lib/jsconsole/inject.js';
 			document.body.appendChild(s);
 		})(document.createElement('script'));
 	}, function (error) {
