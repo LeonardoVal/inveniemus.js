@@ -27,3 +27,7 @@
 		__init__: __init__,
 		__dependencies__: [base]
 	};
+	
+/** This is the prefix used in the identifiers of all types that are serialiable with Sermat.
+*/
+	var SERMAT_LIB_PREFIX = 'inveniemus.';

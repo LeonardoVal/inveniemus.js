@@ -31,7 +31,8 @@
 		"LICENSE.md"
 	],
 	"dependencies": { 
-		"creatartis-base": "~0.1.4"
+		"creatartis-base": "~0.1.4",
+		"sermat": "~0.0.2"
 	},
 	"devDependencies": {
 		"requirejs": "~2.1.9",

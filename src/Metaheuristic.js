@@ -320,7 +320,24 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	*/
 	toString: function toString() {
 		return (this.constructor.name || 'Metaheuristic') +"("+ JSON.stringify(this) +")";
-	}	
+	},
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: SERMAT_LIB_PREFIX +'Metaheuristic',
+		serializer: function serialize_Metaheuristic(obj) {
+			return [{
+				problem: this.problem,
+				size: this.size,
+				state: this.state,
+				steps: this.steps,
+				step: this.step,
+				random: this.random,
+				statistics: this.statistics
+			}];
+		}
+	}
 }); // declare Metaheuristic.
 
 /** `metaheuristics` is a bundle of available metaheuristics.

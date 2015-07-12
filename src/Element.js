@@ -238,5 +238,17 @@ var Element = exports.Element = declare({
 	*/
 	toString: function toString() {
 		return (this.constructor.name || 'Element') +"("+ JSON.stringify(this.values) +", "+ this.evaluation +")";
+	},
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: SERMAT_LIB_PREFIX +'Element',
+		serializer: function serialize_Element(obj) {
+			return [this.values, this.evaluation];
+		},
+		materializer: function materialize_Element(obj, args) {
+			return args && (new Element(args[0], args[1]));
+		}
 	}
 }); // declare Element.
