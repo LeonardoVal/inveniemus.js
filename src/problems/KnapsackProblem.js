@@ -38,43 +38,43 @@ problems.KnapsackProblem = declare(Problem, {
 			/** + `items` is the set of items.
 			*/
 			.object('items', { ignore: true });
-		
-		var problem = this;
-		/** The problem's representation is declared _ad hoc_. It is an array with a number for each
-		item. This number holds the selected amount for each item (from 0 up to the item's amount).
-		*/
-		this.representation = declare(Element, {
-			length: Object.keys(this.items).length,
-			/** All elements are evaluated by calculating the worth of all included items. If their 
-			cost is greater than the problem's limit, the worth becomes negative.
-			*/
-			evaluate: function evaluate() {
-				var selection = this.mapping(),
-					worth = 0,
-					cost = 0;
-				Object.keys(selection).forEach(function (name) {
-					var item = problem.items[name],
-						amount = selection[name];
-					worth += item.worth * amount;
-					cost += item.cost * amount;
-				});
-				return this.evaluation = cost > problem.limit ? -worth : worth;
-			},
-			/** All elements are mapped to an object with the selected amount associated to each 
-			item.
-			*/
-			mapping: function mapping() {
-				var selection = {},
-					keys = Object.keys(problem.items);
-				keys.sort();
-				iterable(this.values).zip(keys).forEach(function (pair) {
-					var item = problem.items[pair[1]],
-						amount = pair[0] * (1 + (+item.amount || 1)) | 0;
-					selection[pair[1]] = amount;
-				});
-				return selection;
-			}
+	},
+
+	/** The problem's representation is an array with a number for each item. This number holds the 
+	selected amount for each item (from 0 up to the item's amount).
+	*/	
+	elementLength: function elementLength() {
+		return Object.keys(this.items).length;
+	},
+	
+	/** All elements are mapped to an object with the selected amount associated to each item.
+	*/
+	mapping: function mapping(element) {
+		var selection = {},
+			keys = Object.keys(problem.items);
+		keys.sort();
+		iterable(element.values).zip(keys).forEach(function (pair) {
+			var item = problem.items[pair[1]],
+				amount = pair[0] * (1 + (+item.amount || 1)) | 0;
+			selection[pair[1]] = amount;
 		});
+		return selection;
+	},
+	
+	/** All elements are evaluated by calculating the worth of all included items. If their cost is 
+	greater than the problem's limit, the worth becomes negative.
+	*/
+	evaluation: function evaluation(element) {
+		var selection = this.mapping(element),
+			worth = 0,
+			cost = 0;
+		Object.keys(selection).forEach(function (name) {
+			var item = problem.items[name],
+				amount = selection[name];
+			worth += item.worth * amount;
+			cost += item.cost * amount;
+		});
+		return cost > problem.limit ? -worth : worth;
 	},
 	
 	/** The best selection of items is the one that maximizes worth, without exceeding the cost 
