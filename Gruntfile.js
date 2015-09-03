@@ -27,10 +27,10 @@ module.exports = function(grunt) {
 		'src/__epilogue__.js'];
 
 	grunt.file.defaultEncoding = 'utf8';
-// Init config. ////////////////////////////////////////////////////////////////
+// Init config. ////////////////////////////////////////////////////////////////////////////////////
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
-		concat_sourcemap: { ////////////////////////////////////////////////////
+		concat_sourcemap: { ////////////////////////////////////////////////////////////////////////
 			build: {
 				src: SOURCE_FILES,
 				dest: 'build/<%= pkg.name %>.js',
@@ -39,7 +39,7 @@ module.exports = function(grunt) {
 				}
 			},
 		},
-		jshint: { //////////////////////////////////////////////////////////////
+		jshint: { //////////////////////////////////////////////////////////////////////////////////
 			build: {
 				options: { // Check <http://jshint.com/docs/options/>.
 					loopfunc: true,
@@ -48,7 +48,7 @@ module.exports = function(grunt) {
 				src: ['build/<%= pkg.name %>.js'],
 			},
 		},
-		karma: { ///////////////////////////////////////////////////////////////
+		karma: { ///////////////////////////////////////////////////////////////////////////////////
 			options: {
 				configFile: 'tests/karma.conf.js'
 			},
@@ -58,7 +58,7 @@ module.exports = function(grunt) {
 			opera: { browsers: ['Opera'] },
 			iexplore: { browsers: ['IE'] }
 		},
-		uglify: { //////////////////////////////////////////////////////////////
+		uglify: { //////////////////////////////////////////////////////////////////////////////////
 			build: {
 				src: 'build/<%= pkg.name %>.js',
 				dest: 'build/<%= pkg.name %>.min.js',
@@ -71,74 +71,27 @@ module.exports = function(grunt) {
 				}
 			}
 		},
-		docker: { //////////////////////////////////////////////////////////////
+		docker: { //////////////////////////////////////////////////////////////////////////////////
 			build: {
-				src: ["src/**/*.js", "README.md", "docs/*.md"],
-				dest: "docs/docker",
+				src: ['src/**/*.js', 'README.md', 'docs/*.md'],
+				dest: 'docs/docker',
 				options: {
 					colourScheme: 'borland',
 					ignoreHidden: true,
 					exclude: 'src/__prologue__.js,src/__epilogue__.js'
 				}
 			}
-		},
-		bowercopy: { ///////////////////////////////////////////////////////////
-			options: {
-				clean: true,
-				runBower: true,
-				srcPrefix: 'bower_components'
-			},
-			lib: {
-				options: {
-					destPrefix: 'lib'
-				},
-				files: {
-					'jquery.js': 'jquery/jquery.js',
-					'require.js': 'requirejs/require.js',
-					'creatartis-base.js': 'creatartis-base/build/creatartis-base.js'
-				},
-			}
 		}
 	});
 	
-// Load plugins. ///////////////////////////////////////////////////////////////
+// Load plugins. ///////////////////////////////////////////////////////////////////////////////////
 	grunt.loadNpmTasks('grunt-concat-sourcemap');
-	grunt.loadNpmTasks('grunt-karma');
-	grunt.loadNpmTasks('grunt-contrib-uglify');
-	grunt.loadNpmTasks('grunt-docker');
-	grunt.loadNpmTasks('grunt-bowercopy');
 	grunt.loadNpmTasks('grunt-contrib-jshint');
+	grunt.loadNpmTasks('grunt-contrib-uglify');
+	grunt.loadNpmTasks('grunt-karma');
+	grunt.loadNpmTasks('grunt-docker');
 	
-// Custom tasks. ///////////////////////////////////////////////////////////////
-	grunt.registerTask('bower-json', 'Writes <bower.json> based on <package.json>.', function() {
-		var pkg = grunt.config.get('pkg'),
-			bowerJSON = { // bower.json own members.
-				"moduleType": ["amd", "globals", "node"],
-				"authors": [pkg.author],
-				"ignore": ["**/.*", "node_modules", "bower_components", "src", 
-					"tests", "docs", "bower.json", "package.json", "Gruntfile.js", 
-					"LICENSE.md", "README.md"],
-				"dependencies": {
-					"requirejs": "2.1.9",
-					"creatartis-base": "git://github.com/LeonardoVal/creatartis-base.git"
-				},
-				"devDependencies": {
-					"jquery": "~2.0.3",
-					//"dygraphs": "~1.0.1" // Dygraphs bower package does not have the combined library.
-				}
-			};
-		// Copy package.json members to bower.json.
-		['name', 'description', 'version', 'keywords', 'licence', 'homepage',
-		 'contributors', 'private', 'main', 'dependencies', 'devDependencies',
-		 'optionalDependencies'].forEach(function (id) {
-			if (pkg.hasOwnProperty(id) && !bowerJSON.hasOwnProperty(id)) {
-				bowerJSON[id] = pkg[id];
-			}
-		});
-		grunt.file.write('bower.json', JSON.stringify(bowerJSON, null, '\t'), { encoding: 'utf8' });
-	}); // bower-json.
-	
-	// Custom tasks ////////////////////////////////////////////////////////////////////////////////////
+// Custom tasks ////////////////////////////////////////////////////////////////////////////////////
 	grunt.registerTask('test-lib', 'Copies libraries for the testing facilities to use.', function() {
 		var path = require('path'),
 			pkg = grunt.config.get('pkg');
@@ -157,11 +110,10 @@ module.exports = function(grunt) {
 		}).join(", ") +".");
 	}); // test-lib
 	
-// Register tasks. /////////////////////////////////////////////////////////////
+// Register tasks. /////////////////////////////////////////////////////////////////////////////////
 	grunt.registerTask('compile', ['concat_sourcemap:build', 'jshint:build', 'uglify:build']);
 	grunt.registerTask('test', ['compile', 'test-lib', 'karma:build']); 
-	grunt.registerTask('test-all', ['test', 'karma:chrome', 'karma:firefox', 'karma:opera', 'karma:iexplore']);
+	grunt.registerTask('test-all', ['test', 'karma:chrome', 'karma:firefox', 'karma:iexplore']);
 	grunt.registerTask('build', ['test', 'docker:build']);
 	grunt.registerTask('default', ['build']);
-	grunt.registerTask('lib', ['bowercopy:lib']);
 };
