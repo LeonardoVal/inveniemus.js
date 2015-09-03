@@ -23,14 +23,21 @@
 	
 // Library layout. /////////////////////////////////////////////////////////////
 	var exports = {
+		__package__: 'inveniemus',
 		__name__: 'inveniemus',
 		__init__: __init__,
-		__dependencies__: [base]
+		__dependencies__: [base],
+		__SERMAT__: { include: [] },
+	/** `metaheuristics` is a bundle of available metaheuristics.
+	*/	
+		metaheuristics: {},
+	/** `problems` is a bundle of classic and reference problems.
+	*/
+		problems: {}
 	};
+	var metaheuristics = exports.metaheuristics,
+		problems = exports.problems;
 	
-/** This is the prefix used in the identifiers of all types that are serialiable with Sermat.
-*/
-	var SERMAT_LIB_PREFIX = 'inveniemus.';
 
 /**	# Element
 
@@ -40,21 +47,22 @@ Element is the term used in Inveniemus for representations of
 their candidate solutions.
 */
 var Element = exports.Element = declare({
-	/** All elements are defined by an array of numbers (i.e. the element's `values`, random numbers
-	by default) and an `evaluation` (`NaN` by default). The element's values are coerced to be in 
-	the [0,1] range.
+	/** All elements are defined by a `problem`, an array of numbers (i.e. the element's `values`, 
+	random numbers by default) and an `evaluation` (`NaN` by default). The element's values are 
+	coerced to be in the [0,1] range.
 	
 	The `values` store all data about the candidate solution this element represents. This may 
-	appear to abstract and stark, but it helps	to separate the problem definition from the search
+	appear to abstract and stark, but it helps to separate the problem definition from the search
 	or optimization strategy.
 	
 	The element's `evaluation` is a numerical assessment of the represented candidate solution. 
 	Usually is a measure of how well the problem is solved, or how close the element is to a real 
 	solution. It guides almost all of the metaheuristics.
 	*/
-	constructor: function Element(values, evaluation) {
-		if (typeof values === 'undefined') {
-			this.values = this.random.randoms(this.length);
+	constructor: function Element(problem, values, evaluation) {
+		this.problem = problem;
+		if (!values) {
+			this.values = problem.random.randoms(problem.elementLength());
 		} else {
 			this.values = values.map(function (value, i) {
 				raiseIf(isNaN(value), "Value #", i, " for element is NaN!");
@@ -64,41 +72,12 @@ var Element = exports.Element = declare({
 		this.evaluation = +evaluation;
 	},
 	
-	/** The class property `length` defines the size of the element's values array (10 by default).
-	*/
-	length: 10,
-
-	/** The pseudorandom number generator in the class property `random` is required by some of the
-	element's operations. Its equal to `base.Randomness.DEFAULT` by default.
-	*/
-	random: Randomness.DEFAULT,
-	
-	// ## Basic operations #########################################################################
-	
-	/** The element's evaluation is calculated by `evaluate()`, which assigns and returns this 
-	number. It can return a promise if the evaluation has to be done asynchronously. This can be 
-	interpreted as the solutions cost in a search problem or the target function of an optimization 
-	problem. The default behaviour is adding up this element's values, useful only for testing.
-	*/
-	evaluate: function evaluate() {
-		return this.evaluation = iterable(this.values).sum();
-	},
-
 	/** Whether this element is a actual solution or not is decided by `suffices()`. It holds the 
 	implementation of the goal test in search problems. More complex criteria may be implemented in 
 	`Problem.suffices`. By default it returns false.
 	*/
 	suffices: function suffices() {
-		return false;
-	},
-	
-	/** Usually a numbers array is just too abstract to handle, and	another representation of the 
-	candidate solution must be build. For this `mapping()` must be overridden to returns an 
-	alternate representation of this element that may be fitter for evaluation or showing it to the
-	user. By default it just returns the same `values` array.
-	*/
-	mapping: function mapping() {
-		return this.values;
+		return this.problem.sufficient(this);
 	},
 
 	/** The `emblem` of an element is a string that represents it and can be displayed to the user. 
@@ -110,6 +89,19 @@ var Element = exports.Element = declare({
 
 	// ## Evaluations ##############################################################################
 
+	/** The element's `evaluation` is calculated by `evaluate()`, which assigns and returns this 
+	number. It may return a promise if the evaluation has to be done asynchronously. This can be 
+	interpreted as the solution's cost in a search problem or the target function of an optimization 
+	problem. The default behaviour is adding up this element's values, useful only for testing.
+	*/
+	evaluate: function evaluate() {
+		var elem = this;
+		return Future.then(this.problem.evaluation(this), function (e) {
+			elem.evaluation = e;
+			return e;
+		});
+	},
+	
 	/** The element's `resolution` is the minimal difference between elements' evaluations, below 
 	which two evaluations are considered equal.
 	*/
@@ -197,10 +189,16 @@ var Element = exports.Element = declare({
 			raiseIf(isNaN(v), "Invalid value ", v, " for element.");
 			newValues[arguments[i] |0] = Math.min(1, Math.max(0, v));
 		}
-		return new this.constructor(newValues);
+		return new this.constructor(this.problem, newValues);
 	},
 	
 	// ## Mappings #################################################################################
+	
+	/** Gives an alternate representation of this element. See `Problem.mapping()`.
+	*/
+	mapping: function mapping() {
+		return this.problem.mapping(this);
+	},
 	
 	/** An array mapping builds an array of equal length of this element's `values`. Each value is 
 	used to index the corresponding items argument. If there are less arguments than the element's 
@@ -249,7 +247,7 @@ var Element = exports.Element = declare({
 	/** A `clone` is a copy of this element.
 	*/
 	clone: function clone() {
-		return new this.constructor(this.values, this.evaluation);
+		return new this.constructor(this.problem, this.values, this.evaluation);
 	},
 	
 	/** Two elements can be compared with `equals(other)`. It checks if the other element has the 
@@ -277,12 +275,9 @@ var Element = exports.Element = declare({
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
-		identifier: SERMAT_LIB_PREFIX +'Element',
+		identifier: 'Element',
 		serializer: function serialize_Element(obj) {
-			return [this.values, this.evaluation];
-		},
-		materializer: function materialize_Element(obj, args) {
-			return args && (new Element(args[0], args[1]));
+			return [obj.problem, obj.values, obj.evaluation];
 		}
 	}
 }); // declare Element.
@@ -312,21 +307,57 @@ var Problem = exports.Problem = declare({
 		initialize(this, params)
 			.string('title', { coerce: true, ignore: true })
 			.string('description', { coerce: true, ignore: true })
-			.object('random', { ignore: true })
-			/** + `representation`: the element constructor,
-			*/
-			.func('representation', { ignore: true }) // Overrides.
-			/** + `compare`: the comparison between elements,
-			*/
-			.func('compare', { ignore: true })
-			/** + `suffices`: the sufficiency criteria.
-			*/
-			.func('suffices', { ignore: true });
+			.object('random', { ignore: true });
 	},
 
-	/** The problem's candidate solution `representation` is a subclass of [`Element`](Element.js.html).
+	/** The `elementLength` is the amount of values each candidate solution has. It is 10 by 
+	default.
 	*/
-	representation: Element,
+	elementLength: function elementLength() {
+		return 10;
+	},
+	
+	/** Problem uses `Element` instances to represent its candidate solutions.
+	*/
+	newElement: function newElement(values, evaluation) {
+		return new Element(this, values, evaluation);
+	},
+	
+	/** The problem's elements must be evaluated somehow. This can be interpreted as the solution's 
+	cost in a search problem or the target function of an optimization problem. The default 
+	behaviour is adding up this element's values, useful only for testing. It can return a promise 
+	if the evaluation has to be done asynchronously. 
+	*/
+	evaluation: function evaluation(element) {
+		return iterable(element.values).sum();
+	},
+	
+	/** Usually a numbers array is just too abstract to handle, and	another representation of the 
+	candidate solution must be build. For this `mapping()` must be overridden to returns an 
+	alternate representation of an element that may be fitter for evaluation or showing it to the
+	user. By default it just returns the same `values` array.
+	*/
+	mapping: function mapping(element) {
+		return element.values;
+	},
+	
+	/** An element is `sufficient` when it can be considered a solution of a search or a good enough
+	solution of an optimization. By default it returns false.
+	*/
+	sufficientElement: function sufficientElement(element) {
+		return false;
+	},
+	
+	/** When a set of elements is sufficient, the search/optimization ends. The method 
+	`suffices(elements)` returns `true` if inside the elements array there are enough actual 
+	solutions to this problem. It holds the implementation of the goal test in search problems. By 
+	default calls the `suffice` method of the first element (assumed to be the best one).
+	*/
+	sufficientElements: function sufficientElements(elements) {
+		return this.sufficientElement(elements[0]);
+	},
+	
+	// ## Optimization modes #######################################################################
 	
 	/** How elements are compared with each other in the problem determines which kind of 
 	optimization is performed. The `compare` method implements the comparison between two elements. 
@@ -340,18 +371,7 @@ var Problem = exports.Problem = declare({
 	compare: function compare(element1, element2) {
 		return this.minimization(element1, element2);
 	},
-		
-	/** When a set of elements is sufficient, the search/optimization ends. The method 
-	`suffices(elements)` returns `true` if inside the elements array there are enough actual 
-	solutions to this problem. It holds the implementation of the goal test in search problems. By 
-	default calls the `suffice` method of the first element (assumed to be the best one).
-	*/
-	suffices: function suffices(elements) {
-		return elements[0].suffices();
-	},
 	
-	// ## Optimization modes #######################################################################
-		
 	/** A `maximization` compares two elements by evaluation in descending order.
 	*/
 	maximization: function maximization(element1, element2) {
@@ -381,12 +401,17 @@ var Problem = exports.Problem = declare({
 	*/
 	toString: function toString() {
 		return (this.constructor.name || 'Problem') +"("+ JSON.stringify(this) +")";
+	},
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'Problem',
+		serializer: function serialize_Problem(obj) {
+			return this.serializeAsProperties(obj, ['title', 'description', 'random'], true);
+		}
 	}
 }); // declare Problem.
-		
-/** `problems` is a bundle of classic and reference problems.
-*/
-var problems = exports.problems = {};
 
 
 /**	# Metaheuristic
@@ -446,7 +471,7 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		size = isNaN(size) ? this.size : +size >> 0;
 		this.state = new Array(size);
 		for (var i = 0; i < size; i++) {
-			this.state[i] = new this.problem.representation(); // Element with random values.
+			this.state[i] = this.problem.newElement(); // Element with random values.
 		}
 		this.onInitiate();
 	},
@@ -499,7 +524,7 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		size = isNaN(size) ? Math.floor(expansionRate * this.size) : +size;
 		var elems = new Array(size), i;
 		for (i = 0; i < size; i++){
-			elems[i] = new this.problem.representation();
+			elems[i] = this.problem.newElement();
 		}
 		return elems;
 	},
@@ -543,7 +568,7 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	of passed iterations is not greater than `steps`.
 	*/
 	finished: function finished() {
-		return this.step >= this.steps || this.problem.suffices(this.state);
+		return this.step >= this.steps || this.problem.sufficientElements(this.state);
 	},
 
 	/** `analyze()` updates the process' statistics.
@@ -716,24 +741,13 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
-		identifier: SERMAT_LIB_PREFIX +'Metaheuristic',
+		identifier: 'Metaheuristic',
 		serializer: function serialize_Metaheuristic(obj) {
-			return [{
-				problem: this.problem,
-				size: this.size,
-				state: this.state,
-				steps: this.steps,
-				step: this.step,
-				random: this.random,
-				statistics: this.statistics
-			}];
+			return this.serializeAsProperties(obj, 
+				['problem', 'size', 'state', 'steps', 'step', 'random', 'statistics']);
 		}
 	}
 }); // declare Metaheuristic.
-
-/** `metaheuristics` is a bundle of available metaheuristics.
-*/
-var metaheuristics = exports.metaheuristics = {};
 
 /** # Hill climbing
 
@@ -953,11 +967,10 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 			raiseIf(!Array.isArray(parents) || parents.length < 2, "A two parent array is required.");
 			var cut = this.random.randomInt(this.length - 1) + 1,
 				values0 = parents[0].values,
-				values1 = parents[1].values,
-				ElementConstructor = this.problem.representation;
+				values1 = parents[1].values;
 			return [ 
-				new ElementConstructor(values0.slice(0, cut).concat(values1.slice(cut))),
-				new ElementConstructor(values1.slice(0, cut).concat(values0.slice(cut)))
+				this.problem.newElement(values0.slice(0, cut).concat(values1.slice(cut))),
+				this.problem.newElement(values1.slice(0, cut).concat(values0.slice(cut)))
 			];
 		},
 		
@@ -970,11 +983,10 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 			var cut1 = this.random.randomInt(this.length - 1) + 1,
 				cut2 = this.random.randomInt(this.length - 1) + 1,
 				values0 = parents[0].values,
-				values1 = parents[1].values,
-				ElementConstructor = this.problem.representation;
+				values1 = parents[1].values;
 			return [ 
-				new ElementConstructor(values0.slice(0, cut1).concat(values1.slice(cut1, cut2)).concat(values0.slice(cut2))),
-				new ElementConstructor(values1.slice(0, cut1).concat(values0.slice(cut1, cut2)).concat(values1.slice(cut2)))
+				this.problem.newElement(values0.slice(0, cut1).concat(values1.slice(cut1, cut2)).concat(values0.slice(cut2))),
+				this.problem.newElement(values1.slice(0, cut1).concat(values0.slice(cut1, cut2)).concat(values1.slice(cut2)))
 			];
 		},
 		
@@ -984,8 +996,7 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 		uniformCrossover: function uniformCrossover(parents, count) {
 			count = isNaN(count) ? parents.length : count|0;
 			var result = [],
-				Representation = this.problem.representation,
-				length = representation.prototype.length,
+				length = this.problem.elementLength(),
 				random = this.random,
 				values;
 			for (var i = 0; i < count; ++i) {
@@ -993,7 +1004,7 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 				for (var j = 0; j < length; ++j) {
 					values.push(random.choice(parents).values[j]);
 				}
-				result.push(new Representation(values));
+				result.push(this.problem.newElement(values));
 			}
 			return result;
 		}
@@ -1021,7 +1032,7 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 			max = isNaN(maxPoints) ? Infinity : +maxPoints;
 			return function mutation(element) {
 				var times = maxPoints;
-				element = new element.constructor(element.values); // Copy element.
+				element = this.problem.newElement(element.values); // Copy element.
 				do {
 					element.values[this.random.randomInt(element.length)] = this.random.random();
 				} while (this.random.randomBool(this.mutationRate) && --times > 0);
@@ -1050,7 +1061,7 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 			}
 			values[i1] = values[i2];
 			values[i2] = v1;
-			return new element.constructor(values);
+			return this.problem.newElement(values);
 		}
 	}, // GeneticAlgorithm.mutations
 	
@@ -1092,8 +1103,19 @@ var BeamSearch = metaheuristics.BeamSearch = declare(Metaheuristic, {
 		return allSuccessors;
 	},
 	
+	// ## Utilities ################################################################################
+	
 	toString: function toString() {
 		return (this.constructor.name || 'BeamSearch') +'('+ JSON.stringify(this) +')';
+	},
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: exports.__package__ +'.BeamSearch',
+		serializer: function serialize_Metaheuristic(obj) {
+			return Metaheuristic.__SERMAT__.serializer.call(this, obj);
+		}
 	}
 }); // declare BeamSearch.
 
@@ -1235,8 +1257,9 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 		Metaheuristic.prototype.initiate.call(this, size);
 		var mh = this,
 			result = this.state.forEach(function (element) {
-				element.__velocity__ = new Array(element.length);
-				for (var i = 0; i < element.length; ++i) {
+				var len = element.values.length;
+				element.__velocity__ = new Array(len);
+				for (var i = 0; i < len; ++i) {
 					element.__velocity__[i] = mh.random.random(-1, +1);
 				}
 				element.__localBest__ = element;
@@ -1252,12 +1275,13 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 			velocity = element.__velocity__,
 			localBest = element.__localBest__,
 			localCoef = this.random.random() * this.localAcceleration,
-			globalCoef = this.random.random() * this.globalAcceleration;
-		return element.values.map(function (v, i) {
-			return velocity[i] * mh.inertia +
-				localCoef * (localBest.values[i] - v) +
-				globalCoef * (globalBest.values[i] - v);
-		});
+			globalCoef = this.random.random() * this.globalAcceleration,
+			result = element.values.map(function (v, i) {
+				return velocity[i] * mh.inertia +
+					localCoef * (localBest.values[i] - v) +
+					globalCoef * (globalBest.values[i] - v);
+			});
+		return result;
 	},
 	
 	/** The method `nextElement` creates a new element which represents the position of a particle 
@@ -1269,8 +1293,8 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 			nextValues = element.values.map(function (v, i) {
 				return v + nextVelocity[i];
 			}),
-			result = new element.constructor(nextValues);
-		return Future.when(result.evaluate()).then(function () {
+			result = this.problem.newElement(nextValues);
+		return Future.then(result.evaluate(), function () {
 			result.__velocity__ = nextVelocity;
 			result.__localBest__ = mh.problem.compare(element.__localBest__, result) > 0 ? result : element.__localBest__;
 			return result;
@@ -1356,14 +1380,33 @@ var DifferentialEvolution = metaheuristics.DifferentialEvolution = declare(Metah
 						a[i] + mh.differentialWeight * (b[i] - c[i]) :
 						element.values[i]);
 				}
-				return new element.constructor(newValues);
+				return mh.problem.newElement(newValues);
 			});
 		this.onExpand();
 		return result;
 	},
 	
+	// ## Utilities ################################################################################
+	
 	toString: function toString() {
 		return (this.constructor.name || 'DifferentialEvolution') +'('+ JSON.stringify(this) +')';
+	},
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: exports.__package__ +'.DifferentialEvolution',
+		serializer: function serialize_Metaheuristic(obj) {
+			/* return this.serializeAsProperties(obj, 
+				['differentialWeight', 'crossoverProbability'], 
+				this.superSerialize(obj)[0]);
+			*/
+			var result = Metaheuristic.__SERMAT__.serializer.call(this, obj),
+				props = result[0];
+			props.differentialWeight = obj.differentialWeight;
+			props.crossoverProbability = obj.crossoverProbability;
+			return result;
+		}
 	}
 }); // declare DifferentialEvolution.
 
@@ -1396,7 +1439,7 @@ var EvolutionStrategy = metaheuristics.EvolutionStrategy = declare(Metaheuristic
 			newValues = element.values.map(function (v, i) {
 				return v + random.random() - random.random();
 			});
-		return new element.constructor(newValues);
+		return this.problem.newElement(newValues);
 	},
 	
 	/** `mutants` calculates an array of `count` mutants, or `this.mutantCount` by default. 
@@ -1472,7 +1515,7 @@ var HarmonySearch = metaheuristics.HarmonySearch = declare(Metaheuristic, {
 			}
 		}
 		this.onExpand();
-		return [new proto.constructor(values)];
+		return [this.problem.newElement(values)];
 	},
 	
 	toString: function toString() {
@@ -1522,7 +1565,7 @@ var DistributionEstimation = metaheuristics.DistributionEstimation = declare(Met
 	*/
 	histograms: function histograms() {
 		return DistributionEstimation.histograms(this.state, this.histogramWidth, 
-			this.problem.representation.prototype.length);
+			this.problem.elementLength());
 	},
 	
 	'static histograms': function histograms(state, histogramWidth, histogramCount) {
@@ -1547,10 +1590,10 @@ var DistributionEstimation = metaheuristics.DistributionEstimation = declare(Met
 	/** The method `elementFromHistogram` is used to make these new random elements.
 	*/
 	elementFromHistograms: function elementFromHistogram(histograms) {
-		return DistributionEstimation.elementFromHistograms(histograms, this.problem.representation, this.random);
+		return DistributionEstimation.elementFromHistograms(histograms, this.problem, this.random);
 	},
 	
-	'static elementFromHistograms': function elementFromHistogram(histograms, Representation, random) {
+	'static elementFromHistograms': function elementFromHistogram(histograms, problem, random) {
 		var length = histograms.length,
 			values = new Array(length),
 			histogram, r;
@@ -1564,7 +1607,7 @@ var DistributionEstimation = metaheuristics.DistributionEstimation = declare(Met
 				}
 			}
 		}
-		return new Representation(values);
+		return problem.newElement(values);
 	},
 	
 	// ## Estimation of distribution as a problem. #################################################
@@ -1575,52 +1618,51 @@ var DistributionEstimation = metaheuristics.DistributionEstimation = declare(Met
 	'static histogramProblem': function histogramProblem(problem, size, histogramWidth) {
 		size = isNaN(size) ? 30 : Math.max(1, size |0);
 		histogramWidth = isNaN(histogramWidth) ? 10 : Math.max(2, histogramWidth |0);
-		var elementLength = problem.representation.prototype.length,
+		var elementLength = problem.elementLength(),
 			elementFromHistograms = this.elementFromHistograms;
-		return new Problem({
-			/** Each element of this problem represents an histogram for elements of the given
-			`problem`. The argument `histogramWidth` defines how many ranges each histogram has.
-			*/
-			representation: declare(Element, {
-				length: elementLength * histogramWidth,
-				
-				random: problem.random,
+			HistogramProblem = declare(Problem, {
+				/** Each element of this problem represents an histogram for elements of the given
+				`problem`. The argument `histogramWidth` defines how many ranges each histogram has.
+				*/
+				elementLength: function elementLength() {
+					return elementLength * histogramWidth;
+				},
 				
 				/** The evaluation of the elements is the average evaluation of `size` elements 
 				generated from the histogram that this element represents.
 				*/
-				evaluate: function evaluate() {
-					var element = this,
-						histograms = this.mapping(),
+				evaluation: function evaluation(element) {
+					var histograms = this.mapping(element),
 						elements = base.Iterable.repeat(null, size).map(function () {
-							return elementFromHistograms(histograms, problem.representation, problem.random);
+							return elementFromHistograms(histograms, problem, problem.random);
 						});
 					return Future.all(iterable(elements).map(function (e) {
 						return Future.when(e.evaluate());
 					})).then(function (evaluations) {
-						return element.evaluation = iterable(evaluations).sum() / evaluations.length;
+						return iterable(evaluations).sum() / evaluations.length;
 					});
 				},
 				
 				/** The `mapping` simply assembles the histograms and normalizes its frequencies.
 				*/
-				mapping: function mapping() {
-					var histograms = [], histogram, sum;
-					for (var i = 0; i < elementLength; ++i) {
-						histogram = this.values.slice(i * histogramWidth, (i+1) * histogramWidth);
+				mapping: function mapping(element) {
+					var histograms = [],
+						histogram, sum;
+					for (var i = 0; i < element.length; ++i) {
+						histogram = element.values.slice(i * histogramWidth, (i+1) * histogramWidth);
 						sum = iterable(histogram).sum();
 						histograms[i] = histogram.map(function (f) { // Normalization
 							return f / sum;
 						});
 					}
 					return histograms;
-				}
-			}),
-			
-			/** The comparison function is the same as the original problem's.
-			*/
-			compare: problem.compare
-		});
+				},
+				
+				/** The comparison function is the same as the original problem's.
+				*/
+				compare: problem.compare
+			});
+		return new HistogramProblem({ random: problem.random });
 	},
 	
 	// ## Other ####################################################################################
@@ -1695,7 +1737,7 @@ var GradientDescent = metaheuristics.GradientDescent = declare(Metaheuristic, {
 				var newValues = gradient.map(function (gradientValue, i) {
 					return elem.values[i] - gradientValue * rate;
 				});
-				return new elem.constructor(newValues);
+				return mh.problem.newElement(newValues);
 			});
 		})).then(function (elems) {
 			return mh.evaluate(elems);
@@ -1758,44 +1800,42 @@ problems.HelloWorld = declare(Problem, {
 		initialize(this, params)
 			.string('target', { coerce: true, defaultValue: 'Hello world!' });
 		
-		var target = this.target,
-			__target__ = iterable(target).map(function (c) {
-				return c.charCodeAt(0);
-			}).toArray();
-		/** The elements` representation is _ad-hoc_.
-		*/
-		this.representation = declare(Element, {
-			/** The elements` `length` is equal to the length of the target string.
-			*/
-			length: target.length,
-			
-			/** An element `suffices()` when its equal to the target string.
-			*/
-			suffices: function suffices() {
-				return this.mapping() === target;
-			},
-			
-			/** An element evaluation is equal to its distance from target string.
-			*/
-			evaluate: function evaluate() {
-				return this.evaluation = this.manhattanDistance(__target__, this.rangeMapping([32, 254]));
-			},
-			
-			/** An element's values are always numbers. These are converted to a string by 
-			converting each number to its corresponding Unicode character.
-			*/
-			mapping: function mapping() {
-				return this.rangeMapping([32, 254]).map(function (n) {
-					return String.fromCharCode(n |0);
-				}).join('');
-			}
-		});
+		this.__target__ = iterable(target).map(function (c) {
+			return c.charCodeAt(0);
+		}).toArray();
 	},
+	
+	/** The elements' `length` is equal to the length of the target string.
+	*/
+	elementLength: function elementLength() {
+		return target.length;
+	},
+	
+	/** An element's values are always numbers. These are converted to a string by converting each 
+	number to its corresponding Unicode character.
+	*/
+	mapping: function mapping(element) {
+		return element.rangeMapping([32, 254]).map(function (n) {
+			return String.fromCharCode(n |0);
+		}).join('');
+	},
+			
+	/** An element evaluation is equal to its distance from target string.
+	*/
+	evaluation: function evaluation(element) {
+		return element.manhattanDistance(this.__target__, element.rangeMapping([32, 254]));
+	},		
 	
 	/** Since elements' evaluation is a distance, this value must be minimized to guide the search 
 	towards the target string.
 	*/
-	compare: Problem.prototype.minimization
+	compare: Problem.prototype.minimization,
+	
+	/** An element is sufficient when its equal to the target string.
+	*/
+	sufficientElement: function sufficientElement(element) {
+		return this.mapping(element) === target;
+	}
 }); // declare HelloWorld.
 
 
@@ -1808,21 +1848,19 @@ Problem builder for test beds of algorithms in this library.
 */
 var testbed = problems.testbed = function testbed(spec) {
 	var minimumValue = isNaN(spec.minimumValue) ? -1e6 : +spec.minimumValue,
-		maximumValue = isNaN(spec.maximumValue) ? +1e6 : +spec.maximumValue;
+		maximumValue = isNaN(spec.maximumValue) ? +1e6 : +spec.maximumValue,
+		length = isNaN(spec.length) ? 2 : +spec.length;
 	return new Problem({
 		title: spec.title +"",
 		description: spec.description +"",
 		
-		/** The representation of all testbeds must override the evaluation of the candidate 
-		solutions. The `length` is 2 by default.
-		*/
-		representation: declare(Element, {
-			length: isNaN(spec.length) ? 2 : +spec.length,				
-				
-			evaluate: function evaluate() {
-				return this.evaluation = spec.evaluation(this.rangeMapping([minimumValue, maximumValue]));
-			}
-		}),
+		elementLength: function elementLength() {
+			return length;
+		},
+		
+		evaluation: function evaluation(element) {
+			return spec.evaluation(this.rangeMapping([minimumValue, maximumValue]));
+		},
 		
 		/** The optimization type is defined by `spec.target`. Minimization is assumed by default.
 		*/
@@ -1835,10 +1873,9 @@ var testbed = problems.testbed = function testbed(spec) {
 		/** If an optimum value is provided (`spec.optimumValue`) it is added to the termination
 		criteria.
 		*/
-		suffices: spec.hasOwnProperty('optimumValue') ? function suffices(elements) {
-			var best = elements[0];
-			return Math.abs(best.evaluation - spec.optimumValue) < best.resolution;
-		} : Problem.prototype.suffices,
+		sufficientElement: spec.hasOwnProperty('optimumValue') ? function sufficientElement(element) {
+				return Math.abs(element.evaluation - spec.optimumValue) < element.resolution;
+			} : Problem.prototype.sufficientElement,
 	});
 }; // problems.testbed()
 
@@ -2097,7 +2134,7 @@ A generalized version of the classic [8 queens puzzle](http://en.wikipedia.org/w
 a problem of placing 8 chess queens on an 8x8 chessboard so that no two queens may attack each 
 other.
 */
-problems.NQueensPuzzle = declare(Problem, { ////////////////////////////
+problems.NQueensPuzzle = declare(Problem, {
 	title: "N-queens puzzle",
 	description: "Generalized version of the classic problem of placing "+
 		"8 chess queens on an 8x8 chessboard so that no two queens attack each other.",
@@ -2111,40 +2148,44 @@ problems.NQueensPuzzle = declare(Problem, { ////////////////////////////
 			*/
 			.integer('N', { coerce: true, defaultValue: 8 });
 		
-		var rowRange = Iterable.range(this.N).toArray();
-		/** The representation is an array of `N` positions, indicating the row of the queen for 
-		each column.
-		*/
-		this.representation = declare(Element, {
-			length: this.N,
-			/** Its evaluation is the count of diagonals shared by queens pairwise.
-			*/
-			evaluate: function evaluate() {
-				var rows = this.mapping(),
-					count = 0;
-				rows.forEach(function (row, i) {
-					for (var j = 1; i + j < rows.length; j++) {
-						if (rows[j] == row + j || rows[j] == row - j) {
-							count++;
-						}
-					}
-				});
-				return this.evaluation = count;
-			},
-			/** It is sufficient when no pair of queens share diagonals.
-			*/
-			suffices: function suffices() {
-				return this.evaluation === 0;
-			},
-			mapping: function mapping() {
-				return this.setMapping(rowRange);
+		this.__rowRange__ = Iterable.range(this.N).toArray();
+	},
+	
+	/** The representation is an array of `N` positions, indicating the row of the queen for each 
+	column.
+	*/
+	elementLength: function elementLength() {
+		return this.N;
+	},
+	
+	mapping: function mapping(element) {
+		return element.setMapping(this.__rowRange__);
+	},
+	
+	/** The elements' evaluation is the count of diagonals shared by queens pairwise.
+	*/
+	evaluation: function evaluation(element) {
+		var rows = this.mapping(),
+			count = 0;
+		rows.forEach(function (row, i) {
+			for (var j = 1; i + j < rows.length; j++) {
+				if (rows[j] == row + j || rows[j] == row - j) {
+					count++;
+				}
 			}
 		});
+		return count;
 	},
 	
 	/** Of course, the number of shared diagonals must be minimized.
 	*/
-	compare: Problem.prototype.minimization
+	compare: Problem.prototype.minimization,
+	
+	/** It is sufficient when no pair of queens share diagonals.
+	*/
+	sufficientElement: function sufficientElement() {
+		return this.evaluation === 0;
+	}
 }); // declare NQueensPuzzle
 
 
@@ -2188,43 +2229,43 @@ problems.KnapsackProblem = declare(Problem, {
 			/** + `items` is the set of items.
 			*/
 			.object('items', { ignore: true });
-		
-		var problem = this;
-		/** The problem's representation is declared _ad hoc_. It is an array with a number for each
-		item. This number holds the selected amount for each item (from 0 up to the item's amount).
-		*/
-		this.representation = declare(Element, {
-			length: Object.keys(this.items).length,
-			/** All elements are evaluated by calculating the worth of all included items. If their 
-			cost is greater than the problem's limit, the worth becomes negative.
-			*/
-			evaluate: function evaluate() {
-				var selection = this.mapping(),
-					worth = 0,
-					cost = 0;
-				Object.keys(selection).forEach(function (name) {
-					var item = problem.items[name],
-						amount = selection[name];
-					worth += item.worth * amount;
-					cost += item.cost * amount;
-				});
-				return this.evaluation = cost > problem.limit ? -worth : worth;
-			},
-			/** All elements are mapped to an object with the selected amount associated to each 
-			item.
-			*/
-			mapping: function mapping() {
-				var selection = {},
-					keys = Object.keys(problem.items);
-				keys.sort();
-				iterable(this.values).zip(keys).forEach(function (pair) {
-					var item = problem.items[pair[1]],
-						amount = pair[0] * (1 + (+item.amount || 1)) | 0;
-					selection[pair[1]] = amount;
-				});
-				return selection;
-			}
+	},
+
+	/** The problem's representation is an array with a number for each item. This number holds the 
+	selected amount for each item (from 0 up to the item's amount).
+	*/	
+	elementLength: function elementLength() {
+		return Object.keys(this.items).length;
+	},
+	
+	/** All elements are mapped to an object with the selected amount associated to each item.
+	*/
+	mapping: function mapping(element) {
+		var selection = {},
+			keys = Object.keys(problem.items);
+		keys.sort();
+		iterable(element.values).zip(keys).forEach(function (pair) {
+			var item = problem.items[pair[1]],
+				amount = pair[0] * (1 + (+item.amount || 1)) | 0;
+			selection[pair[1]] = amount;
 		});
+		return selection;
+	},
+	
+	/** All elements are evaluated by calculating the worth of all included items. If their cost is 
+	greater than the problem's limit, the worth becomes negative.
+	*/
+	evaluation: function evaluation(element) {
+		var selection = this.mapping(element),
+			worth = 0,
+			cost = 0;
+		Object.keys(selection).forEach(function (name) {
+			var item = problem.items[name],
+				amount = selection[name];
+			worth += item.worth * amount;
+			cost += item.cost * amount;
+		});
+		return cost > problem.limit ? -worth : worth;
 	},
 	
 	/** The best selection of items is the one that maximizes worth, without exceeding the cost 
@@ -2233,7 +2274,7 @@ problems.KnapsackProblem = declare(Problem, {
 	compare: Problem.prototype.maximization
 }); // declare KnapsackProblem
 
-/** # Association rules.
+/** # Association rules learning.
 
 Association rules are relations between variables found in databases. Many methods have been 
 researched to automatically search for interesting rules in large data sets.
@@ -2248,25 +2289,67 @@ For further information, see:
 	implication rules for market basket data"_](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.25.3707).
 	SIGMOD 1997, Proceedings ACM SIGMOD International Conference on Management of Data.
 */
-var AssociationRule = problems.AssociationRule = declare(Element, {
-	constructor: function AssociationRule(values) {
-		Element.call(this, values);
+var AssociationRuleLearning = problems.AssociationRuleLearning = declare(Problem, {
+	constructor: function AssociationRuleLearning(params) {
+		Problem.call(this, params);
+		initialize(this, params)
+			/** TODO
+			*/
+			.object('dataset', { defaultValue: [] })
+			/** TODO
+			*/
+			.array('keys');
+		//Element.call(this, problem, values, evaluation);
+	},
+	
+	elementLength: function elementLength() {
+		return keys.length;
 	},
 	
 	// ## Evaluation ###############################################################################
 	
-	/** This method checks if the given `record` complies with this rule's `antecedent`. It is not
-	implemented by default, so it should be overriden.
+	/** TODO The method `booleanRules` builds a representation for classic association rules, which treat
+	each record as a set of `keys`. Each position in the element's values tells if the corresponding
+	key belongs to the rule's antecedent or consequent; or neither. Empty antecedents and 
+	consequents always evaluate to false.
 	*/
-	antecedent: base.objects.unimplemented('AssociationRule', 'antecedent'),
 	
-	/** This method checks if the given `record` complies with this rule's `consequent`. It is not
-	implemented by default, so it should be overriden.
+	/** Turns the element into an association rule.
 	*/
-	consequent: base.objects.unimplemented('AssociationRule', 'consequent'),
+	mapping: function mapping(element) {
+		var problem = this,
+			antecedent = [], 
+			consequent = [];
+		element.arrayMapping([0,1,2]).forEach(function (v, i) {
+			switch (v) {
+				case 1: antecedent.push(problem.keys[i]); break;
+				case 2: consequent.push(problem.keys[i]); break;
+			}
+		});
+		return { antecedent: antecedent, consequent: consequent };
+	},
 	
-	/** Given a `dataset` (a sequence of records) the `measures` of this association rule
-	include the usual statistics:
+	keysComply: function keysComply(keys, record) {
+		var it = iterable(keys);
+		return !it.isEmpty() && it.all(function (key) {
+			return !!record[key];
+		});
+	},
+	
+	/** This method checks if the given `record` complies with the given `rule`'s `antecedent`.
+	*/
+	antecedentComplies: function antecedentComplies(rule, record) {
+		return this.keysComply(rule.antecedent, record);
+	},
+	
+	/** This method checks if the given `record` complies with the given `rule`'s `consequent`.
+	*/
+	consequentComplies: function consequentComplies(rule, record) {
+		return this.keysComply(rule.consequent, record);
+	},
+	
+	/** The `measures` of an `element` (representing an association rule) include the usual 
+	statistics:
 	
 	+ `antecedentCount`, `consequentCount`, `ruleCount` are the numbers of records that comply with
 		this rules's antecedent, consequent and both.
@@ -2278,18 +2361,22 @@ var AssociationRule = problems.AssociationRule = declare(Element, {
 	+ `leverage` measures the difference of A and C appearing together in the data set and what 
 		would be expected if X and Y where statistically dependent.
 	*/
-	measures: function measures(dataset) {
-		var element = this,
+	measures: function measures(element) {
+		var problem = this,
 			result = {},
-			totalCount = 0, antecedentCount = 0, consequentCount = 0, ruleCount = 0;
-		iterable(dataset).forEach(function (record) {
-			if (element.antecedent(record)) {
+			totalCount = 0, 
+			antecedentCount = 0, 
+			consequentCount = 0, 
+			ruleCount = 0,
+			rule = this.mapping(element);
+		iterable(this.dataset).forEach(function (record) {
+			if (problem.antecedentComplies(rule, record)) {
 				++antecedentCount;
-				if (element.consequent(record)) {
+				if (problem.consequentComplies(rule, record)) {
 					++consequentCount;
 					++ruleCount;
 				}
-			} else if (element.consequent(record)) {
+			} else if (problem.consequentComplies(rule, record)) {
 				++consequentCount;
 			}
 			++totalCount;
@@ -2308,60 +2395,21 @@ var AssociationRule = problems.AssociationRule = declare(Element, {
 	}, 
 	
 	/** By default, the evaluation uses the rule's confidence. It assumes the elements has a 
-	`dataset` member. Measures are cached in `this.__measures__`.
+	`dataset` member. Measures are cached in a `__measures__` property in the element.
 	*/
-	evaluate: function evaluate() {
-		if (!this.__measures__) {
-			this.__measures__ = this.measures(this.dataset);
+	evaluation: function evaluation(element) {
+		if (!element.__measures__) {
+			element.__measures__ = this.measures(element);
 		}
-		this.evaluation = this.__measures__.confidence;
-		return this.evaluation;
-	},
-	
-	// ## Utilities ################################################################################
-
-	/** The method `booleanRules` builds a representation for classic association rules, which treat
-	each record as a set of `keys`. Each position in the element's values tells if the corresponding
-	key belongs to the rule's antecedent or consequent; or neither. Empty antecedents and 
-	consequents always evaluate to false.
-	*/
-	'static booleanRules': function booleanRules(keys) {
-		var parent = this;
-		return declare(parent, {
-			length: keys.length,
-			
-			constructor: function (values) {
-				parent.call(this, values);
-				var aks = this.__antecedentKeys__ = [], // Cache rule's keys.
-					cks = this.__consequentKeys__ = [];
-				this.arrayMapping([0,1,2]).forEach(function (v, i) {
-					switch (v) {
-						case 1: aks.push(keys[i]); break;
-						case 2: cks.push(keys[i]); break;
-					}
-				});
-			},
-			
-			__checkKeys__: function __checkKeys__(keys, record) {
-				return keys.length > 0 && iterable(keys).all(function (key) {
-					return !!record[key];
-				});
-			},
-			
-			antecedent: function antecedent(record) {
-				return this.__checkKeys__(this.__antecedentKeys__, record);
-			},
-			
-			consequent: function consequent(record) {
-				return this.__checkKeys__(this.__consequentKeys__, record);
-			}
-		});
-	},
-	
+		return element.__measures__.confidence;
+	}	
 }); // declare AssociationRule.
 
-
 // See __prologue__.js
+	[Element].forEach(function (type) {
+		type.__SERMAT__.identifier = exports.__package__ +'.'+ type.__SERMAT__.identifier;
+		exports.__SERMAT__.include.push(type);
+	});
 	return exports;
 });
 
