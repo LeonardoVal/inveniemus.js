@@ -23,11 +23,18 @@
 	
 // Library layout. /////////////////////////////////////////////////////////////
 	var exports = {
+		__package__: 'inveniemus',
 		__name__: 'inveniemus',
 		__init__: __init__,
-		__dependencies__: [base]
+		__dependencies__: [base],
+		__SERMAT__: { include: [] },
+	/** `metaheuristics` is a bundle of available metaheuristics.
+	*/	
+		metaheuristics: {},
+	/** `problems` is a bundle of classic and reference problems.
+	*/
+		problems: {}
 	};
+	var metaheuristics = exports.metaheuristics,
+		problems = exports.problems;
 	
-/** This is the prefix used in the identifiers of all types that are serialiable with Sermat.
-*/
-	var SERMAT_LIB_PREFIX = 'inveniemus.';
