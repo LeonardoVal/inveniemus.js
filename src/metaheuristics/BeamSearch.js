@@ -30,7 +30,18 @@ var BeamSearch = metaheuristics.BeamSearch = declare(Metaheuristic, {
 		return allSuccessors;
 	},
 	
+	// ## Utilities ################################################################################
+	
 	toString: function toString() {
 		return (this.constructor.name || 'BeamSearch') +'('+ JSON.stringify(this) +')';
+	},
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: exports.__package__ +'.BeamSearch',
+		serializer: function serialize_Metaheuristic(obj) {
+			return Metaheuristic.__SERMAT__.serializer.call(this, obj);
+		}
 	}
 }); // declare BeamSearch.

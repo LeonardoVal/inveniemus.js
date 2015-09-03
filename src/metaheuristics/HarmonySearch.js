@@ -41,7 +41,7 @@ var HarmonySearch = metaheuristics.HarmonySearch = declare(Metaheuristic, {
 			}
 		}
 		this.onExpand();
-		return [new proto.constructor(values)];
+		return [this.problem.newElement(values)];
 	},
 	
 	toString: function toString() {

@@ -151,11 +151,10 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 			raiseIf(!Array.isArray(parents) || parents.length < 2, "A two parent array is required.");
 			var cut = this.random.randomInt(this.length - 1) + 1,
 				values0 = parents[0].values,
-				values1 = parents[1].values,
-				ElementConstructor = this.problem.representation;
+				values1 = parents[1].values;
 			return [ 
-				new ElementConstructor(values0.slice(0, cut).concat(values1.slice(cut))),
-				new ElementConstructor(values1.slice(0, cut).concat(values0.slice(cut)))
+				this.problem.newElement(values0.slice(0, cut).concat(values1.slice(cut))),
+				this.problem.newElement(values1.slice(0, cut).concat(values0.slice(cut)))
 			];
 		},
 		
@@ -168,11 +167,10 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 			var cut1 = this.random.randomInt(this.length - 1) + 1,
 				cut2 = this.random.randomInt(this.length - 1) + 1,
 				values0 = parents[0].values,
-				values1 = parents[1].values,
-				ElementConstructor = this.problem.representation;
+				values1 = parents[1].values;
 			return [ 
-				new ElementConstructor(values0.slice(0, cut1).concat(values1.slice(cut1, cut2)).concat(values0.slice(cut2))),
-				new ElementConstructor(values1.slice(0, cut1).concat(values0.slice(cut1, cut2)).concat(values1.slice(cut2)))
+				this.problem.newElement(values0.slice(0, cut1).concat(values1.slice(cut1, cut2)).concat(values0.slice(cut2))),
+				this.problem.newElement(values1.slice(0, cut1).concat(values0.slice(cut1, cut2)).concat(values1.slice(cut2)))
 			];
 		},
 		
@@ -182,8 +180,7 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 		uniformCrossover: function uniformCrossover(parents, count) {
 			count = isNaN(count) ? parents.length : count|0;
 			var result = [],
-				Representation = this.problem.representation,
-				length = representation.prototype.length,
+				length = this.problem.elementLength(),
 				random = this.random,
 				values;
 			for (var i = 0; i < count; ++i) {
@@ -191,7 +188,7 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 				for (var j = 0; j < length; ++j) {
 					values.push(random.choice(parents).values[j]);
 				}
-				result.push(new Representation(values));
+				result.push(this.problem.newElement(values));
 			}
 			return result;
 		}
@@ -219,7 +216,7 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 			max = isNaN(maxPoints) ? Infinity : +maxPoints;
 			return function mutation(element) {
 				var times = maxPoints;
-				element = new element.constructor(element.values); // Copy element.
+				element = this.problem.newElement(element.values); // Copy element.
 				do {
 					element.values[this.random.randomInt(element.length)] = this.random.random();
 				} while (this.random.randomBool(this.mutationRate) && --times > 0);
@@ -248,7 +245,7 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 			}
 			values[i1] = values[i2];
 			values[i2] = v1;
-			return new element.constructor(values);
+			return this.problem.newElement(values);
 		}
 	}, // GeneticAlgorithm.mutations
 	

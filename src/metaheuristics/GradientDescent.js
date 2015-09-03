@@ -62,7 +62,7 @@ var GradientDescent = metaheuristics.GradientDescent = declare(Metaheuristic, {
 				var newValues = gradient.map(function (gradientValue, i) {
 					return elem.values[i] - gradientValue * rate;
 				});
-				return new elem.constructor(newValues);
+				return mh.problem.newElement(newValues);
 			});
 		})).then(function (elems) {
 			return mh.evaluate(elems);

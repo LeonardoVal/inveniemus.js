@@ -35,8 +35,9 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 		Metaheuristic.prototype.initiate.call(this, size);
 		var mh = this,
 			result = this.state.forEach(function (element) {
-				element.__velocity__ = new Array(element.length);
-				for (var i = 0; i < element.length; ++i) {
+				var len = element.values.length;
+				element.__velocity__ = new Array(len);
+				for (var i = 0; i < len; ++i) {
 					element.__velocity__[i] = mh.random.random(-1, +1);
 				}
 				element.__localBest__ = element;
@@ -52,12 +53,13 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 			velocity = element.__velocity__,
 			localBest = element.__localBest__,
 			localCoef = this.random.random() * this.localAcceleration,
-			globalCoef = this.random.random() * this.globalAcceleration;
-		return element.values.map(function (v, i) {
-			return velocity[i] * mh.inertia +
-				localCoef * (localBest.values[i] - v) +
-				globalCoef * (globalBest.values[i] - v);
-		});
+			globalCoef = this.random.random() * this.globalAcceleration,
+			result = element.values.map(function (v, i) {
+				return velocity[i] * mh.inertia +
+					localCoef * (localBest.values[i] - v) +
+					globalCoef * (globalBest.values[i] - v);
+			});
+		return result;
 	},
 	
 	/** The method `nextElement` creates a new element which represents the position of a particle 
@@ -69,8 +71,8 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 			nextValues = element.values.map(function (v, i) {
 				return v + nextVelocity[i];
 			}),
-			result = new element.constructor(nextValues);
-		return Future.when(result.evaluate()).then(function () {
+			result = this.problem.newElement(nextValues);
+		return Future.then(result.evaluate(), function () {
 			result.__velocity__ = nextVelocity;
 			result.__localBest__ = mh.problem.compare(element.__localBest__, result) > 0 ? result : element.__localBest__;
 			return result;

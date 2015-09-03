@@ -47,13 +47,32 @@ var DifferentialEvolution = metaheuristics.DifferentialEvolution = declare(Metah
 						a[i] + mh.differentialWeight * (b[i] - c[i]) :
 						element.values[i]);
 				}
-				return new element.constructor(newValues);
+				return mh.problem.newElement(newValues);
 			});
 		this.onExpand();
 		return result;
 	},
 	
+	// ## Utilities ################################################################################
+	
 	toString: function toString() {
 		return (this.constructor.name || 'DifferentialEvolution') +'('+ JSON.stringify(this) +')';
+	},
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: exports.__package__ +'.DifferentialEvolution',
+		serializer: function serialize_Metaheuristic(obj) {
+			/* return this.serializeAsProperties(obj, 
+				['differentialWeight', 'crossoverProbability'], 
+				this.superSerialize(obj)[0]);
+			*/
+			var result = Metaheuristic.__SERMAT__.serializer.call(this, obj),
+				props = result[0];
+			props.differentialWeight = obj.differentialWeight;
+			props.crossoverProbability = obj.crossoverProbability;
+			return result;
+		}
 	}
 }); // declare DifferentialEvolution.

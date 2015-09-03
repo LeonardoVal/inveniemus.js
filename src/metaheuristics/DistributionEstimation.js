@@ -39,7 +39,7 @@ var DistributionEstimation = metaheuristics.DistributionEstimation = declare(Met
 	*/
 	histograms: function histograms() {
 		return DistributionEstimation.histograms(this.state, this.histogramWidth, 
-			this.problem.representation.prototype.length);
+			this.problem.elementLength());
 	},
 	
 	'static histograms': function histograms(state, histogramWidth, histogramCount) {
@@ -64,10 +64,10 @@ var DistributionEstimation = metaheuristics.DistributionEstimation = declare(Met
 	/** The method `elementFromHistogram` is used to make these new random elements.
 	*/
 	elementFromHistograms: function elementFromHistogram(histograms) {
-		return DistributionEstimation.elementFromHistograms(histograms, this.problem.representation, this.random);
+		return DistributionEstimation.elementFromHistograms(histograms, this.problem, this.random);
 	},
 	
-	'static elementFromHistograms': function elementFromHistogram(histograms, Representation, random) {
+	'static elementFromHistograms': function elementFromHistogram(histograms, problem, random) {
 		var length = histograms.length,
 			values = new Array(length),
 			histogram, r;
@@ -81,7 +81,7 @@ var DistributionEstimation = metaheuristics.DistributionEstimation = declare(Met
 				}
 			}
 		}
-		return new Representation(values);
+		return problem.newElement(values);
 	},
 	
 	// ## Estimation of distribution as a problem. #################################################
@@ -92,52 +92,51 @@ var DistributionEstimation = metaheuristics.DistributionEstimation = declare(Met
 	'static histogramProblem': function histogramProblem(problem, size, histogramWidth) {
 		size = isNaN(size) ? 30 : Math.max(1, size |0);
 		histogramWidth = isNaN(histogramWidth) ? 10 : Math.max(2, histogramWidth |0);
-		var elementLength = problem.representation.prototype.length,
+		var elementLength = problem.elementLength(),
 			elementFromHistograms = this.elementFromHistograms;
-		return new Problem({
-			/** Each element of this problem represents an histogram for elements of the given
-			`problem`. The argument `histogramWidth` defines how many ranges each histogram has.
-			*/
-			representation: declare(Element, {
-				length: elementLength * histogramWidth,
-				
-				random: problem.random,
+			HistogramProblem = declare(Problem, {
+				/** Each element of this problem represents an histogram for elements of the given
+				`problem`. The argument `histogramWidth` defines how many ranges each histogram has.
+				*/
+				elementLength: function elementLength() {
+					return elementLength * histogramWidth;
+				},
 				
 				/** The evaluation of the elements is the average evaluation of `size` elements 
 				generated from the histogram that this element represents.
 				*/
-				evaluate: function evaluate() {
-					var element = this,
-						histograms = this.mapping(),
+				evaluation: function evaluation(element) {
+					var histograms = this.mapping(element),
 						elements = base.Iterable.repeat(null, size).map(function () {
-							return elementFromHistograms(histograms, problem.representation, problem.random);
+							return elementFromHistograms(histograms, problem, problem.random);
 						});
 					return Future.all(iterable(elements).map(function (e) {
 						return Future.when(e.evaluate());
 					})).then(function (evaluations) {
-						return element.evaluation = iterable(evaluations).sum() / evaluations.length;
+						return iterable(evaluations).sum() / evaluations.length;
 					});
 				},
 				
 				/** The `mapping` simply assembles the histograms and normalizes its frequencies.
 				*/
-				mapping: function mapping() {
-					var histograms = [], histogram, sum;
-					for (var i = 0; i < elementLength; ++i) {
-						histogram = this.values.slice(i * histogramWidth, (i+1) * histogramWidth);
+				mapping: function mapping(element) {
+					var histograms = [],
+						histogram, sum;
+					for (var i = 0; i < element.length; ++i) {
+						histogram = element.values.slice(i * histogramWidth, (i+1) * histogramWidth);
 						sum = iterable(histogram).sum();
 						histograms[i] = histogram.map(function (f) { // Normalization
 							return f / sum;
 						});
 					}
 					return histograms;
-				}
-			}),
-			
-			/** The comparison function is the same as the original problem's.
-			*/
-			compare: problem.compare
-		});
+				},
+				
+				/** The comparison function is the same as the original problem's.
+				*/
+				compare: problem.compare
+			});
+		return new HistogramProblem({ random: problem.random });
 	},
 	
 	// ## Other ####################################################################################
