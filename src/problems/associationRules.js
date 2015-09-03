@@ -1,4 +1,4 @@
-﻿/** # Association rules.
+﻿/** # Association rules learning.
 
 Association rules are relations between variables found in databases. Many methods have been 
 researched to automatically search for interesting rules in large data sets.
@@ -13,25 +13,67 @@ For further information, see:
 	implication rules for market basket data"_](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.25.3707).
 	SIGMOD 1997, Proceedings ACM SIGMOD International Conference on Management of Data.
 */
-var AssociationRule = problems.AssociationRule = declare(Element, {
-	constructor: function AssociationRule(values) {
-		Element.call(this, values);
+var AssociationRuleLearning = problems.AssociationRuleLearning = declare(Problem, {
+	constructor: function AssociationRuleLearning(params) {
+		Problem.call(this, params);
+		initialize(this, params)
+			/** TODO
+			*/
+			.object('dataset', { defaultValue: [] })
+			/** TODO
+			*/
+			.array('keys');
+		//Element.call(this, problem, values, evaluation);
+	},
+	
+	elementLength: function elementLength() {
+		return keys.length;
 	},
 	
 	// ## Evaluation ###############################################################################
 	
-	/** This method checks if the given `record` complies with this rule's `antecedent`. It is not
-	implemented by default, so it should be overriden.
+	/** TODO The method `booleanRules` builds a representation for classic association rules, which treat
+	each record as a set of `keys`. Each position in the element's values tells if the corresponding
+	key belongs to the rule's antecedent or consequent; or neither. Empty antecedents and 
+	consequents always evaluate to false.
 	*/
-	antecedent: base.objects.unimplemented('AssociationRule', 'antecedent'),
 	
-	/** This method checks if the given `record` complies with this rule's `consequent`. It is not
-	implemented by default, so it should be overriden.
+	/** Turns the element into an association rule.
 	*/
-	consequent: base.objects.unimplemented('AssociationRule', 'consequent'),
+	mapping: function mapping(element) {
+		var problem = this,
+			antecedent = [], 
+			consequent = [];
+		element.arrayMapping([0,1,2]).forEach(function (v, i) {
+			switch (v) {
+				case 1: antecedent.push(problem.keys[i]); break;
+				case 2: consequent.push(problem.keys[i]); break;
+			}
+		});
+		return { antecedent: antecedent, consequent: consequent };
+	},
 	
-	/** Given a `dataset` (a sequence of records) the `measures` of this association rule
-	include the usual statistics:
+	keysComply: function keysComply(keys, record) {
+		var it = iterable(keys);
+		return !it.isEmpty() && it.all(function (key) {
+			return !!record[key];
+		});
+	},
+	
+	/** This method checks if the given `record` complies with the given `rule`'s `antecedent`.
+	*/
+	antecedentComplies: function antecedentComplies(rule, record) {
+		return this.keysComply(rule.antecedent, record);
+	},
+	
+	/** This method checks if the given `record` complies with the given `rule`'s `consequent`.
+	*/
+	consequentComplies: function consequentComplies(rule, record) {
+		return this.keysComply(rule.consequent, record);
+	},
+	
+	/** The `measures` of an `element` (representing an association rule) include the usual 
+	statistics:
 	
 	+ `antecedentCount`, `consequentCount`, `ruleCount` are the numbers of records that comply with
 		this rules's antecedent, consequent and both.
@@ -43,18 +85,22 @@ var AssociationRule = problems.AssociationRule = declare(Element, {
 	+ `leverage` measures the difference of A and C appearing together in the data set and what 
 		would be expected if X and Y where statistically dependent.
 	*/
-	measures: function measures(dataset) {
-		var element = this,
+	measures: function measures(element) {
+		var problem = this,
 			result = {},
-			totalCount = 0, antecedentCount = 0, consequentCount = 0, ruleCount = 0;
-		iterable(dataset).forEach(function (record) {
-			if (element.antecedent(record)) {
+			totalCount = 0, 
+			antecedentCount = 0, 
+			consequentCount = 0, 
+			ruleCount = 0,
+			rule = this.mapping(element);
+		iterable(this.dataset).forEach(function (record) {
+			if (problem.antecedentComplies(rule, record)) {
 				++antecedentCount;
-				if (element.consequent(record)) {
+				if (problem.consequentComplies(rule, record)) {
 					++consequentCount;
 					++ruleCount;
 				}
-			} else if (element.consequent(record)) {
+			} else if (problem.consequentComplies(rule, record)) {
 				++consequentCount;
 			}
 			++totalCount;
@@ -73,54 +119,12 @@ var AssociationRule = problems.AssociationRule = declare(Element, {
 	}, 
 	
 	/** By default, the evaluation uses the rule's confidence. It assumes the elements has a 
-	`dataset` member. Measures are cached in `this.__measures__`.
+	`dataset` member. Measures are cached in a `__measures__` property in the element.
 	*/
-	evaluate: function evaluate() {
-		if (!this.__measures__) {
-			this.__measures__ = this.measures(this.dataset);
+	evaluation: function evaluation(element) {
+		if (!element.__measures__) {
+			element.__measures__ = this.measures(element);
 		}
-		this.evaluation = this.__measures__.confidence;
-		return this.evaluation;
-	},
-	
-	// ## Utilities ################################################################################
-
-	/** The method `booleanRules` builds a representation for classic association rules, which treat
-	each record as a set of `keys`. Each position in the element's values tells if the corresponding
-	key belongs to the rule's antecedent or consequent; or neither. Empty antecedents and 
-	consequents always evaluate to false.
-	*/
-	'static booleanRules': function booleanRules(keys) {
-		var parent = this;
-		return declare(parent, {
-			length: keys.length,
-			
-			constructor: function (values) {
-				parent.call(this, values);
-				var aks = this.__antecedentKeys__ = [], // Cache rule's keys.
-					cks = this.__consequentKeys__ = [];
-				this.arrayMapping([0,1,2]).forEach(function (v, i) {
-					switch (v) {
-						case 1: aks.push(keys[i]); break;
-						case 2: cks.push(keys[i]); break;
-					}
-				});
-			},
-			
-			__checkKeys__: function __checkKeys__(keys, record) {
-				return keys.length > 0 && iterable(keys).all(function (key) {
-					return !!record[key];
-				});
-			},
-			
-			antecedent: function antecedent(record) {
-				return this.__checkKeys__(this.__antecedentKeys__, record);
-			},
-			
-			consequent: function consequent(record) {
-				return this.__checkKeys__(this.__consequentKeys__, record);
-			}
-		});
-	},
-	
+		return element.__measures__.confidence;
+	}	
 }); // declare AssociationRule.
