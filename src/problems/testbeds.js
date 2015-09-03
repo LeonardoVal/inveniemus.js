@@ -7,21 +7,19 @@ Problem builder for test beds of algorithms in this library.
 */
 var testbed = problems.testbed = function testbed(spec) {
 	var minimumValue = isNaN(spec.minimumValue) ? -1e6 : +spec.minimumValue,
-		maximumValue = isNaN(spec.maximumValue) ? +1e6 : +spec.maximumValue;
+		maximumValue = isNaN(spec.maximumValue) ? +1e6 : +spec.maximumValue,
+		length = isNaN(spec.length) ? 2 : +spec.length;
 	return new Problem({
 		title: spec.title +"",
 		description: spec.description +"",
 		
-		/** The representation of all testbeds must override the evaluation of the candidate 
-		solutions. The `length` is 2 by default.
-		*/
-		representation: declare(Element, {
-			length: isNaN(spec.length) ? 2 : +spec.length,				
-				
-			evaluate: function evaluate() {
-				return this.evaluation = spec.evaluation(this.rangeMapping([minimumValue, maximumValue]));
-			}
-		}),
+		elementLength: function elementLength() {
+			return length;
+		},
+		
+		evaluation: function evaluation(element) {
+			return spec.evaluation(this.rangeMapping([minimumValue, maximumValue]));
+		},
 		
 		/** The optimization type is defined by `spec.target`. Minimization is assumed by default.
 		*/
@@ -34,10 +32,9 @@ var testbed = problems.testbed = function testbed(spec) {
 		/** If an optimum value is provided (`spec.optimumValue`) it is added to the termination
 		criteria.
 		*/
-		suffices: spec.hasOwnProperty('optimumValue') ? function suffices(elements) {
-			var best = elements[0];
-			return Math.abs(best.evaluation - spec.optimumValue) < best.resolution;
-		} : Problem.prototype.suffices,
+		sufficientElement: spec.hasOwnProperty('optimumValue') ? function sufficientElement(element) {
+				return Math.abs(element.evaluation - spec.optimumValue) < element.resolution;
+			} : Problem.prototype.sufficientElement,
 	});
 }; // problems.testbed()
 
