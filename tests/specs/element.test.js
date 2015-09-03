@@ -1,13 +1,14 @@
 ﻿define(['creatartis-base', 'inveniemus'], function (base, inveniemus) {
-	var Element = inveniemus.Element;
+	var Element = inveniemus.Element,
+		Problem = inveniemus.Problem;
 
 // Evaluation utilities. ///////////////////////////////////////////////////////
 	describe('Element', function () {
 		it("constructor", function () {
-			var elem = new Element();
-			expect(typeof elem.length).toBe('number');
+			var problem = new Problem(),
+				elem = new Element(problem);
 			expect(Array.isArray(elem.values)).toBe(true);
-			expect(elem.values.length).toBe(elem.length);
+			expect(elem.values.length).toBe(problem.elementLength());
 			elem.values.forEach(function (value) {
 				expect(value).not.toBeLessThan(0);
 				expect(value).not.toBeGreaterThan(1);

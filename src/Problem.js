@@ -22,21 +22,57 @@ var Problem = exports.Problem = declare({
 		initialize(this, params)
 			.string('title', { coerce: true, ignore: true })
 			.string('description', { coerce: true, ignore: true })
-			.object('random', { ignore: true })
-			/** + `representation`: the element constructor,
-			*/
-			.func('representation', { ignore: true }) // Overrides.
-			/** + `compare`: the comparison between elements,
-			*/
-			.func('compare', { ignore: true })
-			/** + `suffices`: the sufficiency criteria.
-			*/
-			.func('suffices', { ignore: true });
+			.object('random', { ignore: true });
 	},
 
-	/** The problem's candidate solution `representation` is a subclass of [`Element`](Element.js.html).
+	/** The `elementLength` is the amount of values each candidate solution has. It is 10 by 
+	default.
 	*/
-	representation: Element,
+	elementLength: function elementLength() {
+		return 10;
+	},
+	
+	/** Problem uses `Element` instances to represent its candidate solutions.
+	*/
+	newElement: function newElement(values, evaluation) {
+		return new Element(this, values, evaluation);
+	},
+	
+	/** The problem's elements must be evaluated somehow. This can be interpreted as the solution's 
+	cost in a search problem or the target function of an optimization problem. The default 
+	behaviour is adding up this element's values, useful only for testing. It can return a promise 
+	if the evaluation has to be done asynchronously. 
+	*/
+	evaluation: function evaluation(element) {
+		return iterable(element.values).sum();
+	},
+	
+	/** Usually a numbers array is just too abstract to handle, and	another representation of the 
+	candidate solution must be build. For this `mapping()` must be overridden to returns an 
+	alternate representation of an element that may be fitter for evaluation or showing it to the
+	user. By default it just returns the same `values` array.
+	*/
+	mapping: function mapping(element) {
+		return element.values;
+	},
+	
+	/** An element is `sufficient` when it can be considered a solution of a search or a good enough
+	solution of an optimization. By default it returns false.
+	*/
+	sufficientElement: function sufficientElement(element) {
+		return false;
+	},
+	
+	/** When a set of elements is sufficient, the search/optimization ends. The method 
+	`suffices(elements)` returns `true` if inside the elements array there are enough actual 
+	solutions to this problem. It holds the implementation of the goal test in search problems. By 
+	default calls the `suffice` method of the first element (assumed to be the best one).
+	*/
+	sufficientElements: function sufficientElements(elements) {
+		return this.sufficientElement(elements[0]);
+	},
+	
+	// ## Optimization modes #######################################################################
 	
 	/** How elements are compared with each other in the problem determines which kind of 
 	optimization is performed. The `compare` method implements the comparison between two elements. 
@@ -50,18 +86,7 @@ var Problem = exports.Problem = declare({
 	compare: function compare(element1, element2) {
 		return this.minimization(element1, element2);
 	},
-		
-	/** When a set of elements is sufficient, the search/optimization ends. The method 
-	`suffices(elements)` returns `true` if inside the elements array there are enough actual 
-	solutions to this problem. It holds the implementation of the goal test in search problems. By 
-	default calls the `suffice` method of the first element (assumed to be the best one).
-	*/
-	suffices: function suffices(elements) {
-		return elements[0].suffices();
-	},
 	
-	// ## Optimization modes #######################################################################
-		
 	/** A `maximization` compares two elements by evaluation in descending order.
 	*/
 	maximization: function maximization(element1, element2) {
@@ -91,9 +116,14 @@ var Problem = exports.Problem = declare({
 	*/
 	toString: function toString() {
 		return (this.constructor.name || 'Problem') +"("+ JSON.stringify(this) +")";
+	},
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'Problem',
+		serializer: function serialize_Problem(obj) {
+			return this.serializeAsProperties(obj, ['title', 'description', 'random'], true);
+		}
 	}
 }); // declare Problem.
-		
-/** `problems` is a bundle of classic and reference problems.
-*/
-var problems = exports.problems = {};

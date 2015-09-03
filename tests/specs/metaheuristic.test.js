@@ -30,7 +30,7 @@
 					expect(mh.state.length).toBe(SIZE);
 					var stepBest = mh.state[0];
 					mh.state.forEach(function (elem) {
-						expect(elem instanceof mh.problem.representation).toBe(true); // All elements should inherit from Element.
+						expect(elem instanceof inveniemus.Element).toBe(true); // All elements should inherit from Element.
 						expect(isNaN(elem.evaluation)).toBe(false); // All elements should be evaluated.
 						expect(mh.problem.compare(stepBest, elem)).not.toBeGreaterThan(0); // Elements should be properly sorted.
 					});

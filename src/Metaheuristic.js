@@ -55,7 +55,7 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		size = isNaN(size) ? this.size : +size >> 0;
 		this.state = new Array(size);
 		for (var i = 0; i < size; i++) {
-			this.state[i] = new this.problem.representation(); // Element with random values.
+			this.state[i] = this.problem.newElement(); // Element with random values.
 		}
 		this.onInitiate();
 	},
@@ -108,7 +108,7 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		size = isNaN(size) ? Math.floor(expansionRate * this.size) : +size;
 		var elems = new Array(size), i;
 		for (i = 0; i < size; i++){
-			elems[i] = new this.problem.representation();
+			elems[i] = this.problem.newElement();
 		}
 		return elems;
 	},
@@ -152,7 +152,7 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	of passed iterations is not greater than `steps`.
 	*/
 	finished: function finished() {
-		return this.step >= this.steps || this.problem.suffices(this.state);
+		return this.step >= this.steps || this.problem.sufficientElements(this.state);
 	},
 
 	/** `analyze()` updates the process' statistics.
@@ -325,21 +325,10 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
-		identifier: SERMAT_LIB_PREFIX +'Metaheuristic',
+		identifier: 'Metaheuristic',
 		serializer: function serialize_Metaheuristic(obj) {
-			return [{
-				problem: this.problem,
-				size: this.size,
-				state: this.state,
-				steps: this.steps,
-				step: this.step,
-				random: this.random,
-				statistics: this.statistics
-			}];
+			return this.serializeAsProperties(obj, 
+				['problem', 'size', 'state', 'steps', 'step', 'random', 'statistics']);
 		}
 	}
 }); // declare Metaheuristic.
-
-/** `metaheuristics` is a bundle of available metaheuristics.
-*/
-var metaheuristics = exports.metaheuristics = {};

@@ -6,21 +6,22 @@ Element is the term used in Inveniemus for representations of
 their candidate solutions.
 */
 var Element = exports.Element = declare({
-	/** All elements are defined by an array of numbers (i.e. the element's `values`, random numbers
-	by default) and an `evaluation` (`NaN` by default). The element's values are coerced to be in 
-	the [0,1] range.
+	/** All elements are defined by a `problem`, an array of numbers (i.e. the element's `values`, 
+	random numbers by default) and an `evaluation` (`NaN` by default). The element's values are 
+	coerced to be in the [0,1] range.
 	
 	The `values` store all data about the candidate solution this element represents. This may 
-	appear to abstract and stark, but it helps	to separate the problem definition from the search
+	appear to abstract and stark, but it helps to separate the problem definition from the search
 	or optimization strategy.
 	
 	The element's `evaluation` is a numerical assessment of the represented candidate solution. 
 	Usually is a measure of how well the problem is solved, or how close the element is to a real 
 	solution. It guides almost all of the metaheuristics.
 	*/
-	constructor: function Element(values, evaluation) {
-		if (typeof values === 'undefined') {
-			this.values = this.random.randoms(this.length);
+	constructor: function Element(problem, values, evaluation) {
+		this.problem = problem;
+		if (!values) {
+			this.values = problem.random.randoms(problem.elementLength());
 		} else {
 			this.values = values.map(function (value, i) {
 				raiseIf(isNaN(value), "Value #", i, " for element is NaN!");
@@ -30,41 +31,12 @@ var Element = exports.Element = declare({
 		this.evaluation = +evaluation;
 	},
 	
-	/** The class property `length` defines the size of the element's values array (10 by default).
-	*/
-	length: 10,
-
-	/** The pseudorandom number generator in the class property `random` is required by some of the
-	element's operations. Its equal to `base.Randomness.DEFAULT` by default.
-	*/
-	random: Randomness.DEFAULT,
-	
-	// ## Basic operations #########################################################################
-	
-	/** The element's evaluation is calculated by `evaluate()`, which assigns and returns this 
-	number. It can return a promise if the evaluation has to be done asynchronously. This can be 
-	interpreted as the solutions cost in a search problem or the target function of an optimization 
-	problem. The default behaviour is adding up this element's values, useful only for testing.
-	*/
-	evaluate: function evaluate() {
-		return this.evaluation = iterable(this.values).sum();
-	},
-
 	/** Whether this element is a actual solution or not is decided by `suffices()`. It holds the 
 	implementation of the goal test in search problems. More complex criteria may be implemented in 
 	`Problem.suffices`. By default it returns false.
 	*/
 	suffices: function suffices() {
-		return false;
-	},
-	
-	/** Usually a numbers array is just too abstract to handle, and	another representation of the 
-	candidate solution must be build. For this `mapping()` must be overridden to returns an 
-	alternate representation of this element that may be fitter for evaluation or showing it to the
-	user. By default it just returns the same `values` array.
-	*/
-	mapping: function mapping() {
-		return this.values;
+		return this.problem.sufficient(this);
 	},
 
 	/** The `emblem` of an element is a string that represents it and can be displayed to the user. 
@@ -76,6 +48,19 @@ var Element = exports.Element = declare({
 
 	// ## Evaluations ##############################################################################
 
+	/** The element's `evaluation` is calculated by `evaluate()`, which assigns and returns this 
+	number. It may return a promise if the evaluation has to be done asynchronously. This can be 
+	interpreted as the solution's cost in a search problem or the target function of an optimization 
+	problem. The default behaviour is adding up this element's values, useful only for testing.
+	*/
+	evaluate: function evaluate() {
+		var elem = this;
+		return Future.then(this.problem.evaluation(this), function (e) {
+			elem.evaluation = e;
+			return e;
+		});
+	},
+	
 	/** The element's `resolution` is the minimal difference between elements' evaluations, below 
 	which two evaluations are considered equal.
 	*/
@@ -163,10 +148,16 @@ var Element = exports.Element = declare({
 			raiseIf(isNaN(v), "Invalid value ", v, " for element.");
 			newValues[arguments[i] |0] = Math.min(1, Math.max(0, v));
 		}
-		return new this.constructor(newValues);
+		return new this.constructor(this.problem, newValues);
 	},
 	
 	// ## Mappings #################################################################################
+	
+	/** Gives an alternate representation of this element. See `Problem.mapping()`.
+	*/
+	mapping: function mapping() {
+		return this.problem.mapping(this);
+	},
 	
 	/** An array mapping builds an array of equal length of this element's `values`. Each value is 
 	used to index the corresponding items argument. If there are less arguments than the element's 
@@ -215,7 +206,7 @@ var Element = exports.Element = declare({
 	/** A `clone` is a copy of this element.
 	*/
 	clone: function clone() {
-		return new this.constructor(this.values, this.evaluation);
+		return new this.constructor(this.problem, this.values, this.evaluation);
 	},
 	
 	/** Two elements can be compared with `equals(other)`. It checks if the other element has the 
@@ -243,12 +234,9 @@ var Element = exports.Element = declare({
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
-		identifier: SERMAT_LIB_PREFIX +'Element',
+		identifier: 'Element',
 		serializer: function serialize_Element(obj) {
-			return [this.values, this.evaluation];
-		},
-		materializer: function materialize_Element(obj, args) {
-			return args && (new Element(args[0], args[1]));
+			return [obj.problem, obj.values, obj.evaluation];
 		}
 	}
 }); // declare Element.
