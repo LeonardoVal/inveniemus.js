@@ -2412,5 +2412,4 @@ var AssociationRuleLearning = problems.AssociationRuleLearning = declare(Problem
 	});
 	return exports;
 });
-
 //# sourceMappingURL=inveniemus.js.map

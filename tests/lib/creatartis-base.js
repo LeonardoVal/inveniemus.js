@@ -424,21 +424,6 @@ Mathematical and numerical functions and utilities.
 */
 var math = exports.math = {};
 
-// ## Conditionals #################################################################################
-
-/** Clamps forces a `value` to be between `min` and `max`.
-*/
-math.clamp = function clamp(value, min, max) {
-	return Math.min(max, Math.max(min, value));
-};
-
-/** A simple function to calculate the sign of a number. See [Math.sign](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/sign).
-*/
-math.sign = function sign(x) {
-	x = +x;
-	return (x === 0 || isNaN(x)) ? x : x > 0 ? 1 : -1;
-};
-
 // ## Combinatorics ################################################################################
 
 /** The `factorial` functions needs little introduction. It receives `n` and returns `n!`.
@@ -1674,8 +1659,8 @@ var Iterable = exports.Iterable = declare({
 	all: function all(predicate, strict) {
 		predicate = typeof predicate === 'function' ? predicate : function (x) { return !!x; };
 		var result = true;
-		this.forEach(function (x, i) { 
-			if (!predicate(x, i)) {
+		this.forEach(function (x) { 
+			if (!predicate(x)) {
 				result = false;
 				if (!strict) {
 					throw STOP_ITERATION; // Shortcircuit.
@@ -1691,8 +1676,8 @@ var Iterable = exports.Iterable = declare({
 	any: function any(predicate, strict) {
 		predicate = typeof predicate === 'function' ? predicate : function (x) { return !!x; };
 		var result = false;
-		this.forEach(function (x, i) { 
-			if (predicate(x, i)) {
+		this.forEach(function (x) { 
+			if (predicate(x)) {
 				result = true;
 				if (!strict) {
 					throw STOP_ITERATION; // Shortcut.
@@ -1918,9 +1903,9 @@ var Iterable = exports.Iterable = declare({
 			var result = {},
 				key = key || DEFAULT_KEY,
 				accum = accum || DEFAULT_ACCUM;
-			this.forEach(function (elem, i) {
-				var k = key(elem, i);
-				result[k] = accum(result[k], elem, i);
+			this.forEach(function (elem) {
+				var k = key(elem);
+				result[k] = accum(result[k], elem);
 			});
 			return result;
 		};
