@@ -1,43 +1,46 @@
 ﻿/** Gruntfile for [inveniemus.js](http://github.com/LeonardoVal/inveniemus.js).
 */
 module.exports = function(grunt) {
-	var SOURCE_FILES = ['src/__prologue__.js',
+	var SOURCE_FILES = ['__prologue__',
 	// Core.
-		'src/Element.js',
-		'src/Problem.js',
-		'src/Metaheuristic.js',
+		'Element',
+		'Problem',
+		'Metaheuristic',
 	// Metaheuristics.
-		'src/metaheuristics/HillClimbing.js',
-		'src/metaheuristics/GeneticAlgorithm.js', 
-		'src/metaheuristics/BeamSearch.js',
-		'src/metaheuristics/SimulatedAnnealing.js',
-		'src/metaheuristics/ParticleSwarm.js',
-		'src/metaheuristics/DifferentialEvolution.js',
-		'src/metaheuristics/EvolutionStrategy.js',
-		'src/metaheuristics/HarmonySearch.js',
-		'src/metaheuristics/DistributionEstimation.js',
-		'src/metaheuristics/GradientDescent.js',
+		'metaheuristics/HillClimbing',
+		'metaheuristics/GeneticAlgorithm', 
+		'metaheuristics/BeamSearch',
+		'metaheuristics/SimulatedAnnealing',
+		'metaheuristics/ParticleSwarm',
+		'metaheuristics/DifferentialEvolution',
+		'metaheuristics/EvolutionStrategy',
+		'metaheuristics/HarmonySearch',
+		'metaheuristics/DistributionEstimation',
+		'metaheuristics/GradientDescent',
 	// Problems.
-		'src/problems/HelloWorld.js',
-		'src/problems/testbeds.js',
-		'src/problems/NQueensPuzzle.js',
-		'src/problems/KnapsackProblem.js',
-		'src/problems/associationRules.js',
+		'problems/HelloWorld',
+		'problems/testbeds',
+		'problems/NQueensPuzzle',
+		'problems/KnapsackProblem',
+		'problems/associationRules',
 	// Fin.
-		'src/__epilogue__.js'];
+		'__epilogue__'].map(function (n) {
+			return 'src/'+ n +'.js';
+		});
 
 	grunt.file.defaultEncoding = 'utf8';
 // Init config. ////////////////////////////////////////////////////////////////////////////////////
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
-		concat_sourcemap: { ////////////////////////////////////////////////////////////////////////
+		concat: { ////////////////////////////////////////////////////////////////////////
+			options: {
+				separator: '\n\n',
+				sourceMap: true
+			},
 			build: {
 				src: SOURCE_FILES,
-				dest: 'build/<%= pkg.name %>.js',
-				options: {
-					separator: '\n\n'
-				}
-			},
+				dest: 'build/<%= pkg.name %>.js'
+			}
 		},
 		jshint: { //////////////////////////////////////////////////////////////////////////////////
 			build: {
@@ -45,7 +48,7 @@ module.exports = function(grunt) {
 					loopfunc: true,
 					boss: true
 				},
-				src: ['build/<%= pkg.name %>.js'],
+				src: ['build/<%= pkg.name %>.js', 'tests/specs/*.js'],
 			},
 		},
 		karma: { ///////////////////////////////////////////////////////////////////////////////////
@@ -55,7 +58,6 @@ module.exports = function(grunt) {
 			build: { browsers: ['PhantomJS'] },
 			chrome: { browsers: ['Chrome'] },
 			firefox: { browsers: ['Firefox'] },
-			opera: { browsers: ['Opera'] },
 			iexplore: { browsers: ['IE'] }
 		},
 		uglify: { //////////////////////////////////////////////////////////////////////////////////
@@ -85,7 +87,7 @@ module.exports = function(grunt) {
 	});
 	
 // Load plugins. ///////////////////////////////////////////////////////////////////////////////////
-	grunt.loadNpmTasks('grunt-concat-sourcemap');
+	grunt.loadNpmTasks('grunt-contrib-concat');
 	grunt.loadNpmTasks('grunt-contrib-jshint');
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-karma');
@@ -111,7 +113,7 @@ module.exports = function(grunt) {
 	}); // test-lib
 	
 // Register tasks. /////////////////////////////////////////////////////////////////////////////////
-	grunt.registerTask('compile', ['concat_sourcemap:build', 'jshint:build', 'uglify:build']);
+	grunt.registerTask('compile', ['concat:build', 'jshint:build', 'uglify:build']);
 	grunt.registerTask('test', ['compile', 'test-lib', 'karma:build']); 
 	grunt.registerTask('test-all', ['test', 'karma:chrome', 'karma:firefox', 'karma:iexplore']);
 	grunt.registerTask('build', ['test', 'docker:build']);

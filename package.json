@@ -37,7 +37,7 @@
 	"devDependencies": {
 		"requirejs": "~2.1.9",
 		"grunt": "~0.4.4",
-			"grunt-concat-sourcemap": "~0.4.0",
+			"grunt-contrib-concat": "~0.5.1",
 			"grunt-contrib-uglify": "~0.4.0",
 			"grunt-docker": "~0.0.8",
 			"grunt-contrib-jshint": "~0.10.0",
