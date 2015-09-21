@@ -125,9 +125,10 @@ function post(cmd, blind, response /* passed in when echoing from remote console
     history.push(cmd);
     setHistory(history);
 
-    if (historySupported) {
+    /*if (historySupported) {
       window.history.pushState(cmd, cmd, '?' + encodeURIComponent(cmd));
-    }
+    }*/
+	
   } 
 
   if (!remoteId || response) echo(cmd);
@@ -174,7 +175,7 @@ function log(msg, className) {
       div = document.createElement('div');
 
   div.innerHTML = msg;
-  //prettyPrint([div]);
+  prettyPrint([div]);
   li.className = className || 'log';
   li.innerHTML = '<span class="gutter"></span>';
   li.appendChild(div);
