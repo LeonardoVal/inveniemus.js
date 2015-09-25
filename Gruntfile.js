@@ -101,8 +101,8 @@ module.exports = function(grunt) {
 			'node_modules/requirejs/require.js',
 			'node_modules/creatartis-base/build/creatartis-base.js',
 			'node_modules/creatartis-base/build/creatartis-base.js.map',
-			'node_modules/sermat/build/sermat.js',
-			'node_modules/sermat/build/sermat.js.map',
+			'node_modules/sermat/build/sermat-umd.js',
+			'node_modules/sermat/build/sermat-umd.js.map',
 			'build/'+ pkg.name +'.js', 
 			'build/'+ pkg.name +'.js.map'
 		].map(function (fileToCopy) {
