@@ -19,16 +19,16 @@
 // Examples.
 		var EXAMPLES = runner.EXAMPLES = {
 			'Metaheuristic': { size: 100, steps: 100 },
-			'metaheuristics.HillClimbing': { delta: 0.1, steps: 100 },
-			'metaheuristics.GeneticAlgorithm': { mutationRate: 0.4, size: 100, steps: 50 },
 			'metaheuristics.BeamSearch': { size: 20, steps: 50 },
-			'metaheuristics.SimulatedAnnealing': { delta: 0.1, size: 20, maximumTemperature: 0.1 },
-			'metaheuristics.ParticleSwarm': { size: 20, steps: 30 },
 			'metaheuristics.DifferentialEvolution': { size: 50, steps: 30 },
-			'metaheuristics.EvolutionStrategy': { size: 10, steps: 30, mutantCount: 5 },
-			'metaheuristics.HarmonySearch': { size: 30, steps: 200 },
 			'metaheuristics.DistributionEstimation': { size: 50, steps: 50 },
+			'metaheuristics.EvolutionStrategy': { size: 10, steps: 30, mutantCount: 5 },
+			'metaheuristics.GeneticAlgorithm': { mutationRate: 0.4, size: 100, steps: 50 },
 			'metaheuristics.GradientDescent': { size: 1, steps: 20 },
+			'metaheuristics.HarmonySearch': { size: 30, steps: 200 },
+			'metaheuristics.HillClimbing': { delta: 0.1, steps: 100 },
+			'metaheuristics.SimulatedAnnealing': { delta: 0.1, size: 20, maximumTemperature: 0.1 },
+			'metaheuristics.ParticleSwarm': { size: 20, steps: 30 },			
 		};
 		var exampleSelect = $('select');
 		exampleSelect.change(function () {

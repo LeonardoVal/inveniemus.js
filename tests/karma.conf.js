@@ -17,7 +17,7 @@ module.exports = function(config) {
       {pattern: 'tests/specs/*.test.js', included: false},
       {pattern: 'tests/lib/inveniemus.js', included: false},
       {pattern: 'tests/lib/creatartis-base.js', included: false},
-	  {pattern: 'tests/lib/sermat.js', included: false},
+	  {pattern: 'tests/lib/sermat-umd.js', included: false},
     ],
 
     // list of files to exclude

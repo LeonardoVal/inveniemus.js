@@ -1,30 +1,21 @@
 /** Package wrapper and layout.
 */
-"use strict";
-(function (global, init) { // Universal Module Definition. See <https://github.com/umdjs/umd>.
+(function (global, init) { "use strict"; // Universal Module Definition. See <https://github.com/umdjs/umd>.
 	if (typeof define === 'function' && define.amd) {
-		define([], init); // AMD module.
+		define(['sermat'], init); // AMD module.
 	} else if (typeof exports === 'object' && module.exports) {
-		module.exports = init(); // CommonJS module.
+		module.exports = init(require('sermat')); // CommonJS module.
 	} else { // Browser or web worker (probably).
-		global.base = init();
+		global.base = init(global.Sermat);
 	}
-})(this, function __init__(){
-// Library layout. /////////////////////////////////////////////////////////////
+})(this, function __init__(Sermat) { "use strict";
+// Library layout. /////////////////////////////////////////////////////////////////////////////////
 	var exports = {
-		__name__: 'creatartis-base',
-		__init__: (__init__.dependencies = [], __init__),
-		toString: function toString() {
-			var module = this,
-				privateRegExp = /^__+(.*?)__+$/,
-				members = Object.keys(this);
-			members.sort();
-			return "module creatartis-base[ "+ members.filter(function (member) {
-				return !privateRegExp.exec(member)
-			}).map(function (member) {
-				return member + (typeof module[member] === 'function' ? '()' : '');
-			}).join(" ") + " ]";
-		}
+		__package__: 'creatartis-base',
+		__name__: 'base',
+		__init__: __init__,
+		__dependencies__: [],
+		__SERMAT__: { include: [] }
 	};
 
 /** # Core
@@ -32,21 +23,23 @@
 Generic algorithms and utility definitions.
 */
 
-/** Depending on the execution environment the global scope may be different:
-`window` in browsers, `global` under NodeJS, `self` in web workers, etc. 
-`global` holds a reference to this object.
+/** Depending on the execution environment the global scope may be different: `window` in browsers,
+`global` under NodeJS, `self` in web workers, etc. `global` holds a reference to this 
+object.
 */
-var global = exports.global = (0, eval)('this');
+var global = exports.global = (function () {
+	var f = Function;
+	return f('return this;')();
+})();
 
-/** `raise(message...)` builds a new instance of Error with the concatenation 
-of the arguments as its message and throws it.
+/** `raise(message...)` builds a new instance of Error with the concatenation of the arguments as 
+its message and throws it.
 */
 var raise = exports.raise = function raise() {
 	throw new Error(Array.prototype.slice.call(arguments, 0).join(''));
 };
 
-/** `raiseIf(condition, message...)` does the same as `raise` if `condition` is
-true.
+/** `raiseIf(condition, message...)` does the same as `raise` if `condition` is true.
 */
 var raiseIf = exports.raiseIf = function raiseIf(condition) {
 	if (condition) {
@@ -54,10 +47,9 @@ var raiseIf = exports.raiseIf = function raiseIf(condition) {
 	}
 };
 
-/** Browsers and different environments have different ways to obtain the 
-current call stack. `callStack(error=none)` unifies these. Returns an array with 
-the callstack of error or (if missing) a new one is used, hence returning the 
-current callStack.
+/** Browsers and different environments have different ways to obtain the current call stack. 
+`callStack(error=none)` unifies these. Returns an array with the callstack of error or (if missing)
+a new one is used, hence returning the current callStack.
 */
 var callStack = exports.callStack = function callStack(exception) {
 	if (exception) {
@@ -70,8 +62,8 @@ var callStack = exports.callStack = function callStack(exception) {
 	return (exception.stack || exception.stacktrace || '').split('\n').slice(1);
 };
 
-/** Javascript object literals (as of ES5) cannot be built with expressions as
-keys. `obj(key, value...)` is an object constructor based on key-value pairs.
+/** Javascript object literals (as of ES5) cannot be built with expressions as keys. 
+`obj(key, value...)` is an object constructor based on key-value pairs.
 */
 var obj = exports.obj = function obj() {
 	var result = ({});
@@ -81,9 +73,8 @@ var obj = exports.obj = function obj() {
 	return result;
 };
 
-/** `copy(objTo, objFrom...)` copies all own properties of the given objects 
-missing in `objTo` to it, and returns `objTo`. If only one object is given, a 
-copy of the `objTo` object is returned.
+/** `copy(objTo, objFrom...)` copies all own properties of the given objects missing in `objTo` to 
+it, and returns `objTo`. If only one object is given, a copy of the `objTo` object is returned.
 */
 var copy = exports.copy = function copy(objTo) {
 	var i = 1, k, objFrom;
@@ -121,12 +112,12 @@ if (!Function.prototype.bind) {
 		}
 		var args = Array.prototype.slice.call(arguments, 1), 
 			fToBind = this,
-			fNOP = function () {},
+			F_NOP = function () {},
 			fBound = function () {
 				return fToBind.apply(_this, args.concat(Array.prototype.slice.call(arguments)));
 			};
-		fNOP.prototype = this.prototype;
-		fBound.prototype = new fNOP();
+		F_NOP.prototype = this.prototype;
+		fBound.prototype = new F_NOP();
 		return fBound;
 	};
 }
@@ -152,21 +143,22 @@ var objects = exports.objects = (function () {
 	a new one is used.
 	*/
 	var subconstructor = this.subconstructor = function subconstructor(parent, constructor) {
-		var proto, placeholder;
+		var proto, Placeholder;
 		if (typeof constructor !== 'function') { // If no constructor is given ...
 			constructor = (function () { // ... provide a default constructor.
 				parent.apply(this, arguments);
 			});
 		}
-		/** This is similar to the way 
-		[goog.inherits does it in Google's Closure Library](http://docs.closure-library.googlecode.com/git/namespace_goog.html). 
-		It is preferred since it does not require the parent constructor to 
-		support being called without arguments.			
-		*/
-		placeholder = function () {};
-		placeholder.prototype = parent.prototype;
-		constructor.prototype = new placeholder();
+		constructor.prototype = Object.create(parent.prototype);
 		constructor.prototype.constructor = constructor;
+		/** The constructor function's prototype is changed so static properties are inherited
+		as well.
+		*/
+		if (Object.setPrototypeOf) {
+			Object.setPrototypeOf(constructor, parent);
+		} else {
+			constructor.__proto__ = parent;
+		}
 		return constructor;
 	};
 	
@@ -184,26 +176,31 @@ var objects = exports.objects = (function () {
 		`Object.defineProperty()`, with a setter that throws an error.
 	*/
 	var addMember = this.addMember = function addMember(constructor, key, value, force) {
-		var modifiers = key.split(/\s+/),
-			key = modifiers.pop(),
-			scope = constructor.prototype;
-		if (modifiers.indexOf('static') >= 0) {
-			scope = constructor;
+		var modifiers = key.split(/\s+/), scopes;
+		key = modifiers.pop();
+		if (modifiers.indexOf('dual') >= 0) {
+			scopes = [constructor, constructor.prototype];
+		} else if (modifiers.indexOf('static') >= 0) {
+			scopes = [constructor];
+		} else {
+			scopes = [constructor.prototype];
 		}
-		if (force || typeof scope[key] === 'undefined') {
-			if (modifiers.indexOf('property') >= 0) {
-				return Object.defineProperty(scope, key, value);
-			} else if (modifiers.indexOf('const') >= 0) {
-				return Object.defineProperty(scope, key, { 
-					get: function () { return value; },
-					set: function () { throw new Error(key +" is readonly!"); },
-					enumerable: true, 
-					configurable: false 
-				});
-			} else {
-				return scope[key] = value;
+		scopes.forEach(function (scope) {
+			if (force || typeof scope[key] === 'undefined') {
+				if (modifiers.indexOf('property') >= 0) {
+					return Object.defineProperty(scope, key, value);
+				} else if (modifiers.indexOf('const') >= 0) {
+					return Object.defineProperty(scope, key, { 
+						get: function () { return value; },
+						set: function () { throw new Error(key +" is readonly!"); },
+						enumerable: true, 
+						configurable: false 
+					});
+				} else {
+					return scope[key] = value;
+				}
 			}
-		}
+		});
 	};
 	
 	/** `objects.addMembers(constructor, members, force=false)` adds all own 
@@ -252,7 +249,7 @@ var objects = exports.objects = (function () {
 	*/
 	var unimplemented = this.unimplemented = function unimplemented(cls, id) {
 		return function () {
-			throw new Error((this.constructor.name || cls) +"."+ id +"() not implemented! Please override.");
+			throw new Error((cls || this.constructor.name) +"."+ id +" not implemented! Please override.");
 		};
 	};
 	
@@ -266,7 +263,14 @@ var declare = objects.declare;
 
 Text manipulation functions and definitions.
 */
-var Text = exports.Text = declare({
+var XML_ENTITIES = { 
+		'<': '&lt;', 
+		'>': '&gt;', 
+		'&': '&amp;', 
+		'"': '&quot;', 
+		"'": '&apos;' 
+	},
+	Text = exports.Text = declare({
 	/** Text is similar to Java's [`StringBuilder`](http://docs.oracle.com/javase/7/docs/api/java/lang/StringBuilder.html), 
 	but with extended formatting features.
 	*/
@@ -282,8 +286,7 @@ var Text = exports.Text = declare({
 		return text;
 	},
 	
-	/** `add(...strings)` concatenates all arguments conversions to string to 
-	the buffer.
+	/** `add(...strings)` concatenates all arguments conversions to string to the buffer.
 	*/
 	add: function add() {
 		for (var i = 0; i < arguments.length; i++) {
@@ -291,17 +294,18 @@ var Text = exports.Text = declare({
 		}
 	},
 	
-	/** The default conversion to string returns the content of the buffer. */
+	/** The default conversion to string returns the content of the buffer.
+	*/
 	toString: function toString() {
 		return this.text;
 	},
 	
-	// ## Formatting, encoding and decoding ####################################
+	// ## Formatting, encoding and decoding ########################################################
 	
-	// ### XML (and HTML for most intends and purposes) ########################
+	// ### XML (and HTML for most intends and purposes) ############################################
 	
-	/** `escapeXML(str)` returns the string with XML reserved characters 
-	replaced by the corresponding character entities.
+	/** `escapeXML(str)` returns the string with XML reserved characters replaced by the 
+	corresponding character entities.
 	*/
 	escapeXML: function escapeXML(str) {
 		var XML_ENTITIES = this.XML_ENTITIES;
@@ -312,16 +316,10 @@ var Text = exports.Text = declare({
 	
 	/** The XML character entities are defined in `XML_ENTITIES`:
 	*/
-	XML_ENTITIES: { 
-		'<': '&lt;', 
-		'>': '&gt;', 
-		'&': '&amp;', 
-		'"': '&quot;', 
-		"'": '&apos;' 
-	},
+	XML_ENTITIES: XML_ENTITIES,
+	'static XML_ENTITIES': XML_ENTITIES,
 
-	/** `addXML(...str)` appends all arguments string conversions after applying 
-	`escapeXML()`.
+	/** `addXML(...str)` appends all arguments string conversions after applying `escapeXML()`.
 	*/
 	addXML: function addXML() {
 		for (var i = 0; i < arguments.length; i++) {
@@ -329,21 +327,20 @@ var Text = exports.Text = declare({
 		}
 	},
 	
-	// ### Regular expressions #################################################
+	// ### Regular expressions #####################################################################
 	
-	/** `escapeRegExp(str)` returns the `str` string with the reserved 
-	characters of regular expressions escaped with `'\'`.
+	/** `escapeRegExp(str)` returns the `str` string with the reserved characters of regular 
+	expressions escaped with `'\'`.
 	*/
 	escapeRegExp: function escapeRegExp(str) {
 		return (str +'').replace(/[\-\[\]{}()*+?.^$\\]/g, '\\$&');
 	},
 	
-	// ### Dates ###############################################################
+	// ### Dates ###################################################################################
 	
-	/** `formatDate(date=now, format=Date.toString, useUTC=false)` formats a
-	Date. The `format` string  may use `y` for year, `m` for month, `d` for day 
-	(in month), `h` for hour (24), `H` for hour (am/pm), `n` for minutes, `s` 
-	for seconds, `S` for milliseconds, and `a` or `A` for am/pm.
+	/** `formatDate(date=now, format=Date.toString, useUTC=false)` formats a Date. The `format` 
+	string  may use `y` for year, `m` for month, `d` for day (in month), `h` for hour (24), `H` for
+	hour (am/pm), `n` for minutes, `s` for seconds, `S` for milliseconds, and `a` or `A` for am/pm.
 	*/
 	formatDate: function formatDate(date, format, useUTC) {
 		date = date || new Date();
@@ -367,17 +364,17 @@ var Text = exports.Text = declare({
 			});
 	},
 	
-	/** `addDate(date=now, format=Date.toString, useUTC=false)` appends the 
-	`date` formatted using `formatDate()`.
+	/** `addDate(date=now, format=Date.toString, useUTC=false)` appends the `date` formatted using
+	`formatDate()`.
 	*/
 	addDate: function addDate(date, format, useUTC) {
 		this.text += this.formatDate(date, format, useUTC);
 	},
 	
-	// ## _Static_ members #####################################################
+	// ## _Static_ members #########################################################################
 	
-	/** `lpad(str, len, pad=' ')` returns a copy of the `str` string padded with 
-	`pad` (or space by default) to the left upto `len` length.
+	/** `lpad(str, len, pad=' ')` returns a copy of the `str` string padded with `pad` (or space by 
+	default) to the left upto `len` length.
 	*/
 	'static lpad': function lpad(str, len, pad) {
 		if (isNaN(len) || str.length >= len) {
@@ -388,8 +385,8 @@ var Text = exports.Text = declare({
 		}
 	},
 
-	/** `rpad(str, len, pad=' ')` returns a copy of the `str` string padded with 
-	`pad` (or space by default) to the right upto `len` length.
+	/** `rpad(str, len, pad=' ')` returns a copy of the `str` string padded with `pad` (or space by 
+	default) to the right upto `len` length.
 	*/
 	'static rpad': function rpad(str, len, pad) {
 		if (isNaN(len) || str.length >= len) {
@@ -417,27 +414,50 @@ Text.escapeRegExp = Text.prototype.escapeRegExp;
 Text.formatDate = Text.prototype.formatDate;
 
 
-
 /** # Math
 
 Mathematical and numerical functions and utilities.
 */
 var math = exports.math = {};
 
+// ## Conditionals #################################################################################
+
+/** Clamps forces a `value` to be between `min` and `max`.
+*/
+math.clamp = function clamp(value, min, max) {
+	return Math.min(max, Math.max(min, value));
+};
+
+/** A simple function to calculate the sign of a number. See [Math.sign](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/sign).
+*/
+math.sign = function sign(x) {
+	x = +x;
+	return (x === 0 || isNaN(x)) ? x : x > 0 ? 1 : -1;
+};
+
 // ## Combinatorics ################################################################################
 
-/** The `factorial` functions needs little introduction. It receives `n` and returns `n!`.
+/** The `factorial` functions needs little introduction. It receives `n` and returns `n!`. Argument
+`b` can be used to stop the recursion before zero, which is useful to calculate `n!/b!` efficiently.
 */
-math.factorial = function factorial(n) {
+var factorial = math.factorial = function factorial(n, b) {
 	n = n|0;
+	b = Math.max(0, b|0);
 	if (n < 0) {
 		return NaN;
 	} else {
-		for (var f = 1; n > 0; --n) {
+		for (var f = 1; n > b; --n) {
 			f *= n;
 		}
 		return f;
 	}
+};
+
+/** The `combinations` of selecting `k` elements from a set of `n`, not mattering in which order. It
+is calculated as `n!/k!/(n-k)!`.
+*/
+math.combinations = function combinations(n, k) {
+	return factorial(n, k) / factorial(n - k);
 };
 
 // ## Probability ##################################################################################
@@ -450,8 +470,8 @@ math.gauss_pdf = function gauss_pdf(value, mean, variance) {
 	variance = isNaN(variance) ? 1 : +variance;
 	var standardDeviation = Math.sqrt(variance);
 
-    return Math.exp(-Math.pow(x - mean, 2) / (2 * variance)) 
-		/ standardDeviation * Math.sqrt(2 * Math.PI);
+    return Math.exp(-Math.pow(x - mean, 2) / (2 * variance)) / 
+		standardDeviation * Math.sqrt(2 * Math.PI);
 };
 
 /** Complementary error function routine based on Chebyshev fitting as explained in 
@@ -1000,7 +1020,7 @@ var Initializer = exports.Initializer = declare({
 */
 var initialize = exports.initialize = function initialize(subject, args) {
 	return new Initializer(subject, args);
-}
+};
 
 
 /** # Iterables
@@ -1044,20 +1064,19 @@ var Iterable = exports.Iterable = declare({
 	/** `STOP_ITERATION` is the singleton error raised when an sequence	has finished. It is catched 
 	by all Iterable's functions.
 	*/
-	"static STOP_ITERATION": STOP_ITERATION,
-	STOP_ITERATION: STOP_ITERATION,
+	"dual STOP_ITERATION": STOP_ITERATION,
 
 	/** `stop()` raises the STOP_ITERATION exception. If used inside an iterator it breaks the 
 	iteration.
 	*/
-	stop: function stop() {
+	"dual stop": function stop() {
 		throw STOP_ITERATION;
 	},
 
 	/** `catchStop(exception)` does nothing `exception` is `STOP_ITERATION`, but if it isn't the 
 	exception is thrown.
 	*/
-	catchStop: function catchStop(exception) {
+	"dual catchStop": function catchStop(exception) {
 		if (exception !== STOP_ITERATION) {
 			throw exception;
 		}
@@ -1293,11 +1312,11 @@ var Iterable = exports.Iterable = declare({
 	select: (function () {
 		function __selection__(from, member) {
 			if (Array.isArray(member)) {
-				return member.map(__selection__.bind(this, from));
+				return member.map(__selection__.bind(null, from));
 			} else if (typeof member === 'object') {
 				var result = {};
 				Object.keys(member).forEach(function (k) {
-					result[k] = __selection__.call(this, from, member[k]);
+					result[k] = __selection__.call(null, from, member[k]);
 				});
 				return result;
 			} else if (typeof member === 'function') {
@@ -1579,7 +1598,7 @@ var Iterable = exports.Iterable = declare({
 			var iter = from.__iter__(), value, count = -1;
 			return function __scanlIterator__() {
 				count++;
-				if (count == 0) {
+				if (count === 0) {
 					value = initial === undefined ? iter() : initial;
 				} else {
 					value = foldFunction(value, iter());
@@ -1659,8 +1678,8 @@ var Iterable = exports.Iterable = declare({
 	all: function all(predicate, strict) {
 		predicate = typeof predicate === 'function' ? predicate : function (x) { return !!x; };
 		var result = true;
-		this.forEach(function (x) { 
-			if (!predicate(x)) {
+		this.forEach(function (x, i) { 
+			if (!predicate(x, i)) {
 				result = false;
 				if (!strict) {
 					throw STOP_ITERATION; // Shortcircuit.
@@ -1676,8 +1695,8 @@ var Iterable = exports.Iterable = declare({
 	any: function any(predicate, strict) {
 		predicate = typeof predicate === 'function' ? predicate : function (x) { return !!x; };
 		var result = false;
-		this.forEach(function (x) { 
-			if (predicate(x)) {
+		this.forEach(function (x, i) { 
+			if (predicate(x, i)) {
 				result = true;
 				if (!strict) {
 					throw STOP_ITERATION; // Shortcut.
@@ -1900,12 +1919,12 @@ var Iterable = exports.Iterable = declare({
 			return xs;
 		}
 		return function groupAll(key, accum) {
-			var result = {},
-				key = key || DEFAULT_KEY,
-				accum = accum || DEFAULT_ACCUM;
-			this.forEach(function (elem) {
-				var k = key(elem);
-				result[k] = accum(result[k], elem);
+			var result = {};
+			key = key || DEFAULT_KEY;
+			accum = accum || DEFAULT_ACCUM;
+			this.forEach(function (elem, i) {
+				var k = key(elem, i);
+				result[k] = accum(result[k], elem, i);
 			});
 			return result;
 		};
@@ -2243,11 +2262,10 @@ Iterable.EMPTY = new Iterable(function () {
 	return Iterable.prototype.stop;
 });
 
-/** `iterable(x)` returns an iterable, either if `x` is already one or builds 
-one from it.
+/** `iterable(obj)` returns an iterable, either if `obj` is already one or builds one from it.
 */
-var iterable = exports.iterable = function iterable(x) {
-	return x instanceof Iterable ? x : new Iterable(x);
+var iterable = exports.iterable = function iterable(obj) {
+	return typeof obj !== 'undefined' && obj !== null && typeof obj.__iter__ === 'function' ? obj : new Iterable(obj);
 };
 
 
@@ -2255,16 +2273,16 @@ var iterable = exports.iterable = function iterable(x) {
 
 An implementation of [futures](http://docs.oracle.com/javase/7/docs/api/java/util/concurrent/Future.html),
 also known as [promises](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)
-or [deferreds](http://api.jquery.com/category/deferred-object/). These are 
-constructions oriented to simplify the interaction between parallel threads. 
+or [deferreds](http://api.jquery.com/category/deferred-object/). These are constructions oriented to 
+simplify the interaction between parallel threads. 
 
-A [future](http://en.wikipedia.org/wiki/Futures_and_promises) represents a value 
-that is being calculated asynchronously. Callbacks are registered for when the 
-value becomes available or an error raised.
+A [future](http://en.wikipedia.org/wiki/Futures_and_promises) represents a value that is being 
+calculated asynchronously. Callbacks are registered for when the value becomes available or an error
+raised.
 */
 var Future = exports.Future = declare({
-	/** The constructor builds a resolved future is a value is given, else it
-	builds a pending future.
+	/** The constructor builds a resolved future if a value is given, else it builds a pending 
+	future.
 	*/
 	constructor: function Future(value) {
 		this.state = 0;
@@ -2274,19 +2292,31 @@ var Future = exports.Future = declare({
 		}
 	},
 
+	/** The method `__future__` is used to get a future from an object. Many methods of `Future` 
+	that deal with object that may or may not be futures use this to solve the ambiguity. In this 
+	case it returns this object, but other objects may implement it in other ways.
+	*/
+	__future__: function __future__() {
+		return this;
+	},
+	
+	'static __isFuture__': function __isFuture__(obj) {
+		return typeof obj !== 'undefined' && obj !== null && typeof obj.__future__ === 'function';
+	},
+	
+	// ## State ####################################################################################
+	
 	/** A future may be in any of 4 states:
 	
-	+ 0 or `pending` means that the asynchronous process this future represents
-		has not finished.
+	+ 0 or `pending` means that the asynchronous process this future represents has not finished.
 		
-	+ 1 or `resolved` means that the asynchronous process this future represents
-		has finished successfully.
+	+ 1 or `resolved` means that the asynchronous process this future represents has finished 
+	successfully.
 		
-	+ 2 or `rejected` means that the asynchronous process this future represents
-		has finished unsuccessfully.
+	+ 2 or `rejected` means that the asynchronous process this future represents has finished 
+	unsuccessfully.
 		
-	+ 3 or `cancelled` means that the asynchronous process this future 
-	represents was aborted.
+	+ 3 or `cancelled` means that the asynchronous process this future represents was aborted.
 	*/
 	STATES: ['pending', 'resolved', 'rejected', 'cancelled'],
 	
@@ -2306,12 +2336,10 @@ var Future = exports.Future = declare({
 		return this.state === 3;
 	},
 	
-	/** When a future is completed (either resolved or rejected) all the 
-	corresponding callbacks are called asynchronously with the given context and
-	value.
+	/** When a future is completed (either resolved or rejected) all the corresponding callbacks are
+	called asynchronously with the given context and value.
 	
-	A future may not be completed more than once. Repeated calls to completion
-	methods are ignored.
+	A future may not be completed more than once. Repeated calls to completion methods are ignored.
 	*/
 	__complete__: function __complete__(context, value, state) {
 		var future = this;
@@ -2327,21 +2355,18 @@ var Future = exports.Future = declare({
 		return this; // for chaining.
 	},
 
-	/** `resolve(value, context=this)` completes the future as `resolved`. This 
-	method should be called by the producer when its process is finished 
-	successfully.
+	/** `resolve(value, context=this)` completes the future as `resolved`. This method should be 
+	called by the producer when its process is finished successfully.
 	*/
 	resolve: function resolve(value, context) {
 		return this.state === 0 ? this.__complete__(context || this, value, 1) : this;
 	},
 
-	/** `reject(reason, context=this)` completes the future as `rejected`. This 
-	method should be called by the producer thread when its process is aborted 
-	with an error.
+	/** `reject(reason, context=this)` completes the future as `rejected`. This method should be 
+	called by the producer thread when its process is aborted with an error.
 	
-	If there aren't any `onRejected` callbacks registered, an `Error` is raised.
-	This can be `reason` (if it is already an `Error` instance) or a new `Error`
-	with `reason` as its message.
+	If there aren't any `onRejected` callbacks registered, an `Error` is raised. This can be 
+	`reason` (if it is already an `Error` instance) or a new `Error` with `reason` as its message.
 	*/
 	reject: function reject(reason, context) {
 		if (this.state === 0) {
@@ -2357,16 +2382,22 @@ var Future = exports.Future = declare({
 		return this;
 	},
 
-	/** `cancel(reason)` completes the future as `cancelled`, disregarding all 
-	callbacks. This method may be called by either the producer or the consumer.
+	/** `cancel(reason)` completes the future as `cancelled`, disregarding all callbacks. This 
+	method may be called by either the producer or the consumer.
 	*/	
 	cancel: function cancel(reason) {
 		return this.state === 0 ? this.__complete__(this, reason, 3) : this;
 	},
 
-	/** For a future to have some use, callback functions are registered to be 
-	called when it is completed. Callbacks registered after the future's 
-	completion are called right away if the state matches, or ignored otherwise.
+	toString: function toString() {
+		return 'Future:'+ this.STATES[this.state];
+	},
+	
+	// ## Callbacks ################################################################################
+	
+	/** For a future to have some use, callback functions are registered to be called when it is 
+	completed. Callbacks registered after the future's completion are called right away if the state 
+	matches, or ignored otherwise.
 	*/
 	__register__: function __register__(callback, state) {
 		if (typeof callback === 'function') {
@@ -2377,12 +2408,12 @@ var Future = exports.Future = declare({
 			}
 			return this;
 		} else {
-			throw new Error("Callback must be a function, and not "+ callback);
+			throw new Error("Callback must be a function, and not ("+ callback +")!");
 		}
 	},
 
-	/** `done(callback...)` registers one or more callbacks to be called if 
-	this future gets resolved.
+	/** `done(callback...)` registers one or more callbacks to be called if this future gets 
+	resolved.
 	*/
 	done: function done() {
 		for (var i = 0; i < arguments.length; i++) {
@@ -2391,8 +2422,8 @@ var Future = exports.Future = declare({
 		return this;
 	},
 
-	/** `fail(callback...)` registers one or more callbacks to be called if 
-	this future gets rejected.
+	/** `fail(callback...)` registers one or more callbacks to be called if this future gets 
+	rejected.
 	*/
 	fail: function fail() {
 		for (var i = 0; i < arguments.length; i++) {
@@ -2401,9 +2432,8 @@ var Future = exports.Future = declare({
 		return this;
 	},
 
-	/** `__onCancel__(callback...)` registers one or more callbacks to be called 
-	if this future gets cancelled. This is unusual, yet provided for testing 
-	purposes.
+	/** `__onCancel__(callback...)` registers one or more callbacks to be called if this future gets
+	cancelled. This is unusual, yet provided for testing purposes.
 	*/
 	__onCancel__: function __onCancel__() {
 		for (var i = 0; i < arguments.length; i++) {
@@ -2412,15 +2442,15 @@ var Future = exports.Future = declare({
 		return this;
 	},
 
-	/** `always(callback...)` registers one or more callbacks to be called if 
-	this future gets either resolved or rejected.
+	/** `always(callback...)` registers one or more callbacks to be called if this future gets 
+	either resolved or rejected.
 	*/
 	always: function always() {
 		return this.done.apply(this, arguments).fail.apply(this, arguments);
 	},
 
-	/** Binding one future to another ties the completion of the second one
-	to the completion of the first one.
+	/** Binding one future to another ties the completion of the second one to the completion of the
+	first one.
 	*/
 	bind: function bind(future) {
 		future.done(this.resolve.bind(this));
@@ -2429,22 +2459,21 @@ var Future = exports.Future = declare({
 		return this;
 	},
 
-	/** `then(onResolved, onRejected)` is probably the most used function of
-	promises. It represents a kind of asynchronous sequence operation, returning
-	a new future which is resolved when this future is resolved, and rejected in
-	the same way. 
+	/** `then(onResolved, onRejected)` is probably the most used function of promises. It represents
+	a kind of asynchronous sequence operation, returning a new future which is resolved when this 
+	future is resolved, and rejected in the same way. 
 	
-	The given callbacks are used to calculate a new value to either resolution 
-	or rejection of the new future object, and they themselves may be 
-	asynchronous returning futures.
+	The given callbacks are used to calculate a new value to either resolution or rejection of the 
+	new future object, and they themselves may be asynchronous returning futures.
 	*/
 	then: function then(onResolved, onRejected) {
 		var result = new Future();
 		this.done(function (value) {
+			var futureValue;
 			try {
 				value = onResolved ? onResolved(value) : value;
-				if (value instanceof Future) {
-					result.bind(value);
+				if (__isFuture__(value)) {
+					result.bind(value.__future__());
 				} else {
 					result.resolve(value);
 				}
@@ -2458,8 +2487,8 @@ var Future = exports.Future = declare({
 			} else {
 				try {
 					reason = onRejected(reason);
-					if (reason instanceof Future) {
-						result.bind(reason);
+					if (__isFuture__(reason)) {
+						result.bind(reason.__future__());
 					} else {
 						result.resolve(reason);
 					}
@@ -2472,36 +2501,29 @@ var Future = exports.Future = declare({
 		return result;
 	},
 	
-	toString: function toString() {
-		return 'Future:'+ this.STATES[this.state];
-	},
-	
-	// ## Functions dealing with futures #######################################
+	// ## Functions dealing with futures ###########################################################
 
-	/** `when(value)` unifies asynchronous and synchronous behaviours. If 
-	`value` is a future it is returned as it is. Else a new future is returned 
-	resolved with the given value.
+	/** `when(value)` unifies asynchronous and synchronous behaviours. If `value` is a future it is
+	returned as it is. Else a new future is returned resolved with the given value.
 	*/
 	'static when': function when(value) {
-		return value instanceof Future ? value : new Future(value);
+		return __isFuture__(value) ? value.__future__() : new Future(value);
 	},
 
-	/** The static version of `then(value, onResolved, onRejected)` is another 
-	way of unifying asynchronous and synchronous behaviours. If `value` is a 
-	future, it behaves like the instance `then()`. Else it calls `onResolved` 
-	with the given value. 
+	/** The static version of `then(value, onResolved, onRejected)` is another way of unifying 
+	asynchronous and synchronous behaviours. If `value` is a future, it behaves like the instance 
+	`then()`. Else it calls `onResolved` with the given value. 
 	
-	The main difference with using `Future.when()` is that if value is not a 
-	future, the result may not be a future neither. This may be useful for 
-	avoiding asynchronism overhead when synchronism is more probable.
+	The main difference with using `Future.when()` is that if value is not a future, the result may 
+	not be a future neither. This may be useful for avoiding asynchronism overhead when synchronism 
+	is more probable.
 	*/
 	'static then': function then(value, onResolved, onRejected) {
-		return value instanceof Future ? value.then(onResolved, onRejected) : onResolved(value);
+		return __isFuture__(value) ? value.__future__().then(onResolved, onRejected) : onResolved(value);
 	},
 	
-	/** `invoke(fn, _this, args...)` calls the function synchronously, returning
-	a future resolved with the 	call's result. If an exceptions is raised, the 
-	future is rejected with it.
+	/** `invoke(fn, _this, args...)` calls the function synchronously, returning a future resolved 
+	with the call's result. If an exceptions is raised, the future is rejected with it.
 	*/
 	'static invoke': function invoke(fn, _this) {
 		try {
@@ -2513,9 +2535,8 @@ var Future = exports.Future = declare({
 		}
 	},
 
-	/** `all(futures)` builds a future that is resolved if all the given futures
-	get resolved, or rejected if one gets rejected. If no futures are given, the
-	result is resolved with [].
+	/** `all(futures)` builds a future that is resolved if all the given futures get resolved, or 
+	rejected if one gets rejected. If no futures are given, the result is resolved with [].
 	*/
 	'static all': function all(futures) {
 		futures = Array.isArray(futures) ? futures : iterable(futures).toArray();
@@ -2539,9 +2560,8 @@ var Future = exports.Future = declare({
 		return result;
 	},
 
-	/** `any(futures)` builds a future that is resolved if any of the given 
-	futures are resolved, or rejected if all are rejected. If no futures are 
-	given, the result is rejected with undefined.
+	/** `any(futures)` builds a future that is resolved if any of the given futures are resolved, or
+	rejected if all are rejected. If no futures are given, the result is rejected with undefined.
 	*/
 	'static any': function any(futures) {
 		futures = iterables.iterable(futures).toArray();
@@ -2567,8 +2587,8 @@ var Future = exports.Future = declare({
 		return result;
 	},
 
-	/** `sequence(xs, f=None)` evaluates all values and futures in the iterable 
-	`xs` in sequence. If defined, the function f is called for each value.
+	/** `sequence(xs, f=None)` evaluates all values and futures in the iterable `xs` in sequence. If
+	defined, the function f is called for each value.
 	*/
 	'static sequence': function sequence(xs, f) {
 		var result = new Future(), x,
@@ -2594,13 +2614,12 @@ var Future = exports.Future = declare({
 		return result;
 	},
 
-	/** `doWhile(action, condition)` performs the action until the condition 
-	fails. The action is first called without arguments, and afterwards it is 
-	called with the previous value. The condition is always called with the last
-	value returned by action.
+	/** `doWhile(action, condition)` performs the action until the condition fails. The action is 
+	first called without arguments, and afterwards it is called with the previous value. The 
+	condition is always called with the last value returned by action.
 		
-	Both action and condition may return futures. The condition by default is 
-	the boolean conversion of the action's returned value.
+	Both action and condition may return futures. The condition by default is the boolean conversion
+	of the action's returned value.
 	*/
 	'static doWhile': function doWhile(action, condition) {
 		condition = condition || function (value) {
@@ -2609,9 +2628,9 @@ var Future = exports.Future = declare({
 		var loopEnd = new Future(),
 			reject = loopEnd.reject.bind(loopEnd);
 		function loop(value) {
-			Future.invoke(condition, this, value).then(function (checks) {
+			Future.invoke(condition, null, value).then(function (checks) {
 				if (checks) {
-					Future.invoke(action, this, value).then(loop, reject);
+					Future.invoke(action, null, value).then(loop, reject);
 				} else {
 					loopEnd.resolve(value);
 				}
@@ -2621,8 +2640,8 @@ var Future = exports.Future = declare({
 		return loopEnd;
 	},
 
-	/** `whileDo(condition, action)` is similar to `doWhile`, but evaluates the 
-	condition first with no arguments.
+	/** `whileDo(condition, action)` is similar to `doWhile`, but evaluates the condition first with
+	no arguments.
 	*/
 	'static whileDo': function whileDo(condition, action) {
 		return Future.invoke(condition).then(function (checks) {
@@ -2630,10 +2649,9 @@ var Future = exports.Future = declare({
 		});
 	},
 
-	/** `delay(ms, value)` return a future that will be resolved with the given 
-	value after the given time in milliseconds. Time is forced to be at least 
-	10ms. If value is undefined, the timestamp when the function is called is 
-	used.
+	/** `delay(ms, value)` return a future that will be resolved with the given value after the 
+	given time in milliseconds. Time is forced to be at least 10ms. If value is undefined, the 
+	timestamp when the function is called is used.
 	*/
 	'static delay': function delay(ms, value) {
 		ms = isNaN(ms) ? 10 : Math.max(+ms, 10);
@@ -2643,13 +2661,11 @@ var Future = exports.Future = declare({
 		return result;
 	},
 
-	/** `retrying(f, t=10, delay=100ms, delayFactor=2, maxDelay=5min)` calls the 
-	function `f` upto `t` times until it returns a value or a future that is 
-	resolved. Each time is separated by a `delay` that gets increased by 
-	`delayFactor` upto `maxDelay`.
+	/** `retrying(f, t=10, delay=100ms, delayFactor=2, maxDelay=5min)` calls the function `f` upto 
+	`t` times until it returns a value or a future that is resolved. Each time is separated by a 
+	`delay` that gets increased by `delayFactor` upto `maxDelay`.
 	
-	This function is meant to simplify the implementation of retry schemes, e.g.
-	AJAX calls.
+	This function is meant to simplify the implementation of retry schemes, e.g. AJAX calls.
 	*/
 	'static retrying': function retrying(f, times, delay, delayFactor, maxDelay) {
 		times = isNaN(times) ? 10 : +times;
@@ -2663,9 +2679,9 @@ var Future = exports.Future = declare({
 		});
 	},
 
-	/** `imports(...modules)` returns a future that loads the given modules 
-	using [RequireJS'](http://requirejs.org/) `require` function, and resolves 
-	to an array of the loaded modules.
+	/** `imports(...modules)` returns a future that loads the given modules using 
+	[RequireJS'](http://requirejs.org/) `require` function, and resolves to an array of the loaded 
+	modules.
 	*/
 	'static imports': function imports() {
 		var result = new Future();
@@ -2678,8 +2694,8 @@ var Future = exports.Future = declare({
 	}
 }); // declare Future.
 
-var when = Future.when;
-
+var when = Future.when,
+	__isFuture__ = Future.__isFuture__;
 
 /** # HttpRequest
 
@@ -2771,13 +2787,11 @@ instance and using a method right away.
 
 /** # Parallel
 
-Wrapper for standard web workers, that includes bootstraping and a future 
-oriented interface.
+Wrapper for standard web workers, that includes bootstraping and a future oriented interface.
 */
 var Parallel = exports.Parallel = declare({
-	/** The constructor may take a worker instance to deal with. If not given,
-	a new worker is build using `newWorker()`. If given, it must be properly
-	initialized.
+	/** The constructor may take a worker instance to deal with. If not given, a new worker is build 
+	using `newWorker()`. If given, it must be properly initialized.
 	*/
 	constructor: function Parallel(worker) {
 		if (!worker) {
@@ -2787,9 +2801,8 @@ var Parallel = exports.Parallel = declare({
 		this.worker = worker;
 	},
 	
-	/** `newWorker()` builds a new web worker. Loading `creatartis-base` in its 
-	environment. Sets up a message handler that evaluates posted messages as 
-	code, posting the results back.
+	/** `newWorker()` builds a new web worker. Loading `creatartis-base` in its environment. Sets up
+	a message handler that evaluates posted messages as code, posting the results back.
 	*/
 	"static newWorker": function newWorker() {
 		var src = 'self.base = ('+ exports.__init__ +')();'+
@@ -2806,8 +2819,8 @@ var Parallel = exports.Parallel = declare({
 		return new Worker(URL.createObjectURL(blob));
 	},	
 	
-	/** The handler for the `worker.onmessage` event is the `__onmessage__(msg)`
-	method. It deals with the futures issued by `run()`.
+	/** The handler for the `worker.onmessage` event is the `__onmessage__(msg)` method. It deals 
+	with the futures issued by `run()`.
 	*/
 	__onmessage__: function __onmessage__(msg) {
 		var future = this.__future__;
@@ -2828,8 +2841,8 @@ var Parallel = exports.Parallel = declare({
 	
 	/** `run(code)` sends the code to run in the web worker in parallel.
 	
-	Warning! This method will raise an error if it is called while a previous 
-	execution is still running.
+	Warning! This method will raise an error if it is called while a previous execution is still 
+	running.
 	*/
 	run: function run(code) {
 		if (this.__future__) {
@@ -2838,19 +2851,35 @@ var Parallel = exports.Parallel = declare({
 		this.__future__ = new Future();
 		this.worker.postMessage(code +'');
 		return this.__future__;
-	},
+	}, 
 	
-	/** A _"static"_ version of `run(code)` is provided also. It creates a web 
-	worker to run this code in parallel, and returns a future for its result. 
-	After its finished the web worker is terminated.
+	/** A _"static"_ version of `run(code)` is provided also. It creates a web worker to run this 
+	code in parallel, and returns a future for its result. After its finished the web worker is 
+	terminated.
 	*/
 	"static run": function run(code) {
 		var parallel = new Parallel();
 		return parallel.run(code).always(function () {
 			parallel.worker.terminate();
 		});
+	},
+	
+	/** `loadModule` loads a module in the worker. The module has to have a `__name__`, an 
+	`__init__` function that builds the module and a `__dependencies__` array of modules.
+	*/
+	loadModule: function loadModule(module, recursive) {
+		var parallel = this;
+		return Future.sequence(recursive ? module.__dependencies__ : [], function (dep) {
+			return parallel.loadModule(dep, recursive);
+		}).then(function () {
+			return parallel.run('self.'+ module.__name__ +' || (self.'+ module.__name__ +'=('+ 
+				module.__init__ +')('+ 	module.__dependencies__.map(function (dep) {
+					return dep.__name__;
+				}).join(',') +')), "OK"'
+			);
+		});
 	}
-}) // declare Parallel.
+}); // declare Parallel.
 
 /** # Events
 
@@ -2872,9 +2901,11 @@ var Events = exports.Events = declare({
 			.number('maxListeners', { defaultValue: Infinity, coerce: true, minimum: 1 })
 			.bool('isOpen', { defaultValue: true });
 		var __listeners__ = this.__listeners__ = {};
-		config && Array.isArray(config.events) && config.events.forEach(function (eventName) {
-			__listeners__[eventName] = [];
-		});
+		if (config && Array.isArray(config.events)) {
+			config.events.forEach(function (eventName) {
+				__listeners__[eventName] = [];
+			});
+		}
 	},
 
 	/** `listeners(eventName)` returns an array with the listeners for the 
@@ -2913,7 +2944,7 @@ var Events = exports.Events = declare({
 			.filter(function (listener) {
 				if (listener[1] > 0) {
 					setTimeout(function () {
-						return listener[0].apply(global, args)
+						return listener[0].apply(global, args);
 					}, 1);
 					listener[1]--;
 					return listener[1] > 0;
@@ -2983,9 +3014,13 @@ var Randomness = exports.Randomness = declare({
 	(exclusive). If none is given the standard `Math.random´ is used.
 	*/
 	constructor: function Randomness(generator) {
-		this.__random__ = generator || Math.random;
+		if (typeof generator === 'function') {
+			this.__random__ = generator;
+		}
 	},
 
+	__random__: Math.random,
+	
 	/** The basic use of the pseudorandom number generator is through the method `random`. Called 
 	without arguments returns a random number in [0,1). Called with only the first argument x, 
 	returns a random number in [0, x). Called with two arguments (x, y) return a random number in 
@@ -3064,46 +3099,62 @@ var Randomness = exports.Randomness = declare({
 		return this.choices(elems.length, elems);
 	},
 
-	/** The method `weightedChoices` chooses `n` values from weighted values randomly, such that 
-	each value's probability of being selected is proportional to its weight. The `weightedValues` 
-	must be an iterable of pairs [weight, value]. Weights are normalized, but if there are negative 
-	weights, the minimum value has probability zero.
+	// ## Weighted choices #########################################################################
+	
+	/** Given a sequence of `weightedValues` (pairs `[value, weight]`), a normalization scales all 
+	weights proportionally, so they add up to 1 and hence can be treated as probabilities. If any
+	weight is negative, an error is raised.
 	*/
-	weightedChoices: function weightedChoices(n, weightedValues) {
-		var sum = 0.0, min = Infinity, length = 0, 
-			result = [], r;
-		iterable(weightedValues).forEach(function (weightedValue) {
-			var weight = weightedValue[0];
+	normalizeWeights: function normalizeWeights(weightedValues) {
+		weightedValues = iterable(weightedValues);
+		var sum = 0, min = Infinity, length = 0;
+		weightedValues.forEachApply(function (value, weight) {
+			raiseIf(weight < 0, "Cannot normalize with negative weights!");
 			sum += weight;
 			if (weight < min) {
 				min = weight;
 			}
 			length++;
 		});
-		//- Normalize weights.
 		sum -= min * length;
-		weightedValues = iterable(weightedValues).map(function (weightedValue) {
-			return [(weightedValue[0] - min) / sum, weightedValue[1]]
-		}).toArray();
-		//- Make selection.
-		for (var i = 0; i < n && weightedValues.length > 0; i++) {
-			r = this.random();
-			for (var j = 0; j < weightedValues.length; j++) {
-				r -= weightedValues[j][0];
-				if (r <= 0) {
-					result.push(weightedValues[j][1]);
-					weightedValues.splice(j, 1); // Remove selected element.
-					break;
-				}
+		return weightedValues.mapApply(function (value, weight) {
+			return [value, (weight - min) / sum];
+		});
+	},
+	
+	/** A `weightedChoice` is a choice where each value has its own probability. The given 
+	`weightedValues` must be normalized, i.e. the weights must add up to 1.
+	*/
+	weightedChoice: function weightedChoice(weightedValues) {
+		var chance = this.random(), result;
+		iterable(weightedValues).forEachApply(function (value, weight) {
+			chance -= weight;
+			if (chance <= 0) {
+				result = value;
+				Iterable.stop();
 			}
-			//- Fallback when no element has been selected. Unprobable, but may 
-			//- happen due to rounding errors.
-			if (result.length <= i) {
-				result.push(weightedValues[0][1]);
-				weightedValues.splice(0, 1);
-			}
-		}
+		});
 		return result;
+	},
+	
+	/** The method `weightedChoices` performs `n` weighted choices, without repeating values.
+	*/
+	weightedChoices: function weightedChoices(n, weightedValues) {
+		weightedValues = iterable(weightedValues).toArray();
+		var maxProb = 1, results = [], random;
+		for (var i = 0; i < n; ++i) {
+			random = this.random(maxProb);
+			iterable(weightedValues).forEachApply(function (value, weight, i) {
+				random -= weight;
+				if (random <= 0) {
+					results.push(value);
+					maxProb -= weight;
+					weightedValues.splice(i, 1); // Remove selected element.
+					Iterable.stop();
+				}
+			});
+		}
+		return results;
 	},
 
 	// ## Distributions ############################################################################
@@ -3123,6 +3174,20 @@ var Randomness = exports.Randomness = declare({
 			}
 			return s / n;
 		});
+	},
+	
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'Randomness',
+		serializer: function serialize_Randomness(obj) {
+			return obj.__random__ !== Math.random ? [obj.__random__] : [];
+		},
+		materializer: function materialize_Randomness(obj, args) {
+			return args && (args.length < 1 ? Randomness.DEFAULT : new Randomness(args[0]));
+		}
 	}
 }); //- declare Randomness.
 
@@ -3143,43 +3208,54 @@ Randomness.DEFAULT = new Randomness();
 
 // ### Linear congruential #########################################################################
 
-/** The method `Randomness.linearCongruential` returns a pseudorandom number generator constructor 
-implemented with the [linear congruential algorithm](http://en.wikipedia.org/wiki/Linear_congruential_generator).
+/** `Randomness.LinearCongruential` builds a pseudorandom number generator constructor implemented 
+with the [linear congruential algorithm](http://en.wikipedia.org/wiki/Linear_congruential_generator).
 It also contain the following shortcuts to build common variants:
 */
-Randomness.linearCongruential = function linearCongruential(m, a, c) {
-	return function (seed) {
-		var i = seed || 0;
-		return new Randomness(function () {
+var LinearCongruential = Randomness.LinearCongruential = declare(Randomness, {
+	constructor: function LinearCongruential(m, a, c, seed) {
+		var i = isNaN(seed) ? Date.now() : Math.floor(seed);
+		this.__arguments__ = [m, a, c, i];
+		this.__random__ = function __random__() {
 			return (i = (a * i + c) % m) / m;
-		});
-	};
-};
-
-/** + `numericalRecipies(seed)`: builds a linear congruential pseudorandom number generator as it is 
-specified in [Numerical Recipies](http://www.nr.com/).
-*/
-Randomness.linearCongruential.numericalRecipies = 
-	Randomness.linearCongruential(0xFFFFFFFF, 1664525, 1013904223);
-
-/** + `borlandC(seed)`: builds a linear congruential pseudorandom number generator as it used by
-	Borland C/C++.
-*/
-Randomness.linearCongruential.borlandC = 
-	Randomness.linearCongruential(0xFFFFFFFF, 22695477, 1);
-
-/** + `glibc(seed)`: builds a linear congruential pseudorandom number generator as it used by
-	[glibc](http://www.mscs.dal.ca/~selinger/random/).
-*/
-Randomness.linearCongruential.glibc = 
-	Randomness.linearCongruential(0xFFFFFFFF, 1103515245, 12345);
+		};
+	},
+	
+	'static __SERMAT__': {
+		identifier: 'LinearCongruential',
+		serializer: function serializer_LinearCongruential(obj) {
+			return obj.__arguments__;
+		}
+	},
+	
+	/** + `numericalRecipies(seed)`: builds a linear congruential pseudorandom number generator as 
+		it is specified in [Numerical Recipies](http://www.nr.com/).
+	*/
+	'static numericalRecipies': function (seed) {
+		return new LinearCongruential(0xFFFFFFFF, 1664525, 1013904223, seed);
+	},
+	
+	/** + `borlandC(seed)`: builds a linear congruential pseudorandom number generator as it used by
+		Borland C/C++.
+	*/
+	'static borlandC': function (seed) {
+		return new LinearCongruential(0xFFFFFFFF, 22695477, 1, seed);
+	},
+	
+	/** + `glibc(seed)`: builds a linear congruential pseudorandom number generator as it used by
+		[glibc](http://www.mscs.dal.ca/~selinger/random/).
+	*/
+	'static glibc': function (seed) {
+		return new LinearCongruential(0xFFFFFFFF, 1103515245, 12345, seed);
+	}
+});
 
 // ### Mersenne twister ############################################################################
 
 /** The method `Randomness.mersenneTwister` returns a pseudorandom number generator constructor 
 implemented with the [Mersenne Twister algorithm](http://en.wikipedia.org/wiki/Mersenne_twister#Pseudocode).
 */
-Randomness.mersenneTwister = (function (){
+Randomness.MersenneTwister = (function (){
 	/** Bit operations in Javascript deal with signed 32 bit integers. This algorithm deals with
 	unsigned 32 bit integers. That is why this function is necessary.
 	*/
@@ -3201,29 +3277,38 @@ Randomness.mersenneTwister = (function (){
 		for(var i = 0; i < 624; ++i) {
 			var y = (numbers[i] & 0x80000000) | (numbers[(i+1) % 624] & 0x7FFFFFFF);
 			numbers[i] = unsigned(numbers[(i + 397) % 624] ^ (y * 2));
-			if (y & 1 != 0) {
+			if ((y & 1) !== 0) {
 				numbers[i] = unsigned(numbers[i] ^ 0x9908B0DF);
 			}
 		}
 	}
 
-	return function (seed) {
-		seed = isNaN(seed) ? Date.now() : seed|0;
-		var numbers = initialize(seed),
-			index = 0;
-		return new Randomness(function () {
-			if (index == 0) {
-				generate(numbers);
+	return declare(Randomness, {
+		constructor: function MersenneTwister(seed) {
+			this.__seed__ = isNaN(seed) ? Date.now() : Math.floor(seed);
+			var numbers = initialize(this.__seed__),
+				index = 0;
+			this.__random__ = function () {
+				if (index === 0) {
+					generate(numbers);
+				}
+				var y = numbers[index];
+				y = unsigned(y ^ (y << 11));
+				y = unsigned(y ^ ((y >>> 7) & 0x9D2C5680));
+				y = unsigned(y ^ ((y >>> 15) & 0xEFC60000));
+				y = unsigned(y ^ (y << 18));
+				index = (index + 1) % 624;
+				return y / 0xFFFFFFFF;
+			};
+		},
+		
+		'static __SERMAT__': {
+			identifier: 'MersenneTwister',
+			serializer: function serializer_MersenneTwister(obj) {
+				return [obj.__seed__];
 			}
-			var y = numbers[index];
-			y = unsigned(y ^ (y << 11));
-			y = unsigned(y ^ ((y >>> 7) & 0x9D2C5680));
-			y = unsigned(y ^ ((y >>> 15) & 0xEFC60000));
-			y = unsigned(y ^ (y << 18));
-			index = (index + 1) % 624;
-			return y / 0xFFFFFFFF;
-		});
-	};
+		},
+	});
 })();
 
 /** # Chronometer
@@ -3256,7 +3341,7 @@ var Chronometer = exports.Chronometer = declare({
 	the chronometer, and resets it.
 	*/
 	tick: function tick(t) {
-		var result = this.time()
+		var result = this.time();
 		this.reset(t);
 		return result;
 	},
@@ -3284,25 +3369,18 @@ var Chronometer = exports.Chronometer = declare({
 Component representing statistical accounting for one concept.
 */
 var Statistic = exports.Statistic = declare({
-	/** Every statistic object has a set of keys that identify the numerical 
-	value it represents. This can be as simple as one string, or an object 
-	with many values for different aspects of the statistic.
+	/** Every statistic object has a set of keys that identify the numerical value it represents. 
+	This can be as simple as one string, or an object with many values for different aspects of the 
+	statistic.
 	*/
 	constructor: function Statistic(keys) {
-		switch (typeof keys) {
-			case 'undefined': break;
-			case 'object': 
-				if (keys !== null) {
-					this.keys = keys;
-					break;
-				}
-			default: this.keys = keys === null ? '' : keys +'';
+		if (typeof keys !== 'undefined') {
+			this.keys = typeof keys === 'object' ? 	(keys !== null ? keys : '') : keys +'';
 		}
 		this.reset(); // At first all stats must be reset.
 	},
 	
-	/** Resetting a statistic deletes all registered values and sets all 
-	properties to zero.
+	/** Resetting a statistic deletes all registered values and sets all properties to zero.
 	*/
 	reset: function reset() {
 		this.__count__ = 0; 
@@ -3315,9 +3393,9 @@ var Statistic = exports.Statistic = declare({
 		return this; // For chaining.
 	},
 
-	/** An Statistic object may apply to a certain concept or not, depending on
-	its `keys`. When dealing with sets of keys (objects), `applies(keys)` checks
-	if all the given keys are this statistic's keys.
+	/** An Statistic object may apply to a certain concept or not, depending on its `keys`. When 
+	dealing with sets of keys (objects), `applies(keys)` checks if all the given keys are this 
+	statistic's keys.
 	*/
 	applies: function applies(keys) {
 		if (typeof keys === 'undefined') {
@@ -3325,32 +3403,34 @@ var Statistic = exports.Statistic = declare({
 		} else if (keys === null) {
 			keys = '';
 		}
-		switch (typeof this.keys) {
-			case 'undefined': return false;
-			case 'object':
-				if (typeof keys === 'object') {
-					if (Array.isArray(this.keys) && Array.isArray(keys)) {
-						for (var i in keys) {
-							if (this.keys.indexOf(keys[i]) < 0) {
-								return false;
-							}
-						}
-					} else { 
-						for (var i in keys) {
-							if (typeof this.keys[i] === 'undefined' || keys[i] !== this.keys[i]) {
-								return false;
-							}
+		if (typeof this.keys === 'undefined') {
+			return false;
+		} else if (typeof this.keys === 'object') {
+			var i;
+			if (typeof keys === 'object') {
+				if (Array.isArray(this.keys) && Array.isArray(keys)) {
+					for (i in keys) {
+						if (this.keys.indexOf(keys[i]) < 0) {
+							return false;
 						}
 					}
-					return true;
-				} else {
-					return false;
+				} else { 
+					for (i in keys) {
+						if (typeof this.keys[i] === 'undefined' || keys[i] !== this.keys[i]) {
+							return false;
+						}
+					}
 				}
-			default: return typeof keys !== 'object' && this.keys === keys +'';
+				return true;
+			} else {
+				return false;
+			}
+		} else {
+			return typeof keys !== 'object' && this.keys === keys +'';
 		}
 	},
 	
-	// ## Querying statistics ##################################################
+	// ## Querying statistics ######################################################################
 	
 	/** `count()` gets the current count, or 0 if values have not been added.
 	*/
@@ -3364,52 +3444,48 @@ var Statistic = exports.Statistic = declare({
 		return this.__sum__;
 	},
 	
-	/** `squareSum()` gets the current sum of squares, or zero if values have 
-	not been added.
+	/** `squareSum()` gets the current sum of squares, or zero if values have not been added.
 	*/
 	squareSum: function squareSum() {
 		return this.__sqrSum__;
 	},
 	
-	/** `minimum()` gets the current minimum, or Infinity if values have not 
-	been added.
+	/** `minimum()` gets the current minimum, or Infinity if values have not been added.
 	*/
 	minimum: function minimum() {
 		return this.__min__;
 	},
 	
-	/** `maximum()` gets the current maximum, or -Infinity if values have not 
-	been added.
+	/** `maximum()` gets the current maximum, or -Infinity if values have not been added.
 	*/
 	maximum: function maximum() {
 		return this.__max__;
 	},
 	
-	/** `minData()` gets the data associated with the current minimum, or 
-	`undefined` if there is not one.
+	/** `minData()` gets the data associated with the current minimum, or `undefined` if there is 
+	not one.
 	*/
 	minData: function minData() {
 		return this.__minData__;
 	},
 	
-	/** `maxData()` gets the data associated with the current maximum, or 
-	`undefined` if there is not one.
+	/** `maxData()` gets the data associated with the current maximum, or `undefined` if there is 
+	not one.
 	*/
 	maxData: function maxData() {
 		return this.__maxData__;
 	},
 
-	/** `average()` calculates the current average, or zero if values have not 
-	been added.
+	/** `average()` calculates the current average, or zero if values have not been added.
 	*/
 	average: function average() {	
 		var count = this.count();
 		return count > 0 ? this.sum() / count : 0.0;
 	},
 	
-	/** `variance(center=average)` calculates current variance, as the average 
-	squared difference of each element with the center, which is equal to the 
-	average by default. Returns zero if values have not been added.
+	/** `variance(center=average)` calculates current variance, as the average squared difference of
+	each element with the center, which is equal to the average by default. Returns zero if values 
+	have not been added.
 	*/
 	variance: function variance(center) {
 		if (isNaN(center)) {
@@ -3419,17 +3495,17 @@ var Statistic = exports.Statistic = declare({
 		return count > 0 ? center * center + (this.squareSum() - 2 * center * this.sum()) / count : 0.0;
 	},
 
-	/** `standardDeviation(center=average)` calculates current standard 
-	deviation, as the square root of the current variance.
+	/** `standardDeviation(center=average)` calculates current standard deviation, as the square 
+	root of the current variance.
 	*/
 	standardDeviation: function standardDeviation(center) {
 		return Math.sqrt(this.variance(center));
 	},
 	
-	// ## Updating statistics ##################################################
+	// ## Updating statistics ######################################################################
 	
-	/** Values are added to a statistic with `add(value, data=none)`, which 
-	updates the statistic. Optionally data about the instances can be attached.
+	/** Values are added to a statistic with `add(value, data=none)`, which updates the statistic. 
+	Optionally data about the instances can be attached.
 	*/
 	add: function add(value, data) {
 		if (value === undefined) {
@@ -3460,9 +3536,9 @@ var Statistic = exports.Statistic = declare({
 		return this; // For chaining.
 	},
 	
-	/** `gain(value, factor=DEFAULT_GAIN_FACTOR, data=none)` is similar to 
-	`add()`, but fades previous values by multiplying them by the given factor.
-	This is useful to implement schemes similar to exponential moving averages.
+	/** `gain(value, factor=DEFAULT_GAIN_FACTOR, data=none)` is similar to `add()`, but fades 
+	previous values by multiplying them by the given factor. This is useful to implement schemes 
+	similar to exponential moving averages.
 	*/
 	gain: function gain(value, factor, data) {
 		factor = isNaN(factor) ? this.DEFAULT_GAIN_FACTOR : +factor;
@@ -3476,8 +3552,8 @@ var Statistic = exports.Statistic = declare({
 	*/
 	DEFAULT_GAIN_FACTOR: 0.99,
 	
-	/** `gainAll(values, factor=DEFAULT_GAIN_FACTOR, data=none)` gains all the 
-	given values (using `gain()`).
+	/** `gainAll(values, factor=DEFAULT_GAIN_FACTOR, data=none)` gains all the given values (using 
+	`gain()`).
 	*/
 	gainAll: function gainAll(values, factor, data) {	
 		for (var i = 0; i < values.length; i++) {
@@ -3486,8 +3562,7 @@ var Statistic = exports.Statistic = declare({
 		return this; // For chaining.
 	},
 	
-	/** `addStatistic(stat)` adds the values in the given Statistic object to 
-	this one.
+	/** `addStatistic(stat)` adds the values in the given Statistic object to this one.
 	*/
 	addStatistic: function addStatistic(stat) {
 		this.__count__ += stat.__count__; 
@@ -3504,7 +3579,7 @@ var Statistic = exports.Statistic = declare({
 		return this;
 	},
 	
-	// ### Time handling #######################################################
+	// ### Time handling ###########################################################################
 	
 	/** `startTime(timestamp=now)` starts a chronometer for this statistic.
 	*/
@@ -3513,27 +3588,25 @@ var Statistic = exports.Statistic = declare({
 		return chronometer.reset(timestamp);
 	},
 	
-	/** `addTime(data=undefined)` adds to this statistic the time since 
-	`startTime` was called.
+	/** `addTime(data=undefined)` adds to this statistic the time since `startTime` was called.
 	*/
 	addTime: function addTime(data) {
 		raiseIf(!this.__chronometer__, "Statistic's chronometer has not been started.");
 		return this.add(this.__chronometer__.time(), data);
 	},
 
-	/** `addTick(data=undefined)` adds to this statistic the time since 
-	`startTime` was called, and resets the chronometer.
+	/** `addTick(data=undefined)` adds to this statistic the time since `startTime` was called, and 
+	resets the chronometer.
 	*/
 	addTick: function addTick(data) {
 		raiseIf(!this.__chronometer__, "Statistic's chronometer has not been started.");
 		return this.add(this.__chronometer__.tick(), data);
 	},
 	
-	// ## Tests and inference ##################################################
+	// ## Tests and inference ######################################################################
 	
-	/** The static `z_test` method returns the mean statistic for 
-	[z-tests](http://en.wikipedia.org/wiki/Z-test) given the expected `mean` and
-	`variance` and the `sampleCount` and `sampleMean`.	
+	/** The static `z_test` method returns the mean statistic for [z-tests](http://en.wikipedia.org/wiki/Z-test)
+	given the expected `mean` and `variance` and the `sampleCount` and `sampleMean`.	
 	*/
 	'static z_test': function z_test(mean, variance, sampleCount, sampleMean) {
 		var r = {},
@@ -3541,13 +3614,12 @@ var Statistic = exports.Statistic = declare({
 			p = math.gauss_cdf(z);
 		r.p_lessThan    = z < 0 ? p : 0;
 		r.p_greaterThan = z > 0 ? 1 - p : 0;
-		r.p_notEqual    = z != 0 ? 2 * Math.max(r.p_lessThan, r.p_greaterThan) : 0; //TODO Check this.
+		r.p_notEqual    = z !== 0 ? 2 * Math.max(r.p_lessThan, r.p_greaterThan) : 0; //TODO Check this.
 		return r;
 	},
 	
-	/** The instance `z_test` method is analogue to the static one, using this 
-	object's data. The `variance` is assumed to this sample's variance by 
-	default.
+	/** The instance `z_test` method is analogue to the static one, using this object's data. The 
+	`variance` is assumed to this sample's variance by default.
 	*/
 	z_test: function z_test(mean, variance) {
 		variance = isNaN(variance) ? this.variance() : +variance;
@@ -3564,8 +3636,8 @@ var Statistic = exports.Statistic = declare({
 		};
 	},
 	
-	/** The instance `t_test1` method is analogue to the static one, using this 
-	object's data. The `mean` is assumed to be zero by default.
+	/** The instance `t_test1` method is analogue to the static one, using this object's data. The 
+	`mean` is assumed to be zero by default.
 	*/
 	t_test1: function t_test1(mean, sampleCount, sampleMean, sampleVariance) {
 		return Statistic.t_test1(
@@ -3582,15 +3654,15 @@ var Statistic = exports.Statistic = declare({
 	*/
 	'static t_test2': function t_test2(sampleCount1, sampleCount2, 
 			sampleMean1, sampleMean2, sampleVariance1, sampleVariance2) {
-		var pooledVariance = (((sampleCount1 - 1) * sampleVariance1 + (sampleCount2 - 1) * sampleVariance2)
-			/ (sampleCount1 + sampleCount2 - 2));
+		var pooledVariance = (((sampleCount1 - 1) * sampleVariance1 + (sampleCount2 - 1) * sampleVariance2) /
+			(sampleCount1 + sampleCount2 - 2));
 		return { 
 			t: (sampleMean1 - sampleMean2) / Math.sqrt(pooledVariance * (1 / sampleCount1 + 1 / sampleCount2))
 		};
 	},
 	
-	/** The instance `t_test2` method is analogue to the static one, using this 
-	object's and another one's data.
+	/** The instance `t_test2` method is analogue to the static one, using this object's and another
+	one's data.
 	*/
 	t_test2: function t_test2(other) {
 		return Statistic.t_test2(
@@ -3600,23 +3672,52 @@ var Statistic = exports.Statistic = declare({
 		);
 	},
 	
-	// ## Other ################################################################
+	// ## Other ####################################################################################
 	
-	/** The default string representation is the concatenation of the 
-	statistic's id, count, minimum, average, maximum and standard deviation, 
-	separated by tabs.
+	/** The default string representation is the concatenation of the statistic's id, count, 
+	minimum, average, maximum and standard deviation, separated by tabs.
 	*/
 	toString: function toString(sep) {
 		sep = ''+ (sep || '\t');
 		var keys = typeof this.keys !== 'object' ? this.keys + '' :
 			iterable(this.keys).map(function (kv) {
 				return kv[0] +':'+ kv[1];
-			}).join(', ')
+			}).join(', ');
 		return [keys, this.count(), this.minimum(), this.average(), 
 			this.maximum(), this.standardDeviation()].join(sep);
+	},
+	
+	/** Serialization and materialization using Sermat, registered with identifier
+	`creatartis-base.Statistic`.
+	*/
+	'static __SERMAT__': {
+		identifier: 'Statistic',
+		serializer: function serialize_Statistic(obj) {
+			var result = [obj.keys || null, obj.__count__, obj.__sum__, obj.__sqrSum__, obj.__min__, obj.__max__];
+			if (typeof obj.__minData__ !== 'undefined') { // Assumes this implies (typeof obj.__maxData__ !== 'undefined')
+				return result.concat([obj.__minData__, obj.__maxData__]);
+			} else {
+				return result;
+			}
+		},
+		materializer: function materialize_Statistic(obj, args  /* [keys, count, sum, sqrSum, min, max, minData, maxData] */) {
+			if (!args) {
+				return null;
+			}
+			var stat = args[0] ? new Statistic(args[0]) : new Statistic();
+			stat.__count__ = +args[1]; 
+			stat.__sum__ = +args[2];
+			stat.__sqrSum__ = +args[3];
+			stat.__min__ = +args[4];
+			stat.__max__ = +args[5];
+			if (stat.__count__ > 0) {
+				stat.__minData__ = args[6];
+				stat.__maxData__ = args[7];
+			}
+			return stat;
+		}
 	}
 }); // declare Statistic.
-
 
 /** # Statistics
 
@@ -3629,8 +3730,8 @@ var Statistics = exports.Statistics = declare({
 		this.__stats__ = {};
 	},
 	
-	/** Each [`Statistic`](Statistic.js.html) object is stored in `__stats__`
-	indexed by an identifier string generated by `__id__(keys)`.
+	/** Each [`Statistic`](Statistic.js.html) object is stored in `__stats__` indexed by an 
+	identifier string generated by `__id__(keys)`.
 	*/
 	__id__: function __id__(keys) {
 		if (typeof keys === 'object' && keys !== null) {
@@ -3646,8 +3747,7 @@ var Statistics = exports.Statistics = declare({
 		}
 	},
 	
-	/** `stats(keys)` gets the [`Statistic`](Statistic.js.html) objects that 
-	applies to `keys`.
+	/** `stats(keys)` gets the [`Statistic`](Statistic.js.html) objects that applies to `keys`.
 	*/
 	stats: function stats(keys) {
 		return iterable(this.__stats__).map(function (keyVal) {
@@ -3657,16 +3757,15 @@ var Statistics = exports.Statistics = declare({
 		}).toArray();
 	},
 	
-	/** `stat(keys)` gets the statistic that applies to `keys`, or creates it if
-	it does not exist.
+	/** `stat(keys)` gets the statistic that applies to `keys`, or creates it if it does not exist.
 	*/
 	stat: function stat(keys) {
 		var id = this.__id__(keys);
 		return this.__stats__[id] || (this.__stats__[id] = new Statistic(keys));
 	},
 	
-	/** `addObject(obj, data)` adds the values in the given object, one stat per 
-	member. If a member is an array, all numbers in the array are added.
+	/** `addObject(obj, data)` adds the values in the given object, one stat per member. If a member 
+	is an array, all numbers in the array are added.
 	*/
 	addObject: function addObject(obj, data) {
 		raiseIf(!obj, "Cannot add object "+ JSON.stringify(obj) +".");
@@ -3680,27 +3779,26 @@ var Statistics = exports.Statistics = declare({
 		return this; // For chaining.
 	},
 	
-	/** `addStatistic(stat, keys=stat.keys)` adds the values in the given 
-	[`Statistic`](Statistic.js.html) to the one with the same keys in this 
-	object. If there is none one is created. This does not put the argument as 
-	an statistic of this object.
+	/** `addStatistic(stat, keys=stat.keys)` adds the values in the given [`Statistic`](Statistic.js.html) 
+	to the one with the same keys in this object. If there is none one is created. This does not put
+	the argument as an statistic of this object.
 	*/
 	addStatistic: function addStatistic(stat, keys) {
 		return this.stat(typeof keys !== 'undefined' ? keys : stat.keys).addStatistic(stat);
 	},
 	
-	/** `addStatistics(stats, keys=all)` combines the stats of the given 
-	`Statistics` with this one's.
+	/** `addStatistics(stats, keys=all)` combines the stats of the given `Statistics` with this 
+	one's.
 	*/
 	addStatistics: function addStatistics(stats, keys) {
 		var self = this;
 		stats.stats(keys).forEach(function (stat) {
 			self.stat(stat.keys).addStatistic(stat);
-		})
+		});
 		return this;
 	},
 	
-	// ## Statistic updating shortcuts #########################################
+	// ## Statistic updating shortcuts #############################################################
 	
 	/** `reset(keys)` resets all the stats that apply to the given `keys`.
 	*/
@@ -3717,52 +3815,48 @@ var Statistics = exports.Statistics = declare({
 		return this.stat(keys).add(value, data);
 	},
 	
-	/** `gain(keys, value, factor, data)` gain a value to the corresponding 
-	statistics.
+	/** `gain(keys, value, factor, data)` gain a value to the corresponding statistics.
 	*/
 	gain: function gain(keys, value, factor, data) {
 		return this.stat(keys).gain(value, factor, data);
 	},
 	
-	/** `addAll(keys, values, data)` add all values to the corresponding 
-	statistics.
+	/** `addAll(keys, values, data)` add all values to the corresponding statistics.
 	*/
 	addAll: function addAll(keys, values, data) {
 		return this.stat(keys).addAll(values, data);
 	},
 	
-	/** `gainAll(keys, values, factor, data)` gain all values to the 
-	corresponding statistics.
+	/** `gainAll(keys, values, factor, data)` gain all values to the corresponding statistics.
 	*/
 	gainAll: function gainAll(keys, values, factor, data) {
 		return this.stat(keys).addAll(values, data);
 	},
 
-	/** `startTime(keys, timestamp=now)` starts the timers of all the
-	corresponding statistics.
+	/** `startTime(keys, timestamp=now)` starts the timers of all the corresponding statistics.
 	*/
 	startTime: function startTime(keys, timestamp) {
 		return this.stat(keys).startTime(timestamp);
 	},
 	
-	/** `addTime(keys, data=undefined)` adds the times elapsed since the timers
-	of the corresponding statistics was started.
+	/** `addTime(keys, data=undefined)` adds the times elapsed since the timers of the corresponding 
+	statistics was started.
 	*/
 	addTime: function addTime(keys, data) {
 		return this.stat(keys).addTime(data);
 	},
 	
-	/** `addTick(keys, data=undefined)` adds the times elapsed since the timers 
-	of the corresponding statistics was started, and resets them.
+	/** `addTick(keys, data=undefined)` adds the times elapsed since the timers of the corresponding 
+	statistics was started, and resets them.
 	*/
 	addTick: function addTick(keys, data) {
 		return this.stat(keys).addTick(data);
 	},
 	
-	// ## Statistic querying shortcuts #########################################
+	// ## Statistic querying shortcuts #############################################################
 	
-	/** `accumulation(keys)` creates a new statistic that accumulates all that 
-	apply to the given keys.
+	/** `accumulation(keys)` creates a new statistic that accumulates all that apply to the given 
+	keys.
 	*/
 	accumulation: function accumulation(keys) {
 		var acc = new Statistic(keys);
@@ -3772,66 +3866,61 @@ var Statistics = exports.Statistics = declare({
 		return acc;
 	},
 	
-	/** `count(keys)` gets the count of the accumulation of the corresponding 
-	statistics.
+	/** `count(keys)` gets the count of the accumulation of the corresponding statistics.
 	*/
 	count: function count(keys) {
 		return this.accumulation(keys).count();
 	},
 	
-	/** `sum(keys)` gets the sum of the accumulation of the corresponding 
-	statistics.
+	/** `sum(keys)` gets the sum of the accumulation of the corresponding statistics.
 	*/
 	sum: function sum(keys) {
 		return this.accumulation(keys).sum();
 	},
 	
-	/** `squareSum(keys)` gets the sum of squares of the accumulation of the 
-	corresponding statistics.
+	/** `squareSum(keys)` gets the sum of squares of the accumulation of the corresponding 
+	statistics.
 	*/
 	squareSum: function squareSum(keys) {
 		return this.accumulation(keys).squareSum();
 	},
 	
-	/** `minimum(keys)` gets the minimum value of the accumulation of the 
-	corresponding statistics.
+	/** `minimum(keys)` gets the minimum value of the accumulation of the corresponding statistics.
 	*/
 	minimum: function minimum(keys) {
 		return this.accumulation(keys).minimum();
 	},
 	
-	/** `maximum(keys)` gets the maximum value of the accumulation of the 
-	corresponding statistics.
+	/** `maximum(keys)` gets the maximum value of the accumulation of the corresponding statistics.
 	*/
 	maximum: function maximum(keys) {
 		return this.accumulation(keys).maximum();
 	},
 	
-	/** `average(keys)` gets the average value of the accumulation of the 
-	corresponding statistics.
+	/** `average(keys)` gets the average value of the accumulation of the corresponding statistics.
 	*/
 	average: function average(keys) {
 		return this.accumulation(keys).average();
 	},
 	
-	/** `variance(keys, center=average)` calculates the variance of the 
-	accumulation of the corresponding statistics.
+	/** `variance(keys, center=average)` calculates the variance of the accumulation of the 
+	corresponding statistics.
 	*/
 	variance: function variance(keys, center) {
 		return this.accumulation(keys).variance(center);
 	},
 	
-	/** `standardDeviation(keys, center=average)` calculates the standard 
-	deviation of the accumulation of the corresponding statistics.
+	/** `standardDeviation(keys, center=average)` calculates the standard deviation of the 
+	accumulation of the corresponding statistics.
 	*/
 	standardDeviation: function standardDeviation(keys, center) {
 		return this.accumulation(keys).standardDeviation(center);
 	},
 	
-	// ## Other ################################################################
+	// ## Other ####################################################################################
 	
-	/** The default string representation concatenates the string 
-	representations off all `Statistic` objects, one per line.
+	/** The default string representation concatenates the string representations off all 
+	`Statistic` objects, one per line.
 	*/
 	toString: function toString(fsep, rsep) {
 		fsep = ''+ (fsep || '\t');
@@ -3840,9 +3929,31 @@ var Statistics = exports.Statistics = declare({
 		return Object.keys(stats).map(function (name) {
 			return stats[name].toString(fsep);
 		}).join(rsep);
+	},
+	
+	/** Serialization and materialization using Sermat, registered with identifier 
+	`creatartis-base.Statistics`.
+	*/
+	'static __SERMAT__': {
+		identifier: 'Statistics',
+		serializer: function serialize_Statistics(obj) {
+			var stats = obj.__stats__;
+			return Object.keys(stats).map(function (k) {
+				return stats[k];
+			});
+		},
+		materializer: function materialize_Statistics(obj, args) {
+			if (!args) {
+				return null;
+			}
+			var result = new Statistics();
+			args.forEach(function (stat) {
+				result.addStatistic(stat);
+			});
+			return result;
+		}
 	}
 }); // declare Statistics.
-
 
 /** # Logger
 
@@ -4062,7 +4173,12 @@ Logger.ROOT = new Logger("");
 
 
 // See __prologue__.js
+	[	Randomness, Randomness.LinearCongruential, Randomness.MersenneTwister,
+		Statistic, Statistics
+	].forEach(function (type) {
+		type.__SERMAT__.identifier = exports.__package__ +'.'+ type.__SERMAT__.identifier;
+		exports.__SERMAT__.include.push(type);
+	});
 	return exports;
 });
-
 //# sourceMappingURL=creatartis-base.js.map

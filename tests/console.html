@@ -9,11 +9,13 @@ function main() {
 	require.config({ 
 		paths: {
 			"creatartis-base": "lib/creatartis-base",
+			"sermat": "lib/sermat-umd",
 			"inveniemus": "lib/inveniemus"
 		},
 	});
-	require(['creatartis-base', 'inveniemus'], function (base, inveniemus) {
+	require(['creatartis-base', 'sermat', 'inveniemus'], function (base, Sermat, inveniemus) {
 		window.base = base;
+		window.Sermat = Sermat;
 		window.inveniemus = inveniemus;
 		(function (s){ // See: <http://jsconsole.com>.
 			s.src = 'lib/jsconsole/inject.js';
