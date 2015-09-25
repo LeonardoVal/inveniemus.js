@@ -1,24 +1,28 @@
 ﻿/** # Beam search
 
-[Beam search](http://en.wikipedia.org/wiki/Beam_search) is a form of parallel 
-best-first search with limited memory.
+[Beam search](http://en.wikipedia.org/wiki/Beam_search) is a form of parallel best-first search with 
+limited memory.
 */
 var BeamSearch = metaheuristics.BeamSearch = declare(Metaheuristic, {
-	/** The constructor does not take any special parameters.
+	/** The constructor m take any special parameters.
 	*/
 	constructor: function BeamSearch(params) {
 		Metaheuristic.call(this, params);
+		initialize(this, params)
+			/** A `delta` may be specified for the default `successors` for continuous variables.
+			*/
+			.number('delta', { ignore: true, coerce: true });
 	},
 	
-	/** `successors(element)` returns the elements' successors. The problem's 
-	element must have its `successors` method implemented.
+	/** `successors(element)` returns the elements' successors. The problem's element must have its 
+	`successors` method implemented.
 	*/
 	successors: function successors(element) {
-		return element.successors();
+		return element.neighbourhood(this.delta);
 	},
 	
-	/** The expansion in beam search adds all successors of all elements to the
-	state. After being evaluated and sieved only the best will remain.
+	/** The expansion in beam search adds all successors of all elements to the	state. After being 
+	evaluated and sieved only the best will remain.
 	*/
 	expansion: function expansion() {
 		var allSuccessors = [],
@@ -32,16 +36,12 @@ var BeamSearch = metaheuristics.BeamSearch = declare(Metaheuristic, {
 	
 	// ## Utilities ################################################################################
 	
-	toString: function toString() {
-		return (this.constructor.name || 'BeamSearch') +'('+ JSON.stringify(this) +')';
-	},
-	
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
-		identifier: exports.__package__ +'.BeamSearch',
-		serializer: function serialize_Metaheuristic(obj) {
-			return Metaheuristic.__SERMAT__.serializer.call(this, obj);
+		identifier: 'BeamSearch',
+		serializer: function serialize_BeamSearch(obj) {
+			return [obj.__params__('delta')];
 		}
 	}
 }); // declare BeamSearch.

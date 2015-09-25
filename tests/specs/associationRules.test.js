@@ -30,7 +30,7 @@
 		
 		it(": measures.", function () {
 		// Rule: {0,1,2} -> {3}
-			var measures = problem1.measures(problem1.newElement([0.4, 0.4, 0.4, 0.7]));
+			var measures = problem1.measures(problem1.newElement([1, 1, 1, 2]));
 			expect(measures.antecedentCount).toBe(1);
 			expect(measures.consequentCount).toBe(1);
 			expect(measures.ruleCount).toBe(0);
@@ -39,7 +39,7 @@
 			expect(measures.ruleSupport).toBeCloseTo(0.0, 1);
 			expect(measures.confidence).toBeCloseTo(0.0, 1);
 		// Rule: {1} -> {2}
-			measures = problem1.measures(problem1.newElement([0.0, 0.4, 0.7, 0.0]));
+			measures = problem1.measures(problem1.newElement([0, 1, 2, 0]));
 			expect(measures.antecedentCount).toBe(3);
 			expect(measures.consequentCount).toBe(2);
 			expect(measures.ruleCount).toBe(1);
@@ -48,7 +48,7 @@
 			expect(measures.ruleSupport).toBeCloseTo(1/5, 1);
 			expect(measures.confidence).toBeCloseTo(1/3, 1);
 		// Rule: {0} -> {1}
-			measures = problem1.measures(problem1.newElement([0.4, 0.7, 0.0, 0.0]));
+			measures = problem1.measures(problem1.newElement([1, 2, 0, 0]));
 			expect(measures.antecedentCount).toBe(2);
 			expect(measures.consequentCount).toBe(3);
 			expect(measures.ruleCount).toBe(2);

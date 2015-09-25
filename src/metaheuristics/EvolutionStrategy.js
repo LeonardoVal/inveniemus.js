@@ -23,8 +23,10 @@ var EvolutionStrategy = metaheuristics.EvolutionStrategy = declare(Metaheuristic
 	*/
 	mutant: function mutant(element) {
 		var random = this.random,
+			model = this.problem.elementModel(),
 			newValues = element.values.map(function (v, i) {
-				return v + random.random() - random.random();
+				var range = model[i];
+				return v + (random.random() - random.random()) * (range.max - range.min);
 			});
 		return this.problem.newElement(newValues);
 	},
@@ -53,7 +55,14 @@ var EvolutionStrategy = metaheuristics.EvolutionStrategy = declare(Metaheuristic
 		return newElements;
 	},
 	
-	toString: function toString() {
-		return (this.constructor.name || 'EvolutionStrategy') +'('+ JSON.stringify(this) +')';
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'DistributionEstimation',
+		serializer: function serialize_DistributionEstimation(obj) {
+			return [obj.__params__('mutantCount')];
+		}
 	}
 }); // declare EvolutionStrategy.

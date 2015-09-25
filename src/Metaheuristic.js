@@ -41,9 +41,14 @@ var Metaheuristic = exports.Metaheuristic = declare({
 			.object('statistics', { defaultValue: new Statistics() })
 			.object('logger', { ignore: true });
 		this.events = new Events({ 
-			events: ["initiated", "updated", "expanded", "evaluated", "sieved", 
-				"advanced", "analyzed", "finished"]
+			events: ["initiated", "updated", "expanded", "evaluated", "sieved", "advanced", "analyzed", "finished"]
 		});
+	},
+	
+	__log__: function __log__(level) {
+		if (this.logger) {
+			this.logger[level].apply(this.logger, arguments);
+		}
 	},
 	
 	// ## Basic workflow ###########################################################################
@@ -68,7 +73,7 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	update: function update() {
 		var mh = this;
 		this.expand();
-		return this.evaluate().then(function () {
+		return Future.then(this.evaluate(), function () {
 			mh.sieve();
 			mh.onUpdate();
 			return mh;
@@ -81,21 +86,9 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	expand: function expand(expansion) {
 		expansion = expansion || this.expansion();
 		if (expansion.length < 1) {
-			if (this.logger) {
-				this.logger.warn("Expansion is empty");
-			}
+			this.__log__('warn', "Expansion is empty");
 		} else {
-			var expanded = this.state.concat(expansion),
-				len = expanded.length;
-			expanded = expanded.filter(function (elem, i) { // Trim equal elements from the expanded state.
-				for (i++; i < len; i++) {
-					if (elem.equals(expanded[i])) {
-						return false;
-					}
-				}
-				return true;
-			});
-			this.state = expanded;
+			this.state = this.state.concat(expansion);
 		}
 		this.onExpand();
 	},
@@ -114,24 +107,17 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	},
 	
 	/** `evaluate(elements)` evaluates all the elements in `state` with no evaluation, using its 
-	evaluation method. After that sorts the state with the `compare` method of the problem. Returns 
-	a future, regardless of the evaluation being asynchronous or not.
+	evaluation method. After that sorts the state with the `compare` method of the problem. May 
+	return a future, if any evaluation is asynchronous.
 	*/
 	evaluate: function evaluate(elements) {
 		var mh = this,
-			evalTime = this.statistics.stat({key:'evaluation_time'});
-		evalTime.startTime();
+			evalTime = this.statistics && this.statistics.stat({key:'evaluation_time'});
+		if (evalTime) evalTime.startTime();
 		elements = elements || this.state;
-		return Future.all(iterable(elements).filter(
-			function (element) { // For those elements that don't have an evaluation, ...
-				return isNaN(element.evaluation);
-			},
-			function (element) { // ... evaluate them.
-				return Future.when(element.evaluate());
-			}
-		)).then(function (results) {
+		return Future.then(this.problem.evaluate(elements), function (results) {
 			elements.sort(mh.problem.compare.bind(mh.problem));
-			evalTime.addTime();
+			if (evalTime) evalTime.addTime();
 			mh.onEvaluate(results);
 			return elements;
 		});
@@ -141,7 +127,7 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	default). This is usually used after expanding and evaluating the state.
 	*/
 	sieve: function sieve(size) {
-		size = isNaN(size) ? this.size : size | 0;
+		size = isNaN(size) ? this.size : Math.floor(size);
 		if (this.state.length > size) {
 			this.state = this.state.slice(0, this.size);
 		}
@@ -158,7 +144,8 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	/** `analyze()` updates the process' statistics.
 	*/
 	analyze: function analyze() {
-		var stat = this.statistics.stat({key:'evaluation', step: this.step});
+		var keys = { key:'evaluation', step: this.step },
+			stat = this.statistics ? this.statistics.stat(keys) : new base.Statistic(keys);
 		this.state.forEach(function (element) {
 			stat.add(element.evaluation, element);
 		});
@@ -167,39 +154,39 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	},
 	
 	/** `advance()` performs one step of the optimization. If the process has not been initialized, 
-	it does so. Returns a future if the run has not finished or null otherwise.
+	it does so. Returns a future if any step is asynchronous.
 	*/
 	advance: function advance() {
 		var mh = this, 
-			stepTime = this.statistics.stat({key: 'step_time'}),
+			stepTime = this.statistics && this.statistics.stat({key: 'step_time'}),
 			result;
 		if (isNaN(this.step) || +this.step < 0) {
-			this.statistics.reset();
-			stepTime.startTime();
+			this.reset();
+			if (stepTime) stepTime.startTime();
 			this.initiate();
 			result = this.evaluate();
 		} else {
-			stepTime.startTime();
+			if (stepTime) stepTime.startTime();
 			result = this.update();
 		}
-		return result.then(function () {
+		return Future.then(result, function () {
 			mh.step = isNaN(mh.step) || +mh.step < 0 ? 0 : +mh.step + 1;
 			mh.analyze(); // Calculate the state's stats after updating it.
-			stepTime.addTime();
+			if (stepTime) stepTime.addTime();
 			mh.onAdvance();
 			return mh;
 		});
 	},
 	
 	/** `run()` returns a future that is resolved when the whole search process is finished. The 
-	value is the best cursor after the last step.
+	value is the best cursor after the last step. It always returns a future.
 	*/
 	run: function run() {
 		var mh = this, 
-			advance = this.advance.bind(this);
-		function continues() {
-			return !mh.finished();
-		}
+			advance = this.advance.bind(this),
+			continues = function continues() {
+				return !mh.finished();
+			};
 		return Future.doWhile(advance, continues).then(function () {
 			mh.onFinish();
 			return mh.state[0]; // Return the best cursor.
@@ -211,7 +198,7 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	*/
 	reset: function reset() {
 		this.step = -1;
-		this.statistics.reset();
+		if (this.statistics) this.statistics.reset();
 	},
 	
 	// ## State control ############################################################################
@@ -237,80 +224,64 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		return this.state.length;
 	},
 	
-	/** ## Events ##################################################################################
+	// ## Events ###################################################################################
 	
-	For better customization the `events` handler emits the following events: 
+	/** For better customization the `events` handler emits the following events: 
 		
 	+ `initiated` when the state has been initialized.
 	*/
 	onInitiate: function onInitiate() {
 		this.events.emit('initiated', this);
-		if (this.logger) {
-			this.logger.debug('State has been initiated. Nos coepimus.');
-		}
+		this.__log__('debug', 'State has been initiated. Nos coepimus.');
 	},
 	
 	/** + `updated` when the state has been expanded, evaluated and sieved.
 	*/
 	onUpdate: function onUpdate() {
 		this.events.emit('updated', this);
-		if (this.logger) {
-			this.logger.debug('State has been updated. Mutatis mutandis.');
-		}
+		this.__log__('debug', 'State has been updated. Mutatis mutandis.');
 	},
 	
 	/** + `expanded` after new elements are added to the state.
 	*/
 	onExpand: function onExpand() {
 		this.events.emit('expanded', this);
-		if (this.logger) {
-			this.logger.debug('State has been expanded. Nos exploramus.');
-		}
+		this.__log__('debug', 'State has been expanded. Nos exploramus.');
 	},
 	
 	/** + `evaluated` after the elements in the state are evaluated.
 	*/
 	onEvaluate: function onEvaluate(elements) {
-		this.events.emit('evaluated', this);
-		if (this.logger) {
-			this.logger.debug('Evaluated and sorted ', elements.length, ' elements. Appretiatus sunt.');
-		}
+		this.events.emit('evaluated', this, elements);
+		this.__log__('debug', 'Evaluated and sorted ', elements.length, ' elements. Appretiatus sunt.');
 	},
 	
 	/** + `sieved` after elements are removed from the state.
 	*/
 	onSieve: function onSieve() {
 		this.events.emit('sieved', this);
-		if (this.logger) {
-			this.logger.debug('State has been sieved. Haec est viam.');
-		}
+		this.__log__('debug', 'State has been sieved. Haec est viam.');
 	},
 	
 	/** + `advanced` when one full iteration is completed.
 	*/
 	onAdvance: function onAdvance() {
 		this.events.emit('advanced', this);
-		if (this.logger) {
-			this.logger.debug('Step ', this.step , ' has been completed. Nos proficimus.');
-		}
+		this.__log__('debug', 'Step ', this.step , ' has been completed. Nos proficimus.');
 	},
 	
 	/** + `analyzed` after the statistics are calculated.
 	*/
 	onAnalyze: function onAnalyze() {
 		this.events.emit('analyzed', this);
-		if (this.logger) {
-			this.logger.debug('Statistics have been gathered. Haec sunt numeri.');
-		}
+		this.__log__('debug', 'Statistics have been gathered. Haec sunt numeri.');
 	},
 	
 	/** + `finished` when the run finishes.
 	*/
 	onFinish: function onFinish() {
 		this.events.emit('finished', this);
-		if (this.logger) {
-			this.logger.debug('Finished. Nos invenerunt!');
-		}
+		this.__log__('debug', 'Finished. Nos invenerunt!');
 	},
 	
 	// ## Utilities ################################################################################
@@ -319,7 +290,30 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	parameters.
 	*/
 	toString: function toString() {
-		return (this.constructor.name || 'Metaheuristic') +"("+ JSON.stringify(this) +")";
+		return "<"+ (this.constructor.name || 'Metaheuristic') +" "+ this.problem +">";
+	},
+	
+	/** Returns a reconstruction of the parameters used in the construction of this instance.
+	*/
+	__params__: function __params__() {
+		var params = { problem: this.problem, size: this.size, steps: this.steps };
+		if (this.random !== Randomness.DEFAULT) {
+			params.random = this.random;
+		}
+		if (this.step >= 0) {
+			params.step = this.step;
+			params.state = this.state;
+			params.statistics = this.statistics;
+		} else if (this.state.length > 0) {
+			params.state = this.state;
+		}
+		for (var i = 0; i < arguments.length; i++) {
+			var id = arguments[i];
+			if (this.hasOwnProperty(id)) {
+				params[id] = this[id];
+			}
+		}
+		return params;
 	},
 	
 	/** Serialization and materialization using Sermat.
@@ -327,8 +321,7 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	'static __SERMAT__': {
 		identifier: 'Metaheuristic',
 		serializer: function serialize_Metaheuristic(obj) {
-			return this.serializeAsProperties(obj, 
-				['problem', 'size', 'state', 'steps', 'step', 'random', 'statistics']);
+			return [obj.__params__()];
 		}
 	}
 }); // declare Metaheuristic.

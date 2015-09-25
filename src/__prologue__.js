@@ -9,7 +9,7 @@
 		global.inveniemus = init(global.base);
 	}
 })(this, function __init__(base){ "use strict";
-// Import synonyms. ////////////////////////////////////////////////////////////
+// Import synonyms. ////////////////////////////////////////////////////////////////////////////////
 	var declare = base.declare,
 		initialize = base.initialize,
 		iterable = base.iterable,
@@ -21,7 +21,7 @@
 		Randomness = base.Randomness,
 		Statistics = base.Statistics;
 	
-// Library layout. /////////////////////////////////////////////////////////////
+// Library layout. /////////////////////////////////////////////////////////////////////////////////
 	var exports = {
 		__package__: 'inveniemus',
 		__name__: 'inveniemus',
@@ -37,4 +37,9 @@
 	};
 	var metaheuristics = exports.metaheuristics,
 		problems = exports.problems;
-	
+
+// Utility functions. //////////////////////////////////////////////////////////////////////////////
+
+function clamp(value, min, max) {
+	return Math.max(min, Math.min(max, value));
+}

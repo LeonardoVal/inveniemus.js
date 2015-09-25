@@ -14,37 +14,36 @@ For further information, see:
 	SIGMOD 1997, Proceedings ACM SIGMOD International Conference on Management of Data.
 */
 var AssociationRuleLearning = problems.AssociationRuleLearning = declare(Problem, {
+	/** The constructors take the following parameters:
+	*/
 	constructor: function AssociationRuleLearning(params) {
 		Problem.call(this, params);
 		initialize(this, params)
-			/** TODO
+			/** + A `dataset` with which to test the association rules. It must be a sequence of
+			records (each an object).
 			*/
 			.object('dataset', { defaultValue: [] })
-			/** TODO
+			/** + A set of `keys` for the fields in the dataset.
 			*/
 			.array('keys');
-		//Element.call(this, problem, values, evaluation);
-	},
-	
-	elementLength: function elementLength() {
-		return keys.length;
+		/** The elements represent classic association rules, which treat each record as a set of 
+		`keys`. Each position in the element's values tells if the corresponding key belongs to the 
+		rule's antecedent or consequent; or neither. Empty antecedents and consequents always 
+		evaluate to false.
+		*/
+		this.__elementModel__ = Iterable.repeat({ min: 0, max: 2, discrete: true }, this.keys.length).toArray();
 	},
 	
 	// ## Evaluation ###############################################################################
 	
-	/** TODO The method `booleanRules` builds a representation for classic association rules, which treat
-	each record as a set of `keys`. Each position in the element's values tells if the corresponding
-	key belongs to the rule's antecedent or consequent; or neither. Empty antecedents and 
-	consequents always evaluate to false.
-	*/
-	
-	/** Turns the element into an association rule.
+	/** Turns the element into an association rule, i.e. an object with two disjunct sets of keys:
+	one for the antecedent and the other for the consequent.
 	*/
 	mapping: function mapping(element) {
 		var problem = this,
 			antecedent = [], 
 			consequent = [];
-		element.arrayMapping([0,1,2]).forEach(function (v, i) {
+		element.values.forEach(function (v, i) {
 			switch (v) {
 				case 1: antecedent.push(problem.keys[i]); break;
 				case 2: consequent.push(problem.keys[i]); break;

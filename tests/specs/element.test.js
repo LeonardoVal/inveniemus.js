@@ -6,12 +6,13 @@
 	describe('Element', function () {
 		it("constructor", function () {
 			var problem = new Problem(),
-				elem = new Element(problem);
+				elem = new Element(problem),
+				model = problem.elementModel();
 			expect(Array.isArray(elem.values)).toBe(true);
-			expect(elem.values.length).toBe(problem.elementLength());
-			elem.values.forEach(function (value) {
-				expect(value).not.toBeLessThan(0);
-				expect(value).not.toBeGreaterThan(1);
+			expect(elem.values.length).toBe(model.length);
+			elem.values.forEach(function (value, i) {
+				expect(value).not.toBeLessThan(model[i].min);
+				expect(value).toBeLessThan(model[i].max);
 			});
 		}); // it "constructor"
 	

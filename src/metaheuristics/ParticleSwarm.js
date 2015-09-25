@@ -34,12 +34,11 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 	initiate: function initiate(size) {
 		Metaheuristic.prototype.initiate.call(this, size);
 		var mh = this,
+			model = this.problem.elementModel(),
 			result = this.state.forEach(function (element) {
-				var len = element.values.length;
-				element.__velocity__ = new Array(len);
-				for (var i = 0; i < len; ++i) {
-					element.__velocity__[i] = mh.random.random(-1, +1);
-				}
+				element.__velocity__ = mh.random.randoms(element.values.length, -1, +1).map(function (v, i) {
+					return v * (model[i].max - model[i].min);
+				});
 				element.__localBest__ = element;
 			});
 		this.onInitiate();
@@ -52,8 +51,8 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 		var mh = this,
 			velocity = element.__velocity__,
 			localBest = element.__localBest__,
-			localCoef = this.random.random() * this.localAcceleration,
-			globalCoef = this.random.random() * this.globalAcceleration,
+			localCoef = this.random.random(this.localAcceleration),
+			globalCoef = this.random.random(this.globalAcceleration),
 			result = element.values.map(function (v, i) {
 				return velocity[i] * mh.inertia +
 					localCoef * (localBest.values[i] - v) +
@@ -102,8 +101,15 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 			return mh;
 		});
 	},
-		
-	toString: function toString() {
-		return (this.constructor.name || 'ParticleSwarm') +'('+ JSON.stringify(this) +')';
+	
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'ParticleSwarm',
+		serializer: function serialize_ParticleSwarm(obj) {
+			return [obj.__params__('inertia', 'localAcceleration', 'globalAcceleration')];
+		}
 	}
 }); // declare ParticleSwarm.

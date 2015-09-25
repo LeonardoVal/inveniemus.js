@@ -5,39 +5,43 @@ Problem builder for test beds of algorithms in this library.
 
 /** The function `testbed` is a shortcut used to define the test problems.
 */
-var testbed = problems.testbed = function testbed(spec) {
-	var minimumValue = isNaN(spec.minimumValue) ? -1e6 : +spec.minimumValue,
-		maximumValue = isNaN(spec.maximumValue) ? +1e6 : +spec.maximumValue,
-		length = isNaN(spec.length) ? 2 : +spec.length;
-	return new Problem({
-		title: spec.title +"",
-		description: spec.description +"",
+var TestBed = problems.TestBed = declare(Problem, {
+	constructor: function TestBed(spec) {
+		Problem.call(this, spec);
+		this.title = spec.title;
 		
-		elementLength: function elementLength() {
-			return length;
-		},
+		var minimumValue = isNaN(spec.minimumValue) ? -1e6 : +spec.minimumValue,
+			maximumValue = isNaN(spec.maximumValue) ? +1e6 : +spec.maximumValue,
+			length = isNaN(spec.length) ? 2 : +spec.length;
+		this.__elementModel__ = Iterable.repeat({ min: minimumValue, max: maximumValue, discrete: !!spec.discreteDomain }, length).toArray();
 		
-		evaluation: function evaluation(element) {
-			return spec.evaluation(this.rangeMapping([minimumValue, maximumValue]));
-		},
+		this.evaluation = function evaluation(element) {
+			return spec.evaluation(element.values);
+		};
 		
 		/** The optimization type is defined by `spec.target`. Minimization is assumed by default.
 		*/
-		compare: !spec.hasOwnProperty('target') || spec.target === -Infinity ? Problem.prototype.minimization
-			: spec.target === Infinity ? Problem.prototype.maximization 
-			: function compare(e1, e2) {
+		if (!spec.hasOwnProperty('target') || spec.target === -Infinity) {
+			this.compare = Problem.prototype.minimization;
+		} else if (spec.target === Infinity) { 
+			this.compare = Problem.prototype.maximization;
+		} else {
+			this.compare = function compare(e1, e2) {
 				return this.approximation(spec.target, e1, e2);
-			},
-		
+			};
+		}
+			
 		/** If an optimum value is provided (`spec.optimumValue`) it is added to the termination
 		criteria.
 		*/
-		sufficientElement: spec.hasOwnProperty('optimumValue') ? function sufficientElement(element) {
+		if (spec.hasOwnProperty('optimumValue')) {
+			this.sufficientElement = function sufficientElement(element) {
 				return Math.abs(element.evaluation - spec.optimumValue) < element.resolution;
-			} : Problem.prototype.sufficientElement,
-	});
-}; // problems.testbed()
-
+			};
+		}
+	}
+});
+	
 /** Testbed problems taken from the web (e.g. 
 [1](http://en.wikipedia.org/wiki/Test_functions_for_optimization),
 [2](http://www.sfu.ca/~ssurjano/optimization.html), 
@@ -52,7 +56,8 @@ problems.testbeds = {
 		a = isNaN(a) ? 20 : +a;
 		b = isNaN(b) ? 0.2 : +b;
 		c = isNaN(c) ? 2 * Math.PI : +c;
-		return testbed({
+		return new TestBed({
+			title: "Ackley testbed",
 			length: length,
 			target: -Infinity,
 			minimumValue: -32.768, 
@@ -75,7 +80,8 @@ problems.testbeds = {
 	*/
 	crossInTray: function crossInTray(target) {
 		target = isNaN(target) ? -Infinity : +target;
-		return testbed({
+		return new TestBed({
+			title: "cross-in-tray testbed",
 			length: 2,
 			target: target,
 			minimumValue: -10,
@@ -93,7 +99,8 @@ problems.testbeds = {
 	regularly distributed.
 	*/
 	Griewank: function Griewank(length) {
-		return testbed({
+		return new TestBed({
+			title: "Griewank testbed",
 			length: length,
 			minimumValue: -600,
 			maximumValue: +600,
@@ -114,7 +121,8 @@ problems.testbeds = {
 	difficult local minima regions.
 	*/
 	Levy: function Levy(length) {
-		return testbed({
+		return new TestBed({
+			title: "Levy testbed",
 			length: length,
 			target: -Infinity,
 			minimumValue: -10,
@@ -139,7 +147,8 @@ problems.testbeds = {
 	*/
 	Michalewicz: function Michalewicz(length, m) {
 		m = isNaN(m) ? 10 : +m;
-		return testbed({
+		return new TestBed({
+			title: "Michalewicz testbed",
 			length: length,
 			target: -Infinity,
 			minimumValue: 0,
@@ -160,7 +169,8 @@ problems.testbeds = {
 	perm0: function perm0(d, beta) {
 		d = isNaN(d) ? 2 : Math.min(1, d|0);
 		beta = isNaN(beta) ? 0 : +beta;
-		return testbed({
+		return new TestBed({
+			title: "Perm(0,"+ d +","+ beta +") testbed",
 			length: d,
 			target: -Infinity,
 			minimumValue: -d,
@@ -184,7 +194,8 @@ problems.testbeds = {
 	local minima are regularly distributed.
 	*/
 	Rastrigin: function Rastrigin(length) {
-		return testbed({
+		return new TestBed({
+			title: "Rastrigin testbed",
 			length: length,
 			target: -Infinity,
 			minimumValue: -5.12,
@@ -209,7 +220,8 @@ problems.testbeds = {
 	Rosenbrock: function Rosenbrock(length, a, b) {
 		a = isNaN(a) ? 1 : +a;
 		b = isNaN(b) ? 100 : +b;
-		return testbed({
+		return new TestBed({
+			title: "Rosenbrock testbed",
 			length: length,
 			target: -Infinity,
 			optimumValue: 0,
@@ -227,7 +239,8 @@ problems.testbeds = {
 	local optima.
 	*/
 	Schwefel: function Schwefel(length) {
-		return testbed({
+		return new TestBed({
+			title: "Schwefel testbed",
 			length: length,
 			target: -Infinity,
 			minimumValue: -500,
@@ -249,7 +262,8 @@ problems.testbeds = {
 	search space has, but still only one global minimum (zero). 
 	*/
 	sphere: function sphere(length) {
-		return testbed({
+		return new TestBed({
+			title: "sphere testbed",
 			length: length,
 			target: -Infinity,
 			optimumValue: 0,
@@ -270,7 +284,8 @@ problems.testbeds = {
 	sumOptimization: function sumOptimization(length, target) {
 		length = isNaN(length) ? 2 : Math.max(1, length|0);
 		target = isNaN(target) ? -Infinity : +target;
-		return testbed({
+		return new TestBed({
+			title: "sum optimization testbed",			
 			length: length,
 			target: target,
 			minimumValue:  0,

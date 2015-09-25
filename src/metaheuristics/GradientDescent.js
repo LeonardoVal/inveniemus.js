@@ -11,9 +11,9 @@ var GradientDescent = metaheuristics.GradientDescent = declare(Metaheuristic, {
 	constructor: function HillClimbing(params) {
 		Metaheuristic.call(this, params);
 		initialize(this, params)
-		/** + `delta=0.01`: the maximum distance considered by gradient estimators.
+		/** + `delta=1`: the maximum distance considered by gradient estimators.
 		*/
-			.number('delta', { coerce: true, defaultValue: 0.01 })
+			.number('delta', { coerce: true, defaultValue: 1 })
 		/** + `size=1`: the state's size is 1 by default. This may be increased, resulting in many 
 		parallel descents.
 		*/
@@ -100,9 +100,14 @@ var GradientDescent = metaheuristics.GradientDescent = declare(Metaheuristic, {
 		throw new Error('GradientDescent.gradientSimultaneousPerturbation() is not implemented!');//TODO
 	},
 	
-	// ## Other ####################################################################################
+	// ## Utilities ################################################################################
 	
-	toString: function toString() {
-		return (this.constructor.name || 'GradientDescent') +'('+ JSON.stringify(this) +')';
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'GradientDescent',
+		serializer: function serialize_GradientDescent(obj) {
+			return [obj.__params__('delta')];
+		}
 	}
 }); // declare GradientDescent.

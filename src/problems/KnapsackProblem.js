@@ -38,27 +38,21 @@ problems.KnapsackProblem = declare(Problem, {
 			/** + `items` is the set of items.
 			*/
 			.object('items', { ignore: true });
-	},
-
-	/** The problem's representation is an array with a number for each item. This number holds the 
-	selected amount for each item (from 0 up to the item's amount).
-	*/	
-	elementLength: function elementLength() {
-		return Object.keys(this.items).length;
+		/** The problem's representation is an array with a number for each item, in alphabetical 
+		order. Each number holds the selected amount for each item (from 0 up to the item's amount).
+		*/
+		var items = this.items;
+		this.__elementItems__ = Object.keys(items);
+		this.__elementItems__.sort();
+		this.__elementModel__ = this.__elementItems__.map(function (name) {
+			return { min: 0, max: +items[name].amount || 1, discrete: true };
+		});
 	},
 	
 	/** All elements are mapped to an object with the selected amount associated to each item.
 	*/
 	mapping: function mapping(element) {
-		var selection = {},
-			keys = Object.keys(problem.items);
-		keys.sort();
-		iterable(element.values).zip(keys).forEach(function (pair) {
-			var item = problem.items[pair[1]],
-				amount = pair[0] * (1 + (+item.amount || 1)) | 0;
-			selection[pair[1]] = amount;
-		});
-		return selection;
+		return iterable(this.__elementItems__).zip(Math.floor(element.values)).toObject();
 	},
 	
 	/** All elements are evaluated by calculating the worth of all included items. If their cost is 
@@ -66,19 +60,30 @@ problems.KnapsackProblem = declare(Problem, {
 	*/
 	evaluation: function evaluation(element) {
 		var selection = this.mapping(element),
+			items = this.items,
 			worth = 0,
 			cost = 0;
-		Object.keys(selection).forEach(function (name) {
-			var item = problem.items[name],
-				amount = selection[name];
+		iterable(selection).forEachApply(function (name, amount) {
+			var item = items[name];
 			worth += item.worth * amount;
 			cost += item.cost * amount;
 		});
-		return cost > problem.limit ? -worth : worth;
+		return cost > problem.limit ? -worth : worth; //FIXME Too punishing for going over the limit.
 	},
 	
 	/** The best selection of items is the one that maximizes worth, without exceeding the cost 
 	limit.
 	*/
-	compare: Problem.prototype.maximization
+	compare: Problem.prototype.maximization,
+	
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'KnapsackProblem',
+		serializer: function serialize_KnapsackProblem(obj) {
+			return [obj.__params__('limit', 'amount', 'items')];
+		}
+	}
 }); // declare KnapsackProblem

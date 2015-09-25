@@ -17,9 +17,14 @@ var HarmonySearch = metaheuristics.HarmonySearch = declare(Metaheuristic, {
 			element.
 			*/
 			.number('adjustProbability', { coerce: true, defaultValue: 0.5, minimum: 0, maximum: 1 })
-			/** + `delta=0.1` is the distance between neighbouring states.
+			/** + `delta=1` is the distance between neighbouring states for discrete adjustments.
 			*/
-			.number('delta', { coerce: true, defaultValue: 0.1 });
+			.number('delta', { coerce: true, defaultValue: 1 })
+			/** + `fretWidth=0.01` is the maximum adjustment for continuous variables, expressed as 
+			a ratio of the range.
+			*/
+			.number('fretWidth', { coerce: true, defaultValue: 0.01 })
+			;
 	},
 	
 	/** At each step only one new element is generated. Each of its values is taken from another
@@ -28,23 +33,37 @@ var HarmonySearch = metaheuristics.HarmonySearch = declare(Metaheuristic, {
 	to `adjustProbability`.
 	*/
 	expansion: function expansion() {
-		var proto = this.state[0],
-			values = new Array(length);
-		for (var i = 0; i < proto.length; ++i) {
-			if (this.random.randomBool(this.harmonyProbability)) {
-				values[i] = this.random.choice(this.state).values[i];
-				if (this.random.randomBool(this.adjustProbability)) {
-					values[i] = values[i] + this.random.choice([-1, +1]) * this.delta;
+		var mh = this,
+			random = this.random,
+			model = this.problem.elementModel(),
+			values = model.map(function (range, i) {
+				if (random.randomBool(mh.harmonyProbability)) {
+					var value = random.choice(mh.state).values[i];
+					if (random.randomBool(mh.adjustProbability)) {
+						if (range.discrete) {
+							value += random.choice([-mh.delta, mh.delta]);
+						} else {
+							var span = range.max - range.min;
+							value += random.random(-span, +span) * mh.fretWidth;
+						}
+					}
+					return value;
+				} else {
+					return random.random(range.min, range.max);
 				}
-			} else {
-				values[i] = this.random.random();
-			}
-		}
+			});
 		this.onExpand();
 		return [this.problem.newElement(values)];
 	},
 	
-	toString: function toString() {
-		return (this.constructor.name || 'HarmonySearch') +'('+ JSON.stringify(this) +')';
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'HarmonySearch',
+		serializer: function serialize_HarmonySearch(obj) {
+			return [obj.__params__('harmonyProbability', 'adjustProbability', 'delta', 'fretWidth')];
+		}
 	}
 }); // declare HarmonySearch.

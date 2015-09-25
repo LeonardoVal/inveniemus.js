@@ -34,19 +34,21 @@ var DifferentialEvolution = metaheuristics.DifferentialEvolution = declare(Metah
 	expansion: function expansion() {
 		var mh = this,
 			result = this.state.map(function (element, elementIndex) {
-				var crossover = mh.random.choices(3, iterable(mh.state).filter(function (e, i) {
-						return i !== elementIndex;
-					})),
+				var stateCopy = mh.state.slice();
+				stateCopy.splice(elementIndex, 1);
+				var crossover = mh.random.choices(3, stateCopy),
 					a = crossover[0].values,
 					b = crossover[1].values,
 					c = crossover[2].values,
-					randomIndex = mh.random.randomInt(element.length),
-					newValues = [];
-				for (var i = 0; i < element.length; ++i) {
-					newValues.push(i === randomIndex || mh.random.randomBool(mh.crossoverProbability) ?
-						a[i] + mh.differentialWeight * (b[i] - c[i]) :
-						element.values[i]);
-				}
+					len = element.values.length,
+					randomIndex = mh.random.randomInt(len),
+					newValues = element.values.map(function (value, i) {
+						if (i === randomIndex || mh.random.randomBool(mh.crossoverProbability)) {
+							return a[i] + mh.differentialWeight * (b[i] - c[i]);
+						} else {
+							return value;
+						}
+					});
 				return mh.problem.newElement(newValues);
 			});
 		this.onExpand();
@@ -55,24 +57,12 @@ var DifferentialEvolution = metaheuristics.DifferentialEvolution = declare(Metah
 	
 	// ## Utilities ################################################################################
 	
-	toString: function toString() {
-		return (this.constructor.name || 'DifferentialEvolution') +'('+ JSON.stringify(this) +')';
-	},
-	
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
-		identifier: exports.__package__ +'.DifferentialEvolution',
-		serializer: function serialize_Metaheuristic(obj) {
-			/* return this.serializeAsProperties(obj, 
-				['differentialWeight', 'crossoverProbability'], 
-				this.superSerialize(obj)[0]);
-			*/
-			var result = Metaheuristic.__SERMAT__.serializer.call(this, obj),
-				props = result[0];
-			props.differentialWeight = obj.differentialWeight;
-			props.crossoverProbability = obj.crossoverProbability;
-			return result;
+		identifier: 'DifferentialEvolution',
+		serializer: function serialize_DifferentialEvolution(obj) {
+			return [obj.__params__('differentialWeight', 'crossoverProbability')];
 		}
 	}
 }); // declare DifferentialEvolution.

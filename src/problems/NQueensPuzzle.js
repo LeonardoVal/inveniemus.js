@@ -19,15 +19,12 @@ problems.NQueensPuzzle = declare(Problem, {
 			.integer('N', { coerce: true, defaultValue: 8 });
 		
 		this.__rowRange__ = Iterable.range(this.N).toArray();
+		/** The representation is an array of `N` positions, indicating the row of the queen for 
+		each column.
+		*/
+		this.__elementModel__ = Iterable.repeat({ min: 0, max: this.N - 1, discrete: true }, this.N - 1).toArray();
 	},
-	
-	/** The representation is an array of `N` positions, indicating the row of the queen for each 
-	column.
-	*/
-	elementLength: function elementLength() {
-		return this.N;
-	},
-	
+		
 	mapping: function mapping(element) {
 		return element.setMapping(this.__rowRange__);
 	},
@@ -35,7 +32,7 @@ problems.NQueensPuzzle = declare(Problem, {
 	/** The elements' evaluation is the count of diagonals shared by queens pairwise.
 	*/
 	evaluation: function evaluation(element) {
-		var rows = this.mapping(),
+		var rows = this.mapping(element),
 			count = 0;
 		rows.forEach(function (row, i) {
 			for (var j = 1; i + j < rows.length; j++) {
@@ -53,7 +50,18 @@ problems.NQueensPuzzle = declare(Problem, {
 	
 	/** It is sufficient when no pair of queens share diagonals.
 	*/
-	sufficientElement: function sufficientElement() {
-		return this.evaluation === 0;
+	sufficientElement: function sufficientElement(element) {
+		return element.evaluation === 0;
+	},
+	
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'NQueensPuzzle',
+		serializer: function serialize_NQueensPuzzle(obj) {
+			return [obj.__params__('N')];
+		}
 	}
 }); // declare NQueensPuzzle

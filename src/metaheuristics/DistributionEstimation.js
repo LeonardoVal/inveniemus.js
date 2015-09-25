@@ -39,18 +39,17 @@ var DistributionEstimation = metaheuristics.DistributionEstimation = declare(Met
 	*/
 	histograms: function histograms() {
 		return DistributionEstimation.histograms(this.state, this.histogramWidth, 
-			this.problem.elementLength());
+			this.problem.elementModel().length);
 	},
 	
 	'static histograms': function histograms(state, histogramWidth, histogramCount) {
 		var size = state.length,
-			emptyCount = base.Iterable.repeat(0, histogramWidth).toArray(),
-			counts = base.Iterable.iterate(function (v) {
-				return v.slice(); // Shallow copy.
-			}, emptyCount, histogramCount).toArray();
+			counts = Iterable.iterate(function (v) { // Builds a matrix of zeroes.
+				return v.slice();
+			}, Iterable.repeat(0, histogramWidth).toArray(), histogramCount).toArray();
 		state.forEach(function (element) {
 			element.values.forEach(function (value, i) {
-				var bar = Math.min(histogramWidth - 1, Math.floor(element.values[i] * histogramWidth));
+				var bar = Math.min(histogramWidth - 1, Math.floor(element.values[i] * histogramWidth)); //FIXME Normalize.
 				counts[i][bar]++;
 			});
 		});
@@ -141,7 +140,12 @@ var DistributionEstimation = metaheuristics.DistributionEstimation = declare(Met
 	
 	// ## Other ####################################################################################
 	
-	toString: function toString() {
-		return (this.constructor.name || 'DistributionEstimation') +'('+ JSON.stringify(this) +')';
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'DistributionEstimation',
+		serializer: function serialize_DistributionEstimation(obj) {
+			return [obj.__params__('histogramWidth')];
+		}
 	}
 }); // declare DistributionEstimation.

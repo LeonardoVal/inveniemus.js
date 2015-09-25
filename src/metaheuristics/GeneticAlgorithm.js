@@ -205,7 +205,9 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 		random value.
 		*/
 		singlepointUniformMutation: function singlepointUniformMutation(element) {
-			return element.modification(this.random.randomInt(element.length), this.random.random());
+			var model = this.problem.elementModel(),
+				i = this.random.randomInt(model.length);
+			return element.modification(i, this.random.random(model[i].min, model[i].max));
 		},
 			
 		/** + `uniformMutation(maxPoints=Infinity)` builds a mutation function that makes at least 
@@ -214,11 +216,13 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 		*/
 		uniformMutation: function uniformMutation(maxPoints) {
 			max = isNaN(maxPoints) ? Infinity : +maxPoints;
+			var model = this.problem.elementModel();
 			return function mutation(element) {
-				var times = maxPoints;
+				var times = maxPoints, i, range;
 				element = this.problem.newElement(element.values); // Copy element.
 				do {
-					element.values[this.random.randomInt(element.length)] = this.random.random();
+					i = this.random.randomInt(model.length);
+					element.values[i] = this.random.random(model[i].min, model[i].max);
 				} while (this.random.randomBool(this.mutationRate) && --times > 0);
 				return element;
 			};
@@ -228,18 +232,20 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 		of its value, with a triangular distribution.
 		*/
 		singlepointBiasedMutation: function singlepointBiasedMutation(element) {
-			var random = this.random, 
+			var random = this.random,
+				model = this.problem.elementModel(),
 				i = random.randomInt(element.length);
-			return element.modification(i, element.values[i] + random.random() - random.random());
+			return element.modification(i, element.values[i] + 
+				(random.random() - random.random()) * (model[i].max - model[i].min));
 		},
 		
 		/** + `recombinationMutation(element)` swaps two values of the element at random.
 		*/
 		recombinationMutation: function recombinationMutation(element) {
 			var values = element.values.slice(),
-				i1 = this.random.randomInt(element.length),
+				i1 = this.random.randomInt(values.length),
 				v1 = values[i1],
-				i2 = this.random.randomInt(element.length), v2;
+				i2 = this.random.randomInt(values.length), v2;
 			if (i1 === i2) {
 				i2 = (i2 + 1) % element.length;
 			}
@@ -249,7 +255,16 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 		}
 	}, // GeneticAlgorithm.mutations
 	
-	toString: function toString() {
-		return (this.constructor.name || 'GeneticAlgorithm')+ '('+ JSON.stringify(this) +')';
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'GeneticAlgorithm',
+		serializer: function serialize_GeneticAlgorithm(obj) {
+			var params = obj.__params__('expansionRate', 'mutationRate');
+			//TODO serialize 'selection', 'crossover', 'mutation'
+			return [params];
+		}
 	}
 }); // declare GeneticAlgorithm.

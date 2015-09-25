@@ -15,10 +15,10 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 		/** + `minimumTemperature=0` is the temperature at the end of the run.
 		*/
 			.number('minimumTemperature', { defaultValue: 0, coerce: true })
-		/** + `delta=0.01` is the radius of the elements surroundings in every 
-		dimension, that is checked by this algorithm.
+		/** + `delta=1` is the radius of the elements surroundings in every dimension, that is 
+		checked by this algorithm.
 		*/
-			.number('delta', { defaultValue: 0.01, coerce: true })
+			.number('delta', { defaultValue: 1, coerce: true })
 		/** + `size=1` is 1 by default, but larger states are supported.
 		*/
 			.integer('size', { defaultValue: 1,	coerce: true })
@@ -34,12 +34,7 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 		radius = isNaN(radius) ? this.delta : +radius;
 		var i = this.random.randomInt(element.values.length), 
 			v = element.values[i];
-		if (this.random.randomBool()) {
-			v = Math.min(1, v + radius);
-		} else {
-			v = Math.max(0, v - radius);
-		}
-		return element.modification(i, v);
+		return element.modification(i, this.random.randomBool() ? v + radius : v - radius);
 	},
 	
 	/** The `acceptance(current, neighbour, temp=this.temperature())` is the probability of 
@@ -52,7 +47,7 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 			return 1; // Should always accept a better neighbour.
 		} else {
 			var d = -Math.abs(neighbour.evaluation - current.evaluation);
-			return Math.max(0, Math.min(1, Math.exp(d / temp)));
+			return clamp(Math.exp(d / temp), 0, 1);
 		}
 	},
 	
@@ -79,7 +74,7 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 		temperatureStat.add(temp, this.step);
 		return Future.all(this.state.map(function (elem) {
 			var neighbour = mh.randomNeighbour(elem);
-			return Future.when(neighbour.evaluate()).then(function () {
+			return Future.then(neighbour.evaluate(), function () {
 				var p = mh.acceptance(elem, neighbour, temp);
 				acceptanceStat.add(p, neighbour);
 				return mh.random.randomBool(p) ? neighbour : elem;
@@ -92,7 +87,15 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 		});
 	},
 
-	toString: function toString() {
-		return (this.constructor.name || 'SimulatedAnnealing') +'('+ JSON.stringify(this) +')';
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'SimulatedAnnealing',
+		serializer: function serialize_SimulatedAnnealing(obj) {
+			//TODO Serialize 'temperature'
+			return [obj.__params__('maximumTemperature', 'minimumTemperature', 'delta')];
+		}
 	}
 }); // declare SimulatedAnnealing.

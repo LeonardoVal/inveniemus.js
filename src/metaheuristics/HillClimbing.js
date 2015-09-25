@@ -5,15 +5,16 @@ method. The state has only one element, and in each iteration its best successor
 a local optimum is reached.
 */
 var HillClimbing = metaheuristics.HillClimbing = declare(Metaheuristic, {
-	/** The constructor takes an extra `delta=0.01` parameter. This is the radius of the elements 
-	surroundings in every dimension, that is checked by this algorithm.
+	/** The constructor The constructor takes the following parameters:
 	*/
 	constructor: function HillClimbing(params) {
 		Metaheuristic.call(this, params);
 		initialize(this, params)
-			.number('delta', { defaultValue: 0.01, coerce: true })
-		/** Also, the state's size is constrained to 1 by default. This may be increased, resulting 
-		in many parallel climbings.
+		/** + `delta=1` is the radius of the elements surroundings in every dimension.
+		*/
+			.number('delta', { defaultValue: 1, coerce: true })
+		/** + `size` is constrained to 1 by default. This may be increased, resulting in many 
+		parallel climbings.
 		*/
 			.integer('size', { defaultValue: 1,	coerce: true });
 	},
@@ -29,7 +30,7 @@ var HillClimbing = metaheuristics.HillClimbing = declare(Metaheuristic, {
 		return Future.all(this.state.map(function (elem) {
 			var range = elem.neighbourhood(mh.delta);
 			range.push(elem);
-			return mh.evaluate(range).then(function (range) {
+			return Future.then(mh.evaluate(range), function (range) {
 				var best = range[0];
 				if (elem === best) {
 					localOptima++;
@@ -57,7 +58,14 @@ var HillClimbing = metaheuristics.HillClimbing = declare(Metaheuristic, {
 		return Metaheuristic.prototype.finished.call(this) || this.atLocalOptima();
 	},
 		
-	toString: function toString() {
-		return (this.constructor.name || 'HillClimbing') +'('+ JSON.stringify(this) +')';
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'HillClimbing',
+		serializer: function serialize_HillClimbing(obj) {
+			return [obj.__params__('delta')];
+		}
 	}
 }); // declare HillClimbing.
