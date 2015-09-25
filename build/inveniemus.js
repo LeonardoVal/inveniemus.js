@@ -9,7 +9,7 @@
 		global.inveniemus = init(global.base);
 	}
 })(this, function __init__(base){ "use strict";
-// Import synonyms. ////////////////////////////////////////////////////////////
+// Import synonyms. ////////////////////////////////////////////////////////////////////////////////
 	var declare = base.declare,
 		initialize = base.initialize,
 		iterable = base.iterable,
@@ -21,7 +21,7 @@
 		Randomness = base.Randomness,
 		Statistics = base.Statistics;
 	
-// Library layout. /////////////////////////////////////////////////////////////
+// Library layout. /////////////////////////////////////////////////////////////////////////////////
 	var exports = {
 		__package__: 'inveniemus',
 		__name__: 'inveniemus',
@@ -37,7 +37,12 @@
 	};
 	var metaheuristics = exports.metaheuristics,
 		problems = exports.problems;
-	
+
+// Utility functions. //////////////////////////////////////////////////////////////////////////////
+
+function clamp(value, min, max) {
+	return Math.max(min, Math.min(max, value));
+}
 
 /**	# Element
 
@@ -49,7 +54,7 @@ their candidate solutions.
 var Element = exports.Element = declare({
 	/** All elements are defined by a `problem`, an array of numbers (i.e. the element's `values`, 
 	random numbers by default) and an `evaluation` (`NaN` by default). The element's values are 
-	coerced to be in the [0,1] range.
+	coerced to be in the range provided by the problem's element model.
 	
 	The `values` store all data about the candidate solution this element represents. This may 
 	appear to abstract and stark, but it helps to separate the problem definition from the search
@@ -61,30 +66,39 @@ var Element = exports.Element = declare({
 	*/
 	constructor: function Element(problem, values, evaluation) {
 		this.problem = problem;
+		var model = problem.elementModel();
 		if (!values) {
-			this.values = problem.random.randoms(problem.elementLength());
+			this.values = model.map(function (range) {
+				if (range.discrete) {
+					return problem.random.randomInt(range.min, range.max + 1);
+				} else {
+					return problem.random.random(range.min, range.max);
+				}
+			});
 		} else {
 			this.values = values.map(function (value, i) {
+				var range = model[i];
 				raiseIf(isNaN(value), "Value #", i, " for element is NaN!");
-				return Math.min(1, Math.max(0, +value));
+				value = clamp(+value, range.min, range.max);
+				return value;
 			});
 		}
 		this.evaluation = +evaluation;
 	},
 	
-	/** Whether this element is a actual solution or not is decided by `suffices()`. It holds the 
+	/** Whether this element is an actual solution or not is decided by `suffices()`. It holds the 
 	implementation of the goal test in search problems. More complex criteria may be implemented in 
 	`Problem.suffices`. By default it returns false.
 	*/
 	suffices: function suffices() {
-		return this.problem.sufficient(this);
+		return this.problem.sufficientElement(this);
 	},
 
 	/** The `emblem` of an element is a string that represents it and can be displayed to the user. 
-	By default returns the JSON conversion of the `values` array.
+	By default returns the string conversion of the element.
 	*/
 	emblem: function emblem() {
-		return JSON.stringify(this.mapping());
+		return this +'';
 	},
 
 	// ## Evaluations ##############################################################################
@@ -151,43 +165,41 @@ var Element = exports.Element = declare({
 
 	// ## Expansions ###############################################################################
 	
-	/** An element's `successors` are other elements that can be considered adjacent of this 
-	element. By default returns the element's neighbourhood with the default radius.
-	*/
-	successors: function successors(element) {
-		return this.neighbourhood();
-	},
-	
 	/** An element's `neighbourhood` is a set of new elements, with values belonging to the n 
 	dimensional ball around this element's values with the given `radius` (1% by default). 
 	*/
 	neighbourhood: function neighbourhood(radius) {
-		var elems = [], 
-			values = this.values,
-			i, d, value;
-		for (i = 0; i < values.length; i++) {
-			d = typeof(radius) === 'number' ? radius : Array.isArray(radius) ? radius[i] : 1 / 100;
-			value = values[i] + d;
-			if (value <= 1) {
-				elems.push(this.modification(i, value));
+		var elem = this,
+			neighbours = [],
+			model = this.problem.elementModel();
+		this.values.forEach(function (value, i) {
+			var range = model[i],
+				d = Array.isArray(radius) ? radius[i] : !isNaN(radius) ? radius : range.discrete ? 1 : 0.1,
+				v = value + d;
+			if (v <= range.max) {
+				neighbours.push(elem.modification(i, v));
 			}
-			value = values[i] - d;
-			if (value >= 0) {
-				elems.push(this.modification(i, value));
+			v = value - d;
+			if (v >= range.min) {
+				neighbours.push(elem.modification(i, v));
 			}
-		}
-		return elems;
+		});
+		return neighbours;
 	},
 	
 	/** The method `modification(index, value, ...)` returns a new and unevaluated copy of this 
 	element, with its values modified as specified. Values are always coerced to the [0,1] range.
 	*/
 	modification: function modification() {
-		var newValues = this.values.slice(), i, v;
+		var newValues = this.values.slice(),
+			model = this.problem.elementModel(),
+			range, i, v;
 		for (i = 0; i < arguments.length; i += 2) {
 			v = +arguments[i + 1];
-			raiseIf(isNaN(v), "Invalid value ", v, " for element.");
-			newValues[arguments[i] |0] = Math.min(1, Math.max(0, v));
+			raiseIf(isNaN(v), "Invalid value ", v, " for element!");
+			range = model[i];
+			v = clamp(v, range.min, range.max);
+			newValues[arguments[i] |0] = v;
 		}
 		return new this.constructor(this.problem, newValues);
 	},
@@ -200,46 +212,61 @@ var Element = exports.Element = declare({
 		return this.problem.mapping(this);
 	},
 	
+	/** A range mapping builds an array of equal length of this element's `values`. Each value is 
+	translated from the element model's range to the given range.
+	*/
+	rangeMapping: function rangeMapping() {
+		var args = arguments,
+			model = this.problem.elementModel(),
+			lastRange = args[args.length - 1];
+		raiseIf(args.length < 1, "Element.rangeMapping() expects at least one argument!");
+		return this.values.map(function (v, i) {
+			var rangeFrom = model[i],
+				rangeTo = args.length > i ? args[i] : lastRange;
+			v = (v - rangeFrom.min) / (rangeFrom.max - rangeFrom.min) * (rangeTo[1] - rangeTo[0]) + rangeTo[0];
+			return clamp(v, rangeTo[0], rangeTo[1]);
+		});
+	},
+	
+	/** The `normalizedValues` of an element is a mapping to the range [0,1].
+	*/
+	normalizedValues: function normalizedValues() {
+		return this.rangeMapping([0, 1]);
+	},
+	
 	/** An array mapping builds an array of equal length of this element's `values`. Each value is 
 	used to index the corresponding items argument. If there are less arguments than the element's 
 	`length`, the last one is used for the rest of the values.
-	
-	Warning! This method assumes this element's values are in the range [0,1].
 	*/
 	arrayMapping: function arrayMapping() {
-		var args = arguments, 
-			lastItems = args[args.length - 1];
-		raiseIf(args.length < 1, "Element.arrayMapping() expects at least one argument.");
+		var args = arguments,
+			lastItems = args[args.length - 1],
+			model = this.problem.elementModel();
+		raiseIf(args.length < 1, "Element.arrayMapping() expects at least one argument!");
 		return this.values.map(function (v, i) {
-			var items = args.length > i ? args[i] : lastItems;
-			return items[v * items.length | 0];
+			var items = args.length > i ? args[i] : lastItems,
+				range = model[i],
+				index = Math.floor((v - range.min) / (range.max - range.min) * items.length);
+			return items[index];
 		});
 	},
 	
 	/** A set mapping builds an array of equal length of this element's `values`. Each value is used 
-	to select one item. Items are not selected more than once. 
-	
-	Warning! This method assumes this element's values are in the range [0,1].
+	to select one item. Items are not selected more than once.
 	*/
-	setMapping: function setMapping(items) {
-		raiseIf(!Array.isArray(items), "Element.setMapping() expects an array argument.");
+	setMapping: function setMapping(items, full) {
+		raiseIf(!Array.isArray(items), "Element.setMapping() expects an array argument!");
 		items = items.slice(); // Shallow copy.
-		return this.values.map(function (v, i) {
-			return items.splice(v * items.length | 0, 1)[0];
-		});
-	},
-	
-	/** A range mapping builds an array of equal length of this element's `values`. Each value is 
-	translated from [0,1] to the corresponding range.
-	*/
-	rangeMapping: function rangeMapping() {
-		var args = arguments, 
-			lastRange = args[args.length - 1];
-		raiseIf(args.length < 1, "Element.rangeMapping() expects at least one argument.");
-		return this.values.map(function (v, i) {
-			var range = args.length > i ? args[i] : lastRange;
-			return v * (range[1] - range[0]) + range[0];
-		});
+		var result = this.normalizedValues().map(function (v, i) {
+				raiseIf(items.length < 1, "Element.setMapping(): insufficient elements!");
+				var index = clamp(Math.floor(v * items.length), 0, items.length - 1);
+				return items.splice(index, 1)[0];
+			});
+		if (full) {
+			raiseIf(items.length != 1, "Element.setMapping(): wrong amount of elements!");
+			result.push(items[0]);
+		}
+		return result;
 	},
 	
 	// ## Other utilities ##########################################################################
@@ -290,11 +317,11 @@ The Problem type represents a search or optimization problem in Inveniemus.
 var Problem = exports.Problem = declare({
 	/** A problem should have a `title` to be displayed to the user.
 	*/
-	title: "<no title>",
+	title: "",
 		
 	/** A `description` of the problem to be displayed to the user may also be appreciated.
 	*/
-	description: "<no description>",
+	description: "",
 
 	/** Many operations in this class require a pseudorandom number generator. By default 
 	`base.Randomness.DEFAULT` is used.
@@ -310,11 +337,17 @@ var Problem = exports.Problem = declare({
 			.object('random', { ignore: true });
 	},
 
-	/** The `elementLength` is the amount of values each candidate solution has. It is 10 by 
-	default.
+	/** The `elementModel` is an array of ranges, each an array of two numbers defining the minimum
+	an maximum possible value of each position of every element in this problem. All elements should
+	also be of the same length as the model.
+	
+	By default, the method returns the `__elementModel__` property. It is inefficiency to recompute 
+	this result every time, since it is required in many places.
 	*/
-	elementLength: function elementLength() {
-		return 10;
+	__elementModel__: Iterable.repeat({ min: 0, max: 1, discrete: false }, 10).toArray(),
+	
+	elementModel: function elementModel() {
+		return this.__elementModel__;
 	},
 	
 	/** Problem uses `Element` instances to represent its candidate solutions.
@@ -325,11 +358,30 @@ var Problem = exports.Problem = declare({
 	
 	/** The problem's elements must be evaluated somehow. This can be interpreted as the solution's 
 	cost in a search problem or the target function of an optimization problem. The default 
-	behaviour is adding up this element's values, useful only for testing. It can return a promise 
+	behaviour is adding up this element's values, useful only for testing. It can return a future 
 	if the evaluation has to be done asynchronously. 
 	*/
 	evaluation: function evaluation(element) {
 		return iterable(element.values).sum();
+	},
+	
+	/** The `evaluate` method is used to assign an evaluation to all the given `elements`. By 
+	default it iterates over all elements and gets their evaluation using the `evaluation` method. 
+	If `reevaluate` is false (the default), already evaluated elements are ignored. This method may 
+	be overriden to make a relative evaluation scheme (e.g. in coevolution).
+	*/
+	evaluate: function evaluate(elements, reevaluate) {
+		var async = false;
+		elements = iterable(elements).filter(
+			function (element) {
+				return reevaluate || isNaN(element.evaluation);
+			},
+			function (element) { // ... evaluate them.
+				var result = element.evaluate();
+				async = async || Future.__isFuture__(result);
+				return result;
+			});
+		return async ? Future.all(elements) : elements.toArray();
 	},
 	
 	/** Usually a numbers array is just too abstract to handle, and	another representation of the 
@@ -400,7 +452,24 @@ var Problem = exports.Problem = declare({
 	`"Problem(params)"`.
 	*/
 	toString: function toString() {
-		return (this.constructor.name || 'Problem') +"("+ JSON.stringify(this) +")";
+		return "<"+ (this.constructor.name || 'Problem') +" "+ JSON.stringify(this.title) +">";
+	},
+	
+	/** Returns a reconstruction of the parameters used in the construction of this instance.
+	*/
+	__params__: function __params__() {
+		var params = {},
+			self = this,
+			ids = ['title', 'description'].concat(Array.prototype.slice.call(arguments));
+		ids.forEach(function (id) {
+			if (self.hasOwnProperty(id)) {
+				params[id] = self[id];
+			}
+		});
+		if (this.random !== Randomness.DEFAULT) {
+			params.random = this.random;
+		}
+		return params;
 	},
 	
 	/** Serialization and materialization using Sermat.
@@ -408,7 +477,7 @@ var Problem = exports.Problem = declare({
 	'static __SERMAT__': {
 		identifier: 'Problem',
 		serializer: function serialize_Problem(obj) {
-			return this.serializeAsProperties(obj, ['title', 'description', 'random'], true);
+			return [obj.__params__()];
 		}
 	}
 }); // declare Problem.
@@ -457,9 +526,14 @@ var Metaheuristic = exports.Metaheuristic = declare({
 			.object('statistics', { defaultValue: new Statistics() })
 			.object('logger', { ignore: true });
 		this.events = new Events({ 
-			events: ["initiated", "updated", "expanded", "evaluated", "sieved", 
-				"advanced", "analyzed", "finished"]
+			events: ["initiated", "updated", "expanded", "evaluated", "sieved", "advanced", "analyzed", "finished"]
 		});
+	},
+	
+	__log__: function __log__(level) {
+		if (this.logger) {
+			this.logger[level].apply(this.logger, arguments);
+		}
 	},
 	
 	// ## Basic workflow ###########################################################################
@@ -484,7 +558,7 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	update: function update() {
 		var mh = this;
 		this.expand();
-		return this.evaluate().then(function () {
+		return Future.then(this.evaluate(), function () {
 			mh.sieve();
 			mh.onUpdate();
 			return mh;
@@ -497,21 +571,9 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	expand: function expand(expansion) {
 		expansion = expansion || this.expansion();
 		if (expansion.length < 1) {
-			if (this.logger) {
-				this.logger.warn("Expansion is empty");
-			}
+			this.__log__('warn', "Expansion is empty");
 		} else {
-			var expanded = this.state.concat(expansion),
-				len = expanded.length;
-			expanded = expanded.filter(function (elem, i) { // Trim equal elements from the expanded state.
-				for (i++; i < len; i++) {
-					if (elem.equals(expanded[i])) {
-						return false;
-					}
-				}
-				return true;
-			});
-			this.state = expanded;
+			this.state = this.state.concat(expansion);
 		}
 		this.onExpand();
 	},
@@ -530,24 +592,17 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	},
 	
 	/** `evaluate(elements)` evaluates all the elements in `state` with no evaluation, using its 
-	evaluation method. After that sorts the state with the `compare` method of the problem. Returns 
-	a future, regardless of the evaluation being asynchronous or not.
+	evaluation method. After that sorts the state with the `compare` method of the problem. May 
+	return a future, if any evaluation is asynchronous.
 	*/
 	evaluate: function evaluate(elements) {
 		var mh = this,
-			evalTime = this.statistics.stat({key:'evaluation_time'});
-		evalTime.startTime();
+			evalTime = this.statistics && this.statistics.stat({key:'evaluation_time'});
+		if (evalTime) evalTime.startTime();
 		elements = elements || this.state;
-		return Future.all(iterable(elements).filter(
-			function (element) { // For those elements that don't have an evaluation, ...
-				return isNaN(element.evaluation);
-			},
-			function (element) { // ... evaluate them.
-				return Future.when(element.evaluate());
-			}
-		)).then(function (results) {
+		return Future.then(this.problem.evaluate(elements), function (results) {
 			elements.sort(mh.problem.compare.bind(mh.problem));
-			evalTime.addTime();
+			if (evalTime) evalTime.addTime();
 			mh.onEvaluate(results);
 			return elements;
 		});
@@ -557,7 +612,7 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	default). This is usually used after expanding and evaluating the state.
 	*/
 	sieve: function sieve(size) {
-		size = isNaN(size) ? this.size : size | 0;
+		size = isNaN(size) ? this.size : Math.floor(size);
 		if (this.state.length > size) {
 			this.state = this.state.slice(0, this.size);
 		}
@@ -574,7 +629,8 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	/** `analyze()` updates the process' statistics.
 	*/
 	analyze: function analyze() {
-		var stat = this.statistics.stat({key:'evaluation', step: this.step});
+		var keys = { key:'evaluation', step: this.step },
+			stat = this.statistics ? this.statistics.stat(keys) : new base.Statistic(keys);
 		this.state.forEach(function (element) {
 			stat.add(element.evaluation, element);
 		});
@@ -583,39 +639,39 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	},
 	
 	/** `advance()` performs one step of the optimization. If the process has not been initialized, 
-	it does so. Returns a future if the run has not finished or null otherwise.
+	it does so. Returns a future if any step is asynchronous.
 	*/
 	advance: function advance() {
 		var mh = this, 
-			stepTime = this.statistics.stat({key: 'step_time'}),
+			stepTime = this.statistics && this.statistics.stat({key: 'step_time'}),
 			result;
 		if (isNaN(this.step) || +this.step < 0) {
-			this.statistics.reset();
-			stepTime.startTime();
+			this.reset();
+			if (stepTime) stepTime.startTime();
 			this.initiate();
 			result = this.evaluate();
 		} else {
-			stepTime.startTime();
+			if (stepTime) stepTime.startTime();
 			result = this.update();
 		}
-		return result.then(function () {
+		return Future.then(result, function () {
 			mh.step = isNaN(mh.step) || +mh.step < 0 ? 0 : +mh.step + 1;
 			mh.analyze(); // Calculate the state's stats after updating it.
-			stepTime.addTime();
+			if (stepTime) stepTime.addTime();
 			mh.onAdvance();
 			return mh;
 		});
 	},
 	
 	/** `run()` returns a future that is resolved when the whole search process is finished. The 
-	value is the best cursor after the last step.
+	value is the best cursor after the last step. It always returns a future.
 	*/
 	run: function run() {
 		var mh = this, 
-			advance = this.advance.bind(this);
-		function continues() {
-			return !mh.finished();
-		}
+			advance = this.advance.bind(this),
+			continues = function continues() {
+				return !mh.finished();
+			};
 		return Future.doWhile(advance, continues).then(function () {
 			mh.onFinish();
 			return mh.state[0]; // Return the best cursor.
@@ -627,7 +683,7 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	*/
 	reset: function reset() {
 		this.step = -1;
-		this.statistics.reset();
+		if (this.statistics) this.statistics.reset();
 	},
 	
 	// ## State control ############################################################################
@@ -653,80 +709,64 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		return this.state.length;
 	},
 	
-	/** ## Events ##################################################################################
+	// ## Events ###################################################################################
 	
-	For better customization the `events` handler emits the following events: 
+	/** For better customization the `events` handler emits the following events: 
 		
 	+ `initiated` when the state has been initialized.
 	*/
 	onInitiate: function onInitiate() {
 		this.events.emit('initiated', this);
-		if (this.logger) {
-			this.logger.debug('State has been initiated. Nos coepimus.');
-		}
+		this.__log__('debug', 'State has been initiated. Nos coepimus.');
 	},
 	
 	/** + `updated` when the state has been expanded, evaluated and sieved.
 	*/
 	onUpdate: function onUpdate() {
 		this.events.emit('updated', this);
-		if (this.logger) {
-			this.logger.debug('State has been updated. Mutatis mutandis.');
-		}
+		this.__log__('debug', 'State has been updated. Mutatis mutandis.');
 	},
 	
 	/** + `expanded` after new elements are added to the state.
 	*/
 	onExpand: function onExpand() {
 		this.events.emit('expanded', this);
-		if (this.logger) {
-			this.logger.debug('State has been expanded. Nos exploramus.');
-		}
+		this.__log__('debug', 'State has been expanded. Nos exploramus.');
 	},
 	
 	/** + `evaluated` after the elements in the state are evaluated.
 	*/
 	onEvaluate: function onEvaluate(elements) {
-		this.events.emit('evaluated', this);
-		if (this.logger) {
-			this.logger.debug('Evaluated and sorted ', elements.length, ' elements. Appretiatus sunt.');
-		}
+		this.events.emit('evaluated', this, elements);
+		this.__log__('debug', 'Evaluated and sorted ', elements.length, ' elements. Appretiatus sunt.');
 	},
 	
 	/** + `sieved` after elements are removed from the state.
 	*/
 	onSieve: function onSieve() {
 		this.events.emit('sieved', this);
-		if (this.logger) {
-			this.logger.debug('State has been sieved. Haec est viam.');
-		}
+		this.__log__('debug', 'State has been sieved. Haec est viam.');
 	},
 	
 	/** + `advanced` when one full iteration is completed.
 	*/
 	onAdvance: function onAdvance() {
 		this.events.emit('advanced', this);
-		if (this.logger) {
-			this.logger.debug('Step ', this.step , ' has been completed. Nos proficimus.');
-		}
+		this.__log__('debug', 'Step ', this.step , ' has been completed. Nos proficimus.');
 	},
 	
 	/** + `analyzed` after the statistics are calculated.
 	*/
 	onAnalyze: function onAnalyze() {
 		this.events.emit('analyzed', this);
-		if (this.logger) {
-			this.logger.debug('Statistics have been gathered. Haec sunt numeri.');
-		}
+		this.__log__('debug', 'Statistics have been gathered. Haec sunt numeri.');
 	},
 	
 	/** + `finished` when the run finishes.
 	*/
 	onFinish: function onFinish() {
 		this.events.emit('finished', this);
-		if (this.logger) {
-			this.logger.debug('Finished. Nos invenerunt!');
-		}
+		this.__log__('debug', 'Finished. Nos invenerunt!');
 	},
 	
 	// ## Utilities ################################################################################
@@ -735,7 +775,30 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	parameters.
 	*/
 	toString: function toString() {
-		return (this.constructor.name || 'Metaheuristic') +"("+ JSON.stringify(this) +")";
+		return "<"+ (this.constructor.name || 'Metaheuristic') +" "+ this.problem +">";
+	},
+	
+	/** Returns a reconstruction of the parameters used in the construction of this instance.
+	*/
+	__params__: function __params__() {
+		var params = { problem: this.problem, size: this.size, steps: this.steps };
+		if (this.random !== Randomness.DEFAULT) {
+			params.random = this.random;
+		}
+		if (this.step >= 0) {
+			params.step = this.step;
+			params.state = this.state;
+			params.statistics = this.statistics;
+		} else if (this.state.length > 0) {
+			params.state = this.state;
+		}
+		for (var i = 0; i < arguments.length; i++) {
+			var id = arguments[i];
+			if (this.hasOwnProperty(id)) {
+				params[id] = this[id];
+			}
+		}
+		return params;
 	},
 	
 	/** Serialization and materialization using Sermat.
@@ -743,8 +806,7 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	'static __SERMAT__': {
 		identifier: 'Metaheuristic',
 		serializer: function serialize_Metaheuristic(obj) {
-			return this.serializeAsProperties(obj, 
-				['problem', 'size', 'state', 'steps', 'step', 'random', 'statistics']);
+			return [obj.__params__()];
 		}
 	}
 }); // declare Metaheuristic.
@@ -756,15 +818,16 @@ method. The state has only one element, and in each iteration its best successor
 a local optimum is reached.
 */
 var HillClimbing = metaheuristics.HillClimbing = declare(Metaheuristic, {
-	/** The constructor takes an extra `delta=0.01` parameter. This is the radius of the elements 
-	surroundings in every dimension, that is checked by this algorithm.
+	/** The constructor The constructor takes the following parameters:
 	*/
 	constructor: function HillClimbing(params) {
 		Metaheuristic.call(this, params);
 		initialize(this, params)
-			.number('delta', { defaultValue: 0.01, coerce: true })
-		/** Also, the state's size is constrained to 1 by default. This may be increased, resulting 
-		in many parallel climbings.
+		/** + `delta=1` is the radius of the elements surroundings in every dimension.
+		*/
+			.number('delta', { defaultValue: 1, coerce: true })
+		/** + `size` is constrained to 1 by default. This may be increased, resulting in many 
+		parallel climbings.
 		*/
 			.integer('size', { defaultValue: 1,	coerce: true });
 	},
@@ -780,7 +843,7 @@ var HillClimbing = metaheuristics.HillClimbing = declare(Metaheuristic, {
 		return Future.all(this.state.map(function (elem) {
 			var range = elem.neighbourhood(mh.delta);
 			range.push(elem);
-			return mh.evaluate(range).then(function (range) {
+			return Future.then(mh.evaluate(range), function (range) {
 				var best = range[0];
 				if (elem === best) {
 					localOptima++;
@@ -808,8 +871,15 @@ var HillClimbing = metaheuristics.HillClimbing = declare(Metaheuristic, {
 		return Metaheuristic.prototype.finished.call(this) || this.atLocalOptima();
 	},
 		
-	toString: function toString() {
-		return (this.constructor.name || 'HillClimbing') +'('+ JSON.stringify(this) +')';
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'HillClimbing',
+		serializer: function serialize_HillClimbing(obj) {
+			return [obj.__params__('delta')];
+		}
 	}
 }); // declare HillClimbing.
 
@@ -1021,7 +1091,9 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 		random value.
 		*/
 		singlepointUniformMutation: function singlepointUniformMutation(element) {
-			return element.modification(this.random.randomInt(element.length), this.random.random());
+			var model = this.problem.elementModel(),
+				i = this.random.randomInt(model.length);
+			return element.modification(i, this.random.random(model[i].min, model[i].max));
 		},
 			
 		/** + `uniformMutation(maxPoints=Infinity)` builds a mutation function that makes at least 
@@ -1030,11 +1102,13 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 		*/
 		uniformMutation: function uniformMutation(maxPoints) {
 			max = isNaN(maxPoints) ? Infinity : +maxPoints;
+			var model = this.problem.elementModel();
 			return function mutation(element) {
-				var times = maxPoints;
+				var times = maxPoints, i, range;
 				element = this.problem.newElement(element.values); // Copy element.
 				do {
-					element.values[this.random.randomInt(element.length)] = this.random.random();
+					i = this.random.randomInt(model.length);
+					element.values[i] = this.random.random(model[i].min, model[i].max);
 				} while (this.random.randomBool(this.mutationRate) && --times > 0);
 				return element;
 			};
@@ -1044,18 +1118,20 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 		of its value, with a triangular distribution.
 		*/
 		singlepointBiasedMutation: function singlepointBiasedMutation(element) {
-			var random = this.random, 
+			var random = this.random,
+				model = this.problem.elementModel(),
 				i = random.randomInt(element.length);
-			return element.modification(i, element.values[i] + random.random() - random.random());
+			return element.modification(i, element.values[i] + 
+				(random.random() - random.random()) * (model[i].max - model[i].min));
 		},
 		
 		/** + `recombinationMutation(element)` swaps two values of the element at random.
 		*/
 		recombinationMutation: function recombinationMutation(element) {
 			var values = element.values.slice(),
-				i1 = this.random.randomInt(element.length),
+				i1 = this.random.randomInt(values.length),
 				v1 = values[i1],
-				i2 = this.random.randomInt(element.length), v2;
+				i2 = this.random.randomInt(values.length), v2;
 			if (i1 === i2) {
 				i2 = (i2 + 1) % element.length;
 			}
@@ -1065,33 +1141,46 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 		}
 	}, // GeneticAlgorithm.mutations
 	
-	toString: function toString() {
-		return (this.constructor.name || 'GeneticAlgorithm')+ '('+ JSON.stringify(this) +')';
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'GeneticAlgorithm',
+		serializer: function serialize_GeneticAlgorithm(obj) {
+			var params = obj.__params__('expansionRate', 'mutationRate');
+			//TODO serialize 'selection', 'crossover', 'mutation'
+			return [params];
+		}
 	}
 }); // declare GeneticAlgorithm.
 
 
 /** # Beam search
 
-[Beam search](http://en.wikipedia.org/wiki/Beam_search) is a form of parallel 
-best-first search with limited memory.
+[Beam search](http://en.wikipedia.org/wiki/Beam_search) is a form of parallel best-first search with 
+limited memory.
 */
 var BeamSearch = metaheuristics.BeamSearch = declare(Metaheuristic, {
-	/** The constructor does not take any special parameters.
+	/** The constructor m take any special parameters.
 	*/
 	constructor: function BeamSearch(params) {
 		Metaheuristic.call(this, params);
+		initialize(this, params)
+			/** A `delta` may be specified for the default `successors` for continuous variables.
+			*/
+			.number('delta', { ignore: true, coerce: true });
 	},
 	
-	/** `successors(element)` returns the elements' successors. The problem's 
-	element must have its `successors` method implemented.
+	/** `successors(element)` returns the elements' successors. The problem's element must have its 
+	`successors` method implemented.
 	*/
 	successors: function successors(element) {
-		return element.successors();
+		return element.neighbourhood(this.delta);
 	},
 	
-	/** The expansion in beam search adds all successors of all elements to the
-	state. After being evaluated and sieved only the best will remain.
+	/** The expansion in beam search adds all successors of all elements to the	state. After being 
+	evaluated and sieved only the best will remain.
 	*/
 	expansion: function expansion() {
 		var allSuccessors = [],
@@ -1105,16 +1194,12 @@ var BeamSearch = metaheuristics.BeamSearch = declare(Metaheuristic, {
 	
 	// ## Utilities ################################################################################
 	
-	toString: function toString() {
-		return (this.constructor.name || 'BeamSearch') +'('+ JSON.stringify(this) +')';
-	},
-	
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
-		identifier: exports.__package__ +'.BeamSearch',
-		serializer: function serialize_Metaheuristic(obj) {
-			return Metaheuristic.__SERMAT__.serializer.call(this, obj);
+		identifier: 'BeamSearch',
+		serializer: function serialize_BeamSearch(obj) {
+			return [obj.__params__('delta')];
 		}
 	}
 }); // declare BeamSearch.
@@ -1137,10 +1222,10 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 		/** + `minimumTemperature=0` is the temperature at the end of the run.
 		*/
 			.number('minimumTemperature', { defaultValue: 0, coerce: true })
-		/** + `delta=0.01` is the radius of the elements surroundings in every 
-		dimension, that is checked by this algorithm.
+		/** + `delta=1` is the radius of the elements surroundings in every dimension, that is 
+		checked by this algorithm.
 		*/
-			.number('delta', { defaultValue: 0.01, coerce: true })
+			.number('delta', { defaultValue: 1, coerce: true })
 		/** + `size=1` is 1 by default, but larger states are supported.
 		*/
 			.integer('size', { defaultValue: 1,	coerce: true })
@@ -1156,12 +1241,7 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 		radius = isNaN(radius) ? this.delta : +radius;
 		var i = this.random.randomInt(element.values.length), 
 			v = element.values[i];
-		if (this.random.randomBool()) {
-			v = Math.min(1, v + radius);
-		} else {
-			v = Math.max(0, v - radius);
-		}
-		return element.modification(i, v);
+		return element.modification(i, this.random.randomBool() ? v + radius : v - radius);
 	},
 	
 	/** The `acceptance(current, neighbour, temp=this.temperature())` is the probability of 
@@ -1174,7 +1254,7 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 			return 1; // Should always accept a better neighbour.
 		} else {
 			var d = -Math.abs(neighbour.evaluation - current.evaluation);
-			return Math.max(0, Math.min(1, Math.exp(d / temp)));
+			return clamp(Math.exp(d / temp), 0, 1);
 		}
 	},
 	
@@ -1201,7 +1281,7 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 		temperatureStat.add(temp, this.step);
 		return Future.all(this.state.map(function (elem) {
 			var neighbour = mh.randomNeighbour(elem);
-			return Future.when(neighbour.evaluate()).then(function () {
+			return Future.then(neighbour.evaluate(), function () {
 				var p = mh.acceptance(elem, neighbour, temp);
 				acceptanceStat.add(p, neighbour);
 				return mh.random.randomBool(p) ? neighbour : elem;
@@ -1214,8 +1294,16 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 		});
 	},
 
-	toString: function toString() {
-		return (this.constructor.name || 'SimulatedAnnealing') +'('+ JSON.stringify(this) +')';
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'SimulatedAnnealing',
+		serializer: function serialize_SimulatedAnnealing(obj) {
+			//TODO Serialize 'temperature'
+			return [obj.__params__('maximumTemperature', 'minimumTemperature', 'delta')];
+		}
 	}
 }); // declare SimulatedAnnealing.
 
@@ -1256,12 +1344,11 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 	initiate: function initiate(size) {
 		Metaheuristic.prototype.initiate.call(this, size);
 		var mh = this,
+			model = this.problem.elementModel(),
 			result = this.state.forEach(function (element) {
-				var len = element.values.length;
-				element.__velocity__ = new Array(len);
-				for (var i = 0; i < len; ++i) {
-					element.__velocity__[i] = mh.random.random(-1, +1);
-				}
+				element.__velocity__ = mh.random.randoms(element.values.length, -1, +1).map(function (v, i) {
+					return v * (model[i].max - model[i].min);
+				});
 				element.__localBest__ = element;
 			});
 		this.onInitiate();
@@ -1274,8 +1361,8 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 		var mh = this,
 			velocity = element.__velocity__,
 			localBest = element.__localBest__,
-			localCoef = this.random.random() * this.localAcceleration,
-			globalCoef = this.random.random() * this.globalAcceleration,
+			localCoef = this.random.random(this.localAcceleration),
+			globalCoef = this.random.random(this.globalAcceleration),
 			result = element.values.map(function (v, i) {
 				return velocity[i] * mh.inertia +
 					localCoef * (localBest.values[i] - v) +
@@ -1324,9 +1411,16 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 			return mh;
 		});
 	},
-		
-	toString: function toString() {
-		return (this.constructor.name || 'ParticleSwarm') +'('+ JSON.stringify(this) +')';
+	
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'ParticleSwarm',
+		serializer: function serialize_ParticleSwarm(obj) {
+			return [obj.__params__('inertia', 'localAcceleration', 'globalAcceleration')];
+		}
 	}
 }); // declare ParticleSwarm.
 
@@ -1367,19 +1461,21 @@ var DifferentialEvolution = metaheuristics.DifferentialEvolution = declare(Metah
 	expansion: function expansion() {
 		var mh = this,
 			result = this.state.map(function (element, elementIndex) {
-				var crossover = mh.random.choices(3, iterable(mh.state).filter(function (e, i) {
-						return i !== elementIndex;
-					})),
+				var stateCopy = mh.state.slice();
+				stateCopy.splice(elementIndex, 1);
+				var crossover = mh.random.choices(3, stateCopy),
 					a = crossover[0].values,
 					b = crossover[1].values,
 					c = crossover[2].values,
-					randomIndex = mh.random.randomInt(element.length),
-					newValues = [];
-				for (var i = 0; i < element.length; ++i) {
-					newValues.push(i === randomIndex || mh.random.randomBool(mh.crossoverProbability) ?
-						a[i] + mh.differentialWeight * (b[i] - c[i]) :
-						element.values[i]);
-				}
+					len = element.values.length,
+					randomIndex = mh.random.randomInt(len),
+					newValues = element.values.map(function (value, i) {
+						if (i === randomIndex || mh.random.randomBool(mh.crossoverProbability)) {
+							return a[i] + mh.differentialWeight * (b[i] - c[i]);
+						} else {
+							return value;
+						}
+					});
 				return mh.problem.newElement(newValues);
 			});
 		this.onExpand();
@@ -1388,24 +1484,12 @@ var DifferentialEvolution = metaheuristics.DifferentialEvolution = declare(Metah
 	
 	// ## Utilities ################################################################################
 	
-	toString: function toString() {
-		return (this.constructor.name || 'DifferentialEvolution') +'('+ JSON.stringify(this) +')';
-	},
-	
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
-		identifier: exports.__package__ +'.DifferentialEvolution',
-		serializer: function serialize_Metaheuristic(obj) {
-			/* return this.serializeAsProperties(obj, 
-				['differentialWeight', 'crossoverProbability'], 
-				this.superSerialize(obj)[0]);
-			*/
-			var result = Metaheuristic.__SERMAT__.serializer.call(this, obj),
-				props = result[0];
-			props.differentialWeight = obj.differentialWeight;
-			props.crossoverProbability = obj.crossoverProbability;
-			return result;
+		identifier: 'DifferentialEvolution',
+		serializer: function serialize_DifferentialEvolution(obj) {
+			return [obj.__params__('differentialWeight', 'crossoverProbability')];
 		}
 	}
 }); // declare DifferentialEvolution.
@@ -1436,8 +1520,10 @@ var EvolutionStrategy = metaheuristics.EvolutionStrategy = declare(Metaheuristic
 	*/
 	mutant: function mutant(element) {
 		var random = this.random,
+			model = this.problem.elementModel(),
 			newValues = element.values.map(function (v, i) {
-				return v + random.random() - random.random();
+				var range = model[i];
+				return v + (random.random() - random.random()) * (range.max - range.min);
 			});
 		return this.problem.newElement(newValues);
 	},
@@ -1466,8 +1552,15 @@ var EvolutionStrategy = metaheuristics.EvolutionStrategy = declare(Metaheuristic
 		return newElements;
 	},
 	
-	toString: function toString() {
-		return (this.constructor.name || 'EvolutionStrategy') +'('+ JSON.stringify(this) +')';
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'DistributionEstimation',
+		serializer: function serialize_DistributionEstimation(obj) {
+			return [obj.__params__('mutantCount')];
+		}
 	}
 }); // declare EvolutionStrategy.
 
@@ -1491,9 +1584,14 @@ var HarmonySearch = metaheuristics.HarmonySearch = declare(Metaheuristic, {
 			element.
 			*/
 			.number('adjustProbability', { coerce: true, defaultValue: 0.5, minimum: 0, maximum: 1 })
-			/** + `delta=0.1` is the distance between neighbouring states.
+			/** + `delta=1` is the distance between neighbouring states for discrete adjustments.
 			*/
-			.number('delta', { coerce: true, defaultValue: 0.1 });
+			.number('delta', { coerce: true, defaultValue: 1 })
+			/** + `fretWidth=0.01` is the maximum adjustment for continuous variables, expressed as 
+			a ratio of the range.
+			*/
+			.number('fretWidth', { coerce: true, defaultValue: 0.01 })
+			;
 	},
 	
 	/** At each step only one new element is generated. Each of its values is taken from another
@@ -1502,27 +1600,40 @@ var HarmonySearch = metaheuristics.HarmonySearch = declare(Metaheuristic, {
 	to `adjustProbability`.
 	*/
 	expansion: function expansion() {
-		var proto = this.state[0],
-			values = new Array(length);
-		for (var i = 0; i < proto.length; ++i) {
-			if (this.random.randomBool(this.harmonyProbability)) {
-				values[i] = this.random.choice(this.state).values[i];
-				if (this.random.randomBool(this.adjustProbability)) {
-					values[i] = values[i] + this.random.choice([-1, +1]) * this.delta;
+		var mh = this,
+			random = this.random,
+			model = this.problem.elementModel(),
+			values = model.map(function (range, i) {
+				if (random.randomBool(mh.harmonyProbability)) {
+					var value = random.choice(mh.state).values[i];
+					if (random.randomBool(mh.adjustProbability)) {
+						if (range.discrete) {
+							value += random.choice([-mh.delta, mh.delta]);
+						} else {
+							var span = range.max - range.min;
+							value += random.random(-span, +span) * mh.fretWidth;
+						}
+					}
+					return value;
+				} else {
+					return random.random(range.min, range.max);
 				}
-			} else {
-				values[i] = this.random.random();
-			}
-		}
+			});
 		this.onExpand();
 		return [this.problem.newElement(values)];
 	},
 	
-	toString: function toString() {
-		return (this.constructor.name || 'HarmonySearch') +'('+ JSON.stringify(this) +')';
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'HarmonySearch',
+		serializer: function serialize_HarmonySearch(obj) {
+			return [obj.__params__('harmonyProbability', 'adjustProbability', 'delta', 'fretWidth')];
+		}
 	}
 }); // declare HarmonySearch.
-
 
 /** # Distribution estimation
 
@@ -1565,18 +1676,17 @@ var DistributionEstimation = metaheuristics.DistributionEstimation = declare(Met
 	*/
 	histograms: function histograms() {
 		return DistributionEstimation.histograms(this.state, this.histogramWidth, 
-			this.problem.elementLength());
+			this.problem.elementModel().length);
 	},
 	
 	'static histograms': function histograms(state, histogramWidth, histogramCount) {
 		var size = state.length,
-			emptyCount = base.Iterable.repeat(0, histogramWidth).toArray(),
-			counts = base.Iterable.iterate(function (v) {
-				return v.slice(); // Shallow copy.
-			}, emptyCount, histogramCount).toArray();
+			counts = Iterable.iterate(function (v) { // Builds a matrix of zeroes.
+				return v.slice();
+			}, Iterable.repeat(0, histogramWidth).toArray(), histogramCount).toArray();
 		state.forEach(function (element) {
 			element.values.forEach(function (value, i) {
-				var bar = Math.min(histogramWidth - 1, Math.floor(element.values[i] * histogramWidth));
+				var bar = Math.min(histogramWidth - 1, Math.floor(element.values[i] * histogramWidth)); //FIXME Normalize.
 				counts[i][bar]++;
 			});
 		});
@@ -1667,8 +1777,13 @@ var DistributionEstimation = metaheuristics.DistributionEstimation = declare(Met
 	
 	// ## Other ####################################################################################
 	
-	toString: function toString() {
-		return (this.constructor.name || 'DistributionEstimation') +'('+ JSON.stringify(this) +')';
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'DistributionEstimation',
+		serializer: function serialize_DistributionEstimation(obj) {
+			return [obj.__params__('histogramWidth')];
+		}
 	}
 }); // declare DistributionEstimation.
 
@@ -1686,9 +1801,9 @@ var GradientDescent = metaheuristics.GradientDescent = declare(Metaheuristic, {
 	constructor: function HillClimbing(params) {
 		Metaheuristic.call(this, params);
 		initialize(this, params)
-		/** + `delta=0.01`: the maximum distance considered by gradient estimators.
+		/** + `delta=1`: the maximum distance considered by gradient estimators.
 		*/
-			.number('delta', { coerce: true, defaultValue: 0.01 })
+			.number('delta', { coerce: true, defaultValue: 1 })
 		/** + `size=1`: the state's size is 1 by default. This may be increased, resulting in many 
 		parallel descents.
 		*/
@@ -1775,10 +1890,15 @@ var GradientDescent = metaheuristics.GradientDescent = declare(Metaheuristic, {
 		throw new Error('GradientDescent.gradientSimultaneousPerturbation() is not implemented!');//TODO
 	},
 	
-	// ## Other ####################################################################################
+	// ## Utilities ################################################################################
 	
-	toString: function toString() {
-		return (this.constructor.name || 'GradientDescent') +'('+ JSON.stringify(this) +')';
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'GradientDescent',
+		serializer: function serialize_GradientDescent(obj) {
+			return [obj.__params__('delta')];
+		}
 	}
 }); // declare GradientDescent.
 
@@ -1800,30 +1920,28 @@ problems.HelloWorld = declare(Problem, {
 		initialize(this, params)
 			.string('target', { coerce: true, defaultValue: 'Hello world!' });
 		
-		this.__target__ = iterable(target).map(function (c) {
+		this.__target__ = iterable(this.target).map(function (c) {
 			return c.charCodeAt(0);
 		}).toArray();
-	},
-	
-	/** The elements' `length` is equal to the length of the target string.
-	*/
-	elementLength: function elementLength() {
-		return target.length;
+		/** The elements' length is equal to the length of the target string. Every value is between 
+		32 (inclusive) and 127 (exclusive), which is the range of visible characters in ASCII.
+		*/
+		this.__elementModel__ = Iterable.repeat({ min: 32, max: 127, discrete: true }, this.target.length).toArray();
 	},
 	
 	/** An element's values are always numbers. These are converted to a string by converting each 
 	number to its corresponding Unicode character.
 	*/
 	mapping: function mapping(element) {
-		return element.rangeMapping([32, 254]).map(function (n) {
-			return String.fromCharCode(n |0);
+		return element.values.map(function (v) {
+			return String.fromCharCode(Math.floor(v));
 		}).join('');
 	},
 			
 	/** An element evaluation is equal to its distance from target string.
 	*/
 	evaluation: function evaluation(element) {
-		return element.manhattanDistance(this.__target__, element.rangeMapping([32, 254]));
+		return element.manhattanDistance(this.__target__, element.values);
 	},		
 	
 	/** Since elements' evaluation is a distance, this value must be minimized to guide the search 
@@ -1834,7 +1952,18 @@ problems.HelloWorld = declare(Problem, {
 	/** An element is sufficient when its equal to the target string.
 	*/
 	sufficientElement: function sufficientElement(element) {
-		return this.mapping(element) === target;
+		return this.mapping(element) === this.target;
+	},
+	
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'HelloWorld',
+		serializer: function serialize_HelloWorld(obj) {
+			return [obj.__params__('target')];
+		}
 	}
 }); // declare HelloWorld.
 
@@ -1846,39 +1975,43 @@ Problem builder for test beds of algorithms in this library.
 
 /** The function `testbed` is a shortcut used to define the test problems.
 */
-var testbed = problems.testbed = function testbed(spec) {
-	var minimumValue = isNaN(spec.minimumValue) ? -1e6 : +spec.minimumValue,
-		maximumValue = isNaN(spec.maximumValue) ? +1e6 : +spec.maximumValue,
-		length = isNaN(spec.length) ? 2 : +spec.length;
-	return new Problem({
-		title: spec.title +"",
-		description: spec.description +"",
+var TestBed = problems.TestBed = declare(Problem, {
+	constructor: function TestBed(spec) {
+		Problem.call(this, spec);
+		this.title = spec.title;
 		
-		elementLength: function elementLength() {
-			return length;
-		},
+		var minimumValue = isNaN(spec.minimumValue) ? -1e6 : +spec.minimumValue,
+			maximumValue = isNaN(spec.maximumValue) ? +1e6 : +spec.maximumValue,
+			length = isNaN(spec.length) ? 2 : +spec.length;
+		this.__elementModel__ = Iterable.repeat({ min: minimumValue, max: maximumValue, discrete: !!spec.discreteDomain }, length).toArray();
 		
-		evaluation: function evaluation(element) {
-			return spec.evaluation(this.rangeMapping([minimumValue, maximumValue]));
-		},
+		this.evaluation = function evaluation(element) {
+			return spec.evaluation(element.values);
+		};
 		
 		/** The optimization type is defined by `spec.target`. Minimization is assumed by default.
 		*/
-		compare: !spec.hasOwnProperty('target') || spec.target === -Infinity ? Problem.prototype.minimization
-			: spec.target === Infinity ? Problem.prototype.maximization 
-			: function compare(e1, e2) {
+		if (!spec.hasOwnProperty('target') || spec.target === -Infinity) {
+			this.compare = Problem.prototype.minimization;
+		} else if (spec.target === Infinity) { 
+			this.compare = Problem.prototype.maximization;
+		} else {
+			this.compare = function compare(e1, e2) {
 				return this.approximation(spec.target, e1, e2);
-			},
-		
+			};
+		}
+			
 		/** If an optimum value is provided (`spec.optimumValue`) it is added to the termination
 		criteria.
 		*/
-		sufficientElement: spec.hasOwnProperty('optimumValue') ? function sufficientElement(element) {
+		if (spec.hasOwnProperty('optimumValue')) {
+			this.sufficientElement = function sufficientElement(element) {
 				return Math.abs(element.evaluation - spec.optimumValue) < element.resolution;
-			} : Problem.prototype.sufficientElement,
-	});
-}; // problems.testbed()
-
+			};
+		}
+	}
+});
+	
 /** Testbed problems taken from the web (e.g. 
 [1](http://en.wikipedia.org/wiki/Test_functions_for_optimization),
 [2](http://www.sfu.ca/~ssurjano/optimization.html), 
@@ -1893,7 +2026,8 @@ problems.testbeds = {
 		a = isNaN(a) ? 20 : +a;
 		b = isNaN(b) ? 0.2 : +b;
 		c = isNaN(c) ? 2 * Math.PI : +c;
-		return testbed({
+		return new TestBed({
+			title: "Ackley testbed",
 			length: length,
 			target: -Infinity,
 			minimumValue: -32.768, 
@@ -1916,7 +2050,8 @@ problems.testbeds = {
 	*/
 	crossInTray: function crossInTray(target) {
 		target = isNaN(target) ? -Infinity : +target;
-		return testbed({
+		return new TestBed({
+			title: "cross-in-tray testbed",
 			length: 2,
 			target: target,
 			minimumValue: -10,
@@ -1934,7 +2069,8 @@ problems.testbeds = {
 	regularly distributed.
 	*/
 	Griewank: function Griewank(length) {
-		return testbed({
+		return new TestBed({
+			title: "Griewank testbed",
 			length: length,
 			minimumValue: -600,
 			maximumValue: +600,
@@ -1955,7 +2091,8 @@ problems.testbeds = {
 	difficult local minima regions.
 	*/
 	Levy: function Levy(length) {
-		return testbed({
+		return new TestBed({
+			title: "Levy testbed",
 			length: length,
 			target: -Infinity,
 			minimumValue: -10,
@@ -1980,7 +2117,8 @@ problems.testbeds = {
 	*/
 	Michalewicz: function Michalewicz(length, m) {
 		m = isNaN(m) ? 10 : +m;
-		return testbed({
+		return new TestBed({
+			title: "Michalewicz testbed",
 			length: length,
 			target: -Infinity,
 			minimumValue: 0,
@@ -2001,7 +2139,8 @@ problems.testbeds = {
 	perm0: function perm0(d, beta) {
 		d = isNaN(d) ? 2 : Math.min(1, d|0);
 		beta = isNaN(beta) ? 0 : +beta;
-		return testbed({
+		return new TestBed({
+			title: "Perm(0,"+ d +","+ beta +") testbed",
 			length: d,
 			target: -Infinity,
 			minimumValue: -d,
@@ -2025,7 +2164,8 @@ problems.testbeds = {
 	local minima are regularly distributed.
 	*/
 	Rastrigin: function Rastrigin(length) {
-		return testbed({
+		return new TestBed({
+			title: "Rastrigin testbed",
 			length: length,
 			target: -Infinity,
 			minimumValue: -5.12,
@@ -2050,7 +2190,8 @@ problems.testbeds = {
 	Rosenbrock: function Rosenbrock(length, a, b) {
 		a = isNaN(a) ? 1 : +a;
 		b = isNaN(b) ? 100 : +b;
-		return testbed({
+		return new TestBed({
+			title: "Rosenbrock testbed",
 			length: length,
 			target: -Infinity,
 			optimumValue: 0,
@@ -2068,7 +2209,8 @@ problems.testbeds = {
 	local optima.
 	*/
 	Schwefel: function Schwefel(length) {
-		return testbed({
+		return new TestBed({
+			title: "Schwefel testbed",
 			length: length,
 			target: -Infinity,
 			minimumValue: -500,
@@ -2090,7 +2232,8 @@ problems.testbeds = {
 	search space has, but still only one global minimum (zero). 
 	*/
 	sphere: function sphere(length) {
-		return testbed({
+		return new TestBed({
+			title: "sphere testbed",
 			length: length,
 			target: -Infinity,
 			optimumValue: 0,
@@ -2111,7 +2254,8 @@ problems.testbeds = {
 	sumOptimization: function sumOptimization(length, target) {
 		length = isNaN(length) ? 2 : Math.max(1, length|0);
 		target = isNaN(target) ? -Infinity : +target;
-		return testbed({
+		return new TestBed({
+			title: "sum optimization testbed",			
 			length: length,
 			target: target,
 			minimumValue:  0,
@@ -2149,15 +2293,12 @@ problems.NQueensPuzzle = declare(Problem, {
 			.integer('N', { coerce: true, defaultValue: 8 });
 		
 		this.__rowRange__ = Iterable.range(this.N).toArray();
+		/** The representation is an array of `N` positions, indicating the row of the queen for 
+		each column.
+		*/
+		this.__elementModel__ = Iterable.repeat({ min: 0, max: this.N - 1, discrete: true }, this.N - 1).toArray();
 	},
-	
-	/** The representation is an array of `N` positions, indicating the row of the queen for each 
-	column.
-	*/
-	elementLength: function elementLength() {
-		return this.N;
-	},
-	
+		
 	mapping: function mapping(element) {
 		return element.setMapping(this.__rowRange__);
 	},
@@ -2165,7 +2306,7 @@ problems.NQueensPuzzle = declare(Problem, {
 	/** The elements' evaluation is the count of diagonals shared by queens pairwise.
 	*/
 	evaluation: function evaluation(element) {
-		var rows = this.mapping(),
+		var rows = this.mapping(element),
 			count = 0;
 		rows.forEach(function (row, i) {
 			for (var j = 1; i + j < rows.length; j++) {
@@ -2183,8 +2324,19 @@ problems.NQueensPuzzle = declare(Problem, {
 	
 	/** It is sufficient when no pair of queens share diagonals.
 	*/
-	sufficientElement: function sufficientElement() {
-		return this.evaluation === 0;
+	sufficientElement: function sufficientElement(element) {
+		return element.evaluation === 0;
+	},
+	
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'NQueensPuzzle',
+		serializer: function serialize_NQueensPuzzle(obj) {
+			return [obj.__params__('N')];
+		}
 	}
 }); // declare NQueensPuzzle
 
@@ -2229,27 +2381,21 @@ problems.KnapsackProblem = declare(Problem, {
 			/** + `items` is the set of items.
 			*/
 			.object('items', { ignore: true });
-	},
-
-	/** The problem's representation is an array with a number for each item. This number holds the 
-	selected amount for each item (from 0 up to the item's amount).
-	*/	
-	elementLength: function elementLength() {
-		return Object.keys(this.items).length;
+		/** The problem's representation is an array with a number for each item, in alphabetical 
+		order. Each number holds the selected amount for each item (from 0 up to the item's amount).
+		*/
+		var items = this.items;
+		this.__elementItems__ = Object.keys(items);
+		this.__elementItems__.sort();
+		this.__elementModel__ = this.__elementItems__.map(function (name) {
+			return { min: 0, max: +items[name].amount || 1, discrete: true };
+		});
 	},
 	
 	/** All elements are mapped to an object with the selected amount associated to each item.
 	*/
 	mapping: function mapping(element) {
-		var selection = {},
-			keys = Object.keys(problem.items);
-		keys.sort();
-		iterable(element.values).zip(keys).forEach(function (pair) {
-			var item = problem.items[pair[1]],
-				amount = pair[0] * (1 + (+item.amount || 1)) | 0;
-			selection[pair[1]] = amount;
-		});
-		return selection;
+		return iterable(this.__elementItems__).zip(Math.floor(element.values)).toObject();
 	},
 	
 	/** All elements are evaluated by calculating the worth of all included items. If their cost is 
@@ -2257,21 +2403,32 @@ problems.KnapsackProblem = declare(Problem, {
 	*/
 	evaluation: function evaluation(element) {
 		var selection = this.mapping(element),
+			items = this.items,
 			worth = 0,
 			cost = 0;
-		Object.keys(selection).forEach(function (name) {
-			var item = problem.items[name],
-				amount = selection[name];
+		iterable(selection).forEachApply(function (name, amount) {
+			var item = items[name];
 			worth += item.worth * amount;
 			cost += item.cost * amount;
 		});
-		return cost > problem.limit ? -worth : worth;
+		return cost > problem.limit ? -worth : worth; //FIXME Too punishing for going over the limit.
 	},
 	
 	/** The best selection of items is the one that maximizes worth, without exceeding the cost 
 	limit.
 	*/
-	compare: Problem.prototype.maximization
+	compare: Problem.prototype.maximization,
+	
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'KnapsackProblem',
+		serializer: function serialize_KnapsackProblem(obj) {
+			return [obj.__params__('limit', 'amount', 'items')];
+		}
+	}
 }); // declare KnapsackProblem
 
 /** # Association rules learning.
@@ -2290,37 +2447,36 @@ For further information, see:
 	SIGMOD 1997, Proceedings ACM SIGMOD International Conference on Management of Data.
 */
 var AssociationRuleLearning = problems.AssociationRuleLearning = declare(Problem, {
+	/** The constructors take the following parameters:
+	*/
 	constructor: function AssociationRuleLearning(params) {
 		Problem.call(this, params);
 		initialize(this, params)
-			/** TODO
+			/** + A `dataset` with which to test the association rules. It must be a sequence of
+			records (each an object).
 			*/
 			.object('dataset', { defaultValue: [] })
-			/** TODO
+			/** + A set of `keys` for the fields in the dataset.
 			*/
 			.array('keys');
-		//Element.call(this, problem, values, evaluation);
-	},
-	
-	elementLength: function elementLength() {
-		return keys.length;
+		/** The elements represent classic association rules, which treat each record as a set of 
+		`keys`. Each position in the element's values tells if the corresponding key belongs to the 
+		rule's antecedent or consequent; or neither. Empty antecedents and consequents always 
+		evaluate to false.
+		*/
+		this.__elementModel__ = Iterable.repeat({ min: 0, max: 2, discrete: true }, this.keys.length).toArray();
 	},
 	
 	// ## Evaluation ###############################################################################
 	
-	/** TODO The method `booleanRules` builds a representation for classic association rules, which treat
-	each record as a set of `keys`. Each position in the element's values tells if the corresponding
-	key belongs to the rule's antecedent or consequent; or neither. Empty antecedents and 
-	consequents always evaluate to false.
-	*/
-	
-	/** Turns the element into an association rule.
+	/** Turns the element into an association rule, i.e. an object with two disjunct sets of keys:
+	one for the antecedent and the other for the consequent.
 	*/
 	mapping: function mapping(element) {
 		var problem = this,
 			antecedent = [], 
 			consequent = [];
-		element.arrayMapping([0,1,2]).forEach(function (v, i) {
+		element.values.forEach(function (v, i) {
 			switch (v) {
 				case 1: antecedent.push(problem.keys[i]); break;
 				case 2: consequent.push(problem.keys[i]); break;
