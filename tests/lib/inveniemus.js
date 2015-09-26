@@ -296,7 +296,7 @@ var Element = exports.Element = declare({
 	`"Element(values, evaluation)"`.
 	*/
 	toString: function toString() {
-		return (this.constructor.name || 'Element') +"("+ JSON.stringify(this.values) +", "+ this.evaluation +")";
+		return "<"+ (this.constructor.name || 'Element') +" "+ JSON.stringify(this.values) +" "+ this.evaluation +">";
 	},
 	
 	/** Serialization and materialization using Sermat.
