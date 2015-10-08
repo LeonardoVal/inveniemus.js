@@ -13,9 +13,7 @@ A search and optimization library, focusing on [metaheuristics](http://en.wikipe
 
 and others.
 
-[![Built with Grunt](https://cdn.gruntjs.com/builtwith.png)](http://gruntjs.com/)
-
-[![NPM](https://nodei.co/npm/inveniemus.png)](https://www.npmjs.com/package/inveniemus)
+[![Built with Grunt](https://cdn.gruntjs.com/builtwith.png)](http://gruntjs.com/) [![NPM](https://nodei.co/npm/inveniemus.png?mini=true)](https://www.npmjs.com/package/inveniemus)
 
 Can be loaded with CommonJS (for Node), AMD (via [RequireJS](http://requirejs.org/)) or a script tag (sets 'inveniemus' in the global namespace). In order to work requires another library of mine called [creatartis-base](https://github.com/LeonardoVal/creatartis-base.js).
 
