@@ -39,9 +39,14 @@ function async_it(desc, func) { // Future friendly version of it().
 	it(desc, function () {
 		var finished = false;
 		runs(function () {
-			func().then(function () {
+			try {
+				func().then(function () {
+					finished = true;
+				});
+			} catch (err) {
+				console.error(err);
 				finished = true;
-			});
+			}
 		});
 		waitsFor(function () {
 			return finished;
