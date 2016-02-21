@@ -52,16 +52,18 @@
 			var graphData = [],
 				runMinimum = Infinity,
 				runMaximum = -Infinity,
-				metaheuristic = runner.metaheuristic = metaheuristic = eval('('+ $('#code').val() +')()');
-			metaheuristic.events.on('advanced', function () {
+				mh = runner.metaheuristic = eval('('+ $('#code').val() +')()');
+			mh.events.on('advanced', function () {
 				// Update evaluationGraph data with the run statistics.
-				var evaluationStats = metaheuristic.statistics.stat({key:'evaluation', step: metaheuristic.step}),
-					minimum = evaluationStats.minimum(),
-					maximum = evaluationStats.maximum();
+				var graphStat = mh.problem.objectives.length > 1
+					? mh.statistics.stat({key:'dominators', step: mh.step})
+					: mh.statistics.stat({key:'evaluation', step: mh.step}),
+					minimum = graphStat.minimum(),
+					maximum = graphStat.maximum();
 				graphData.push([
-					metaheuristic.step, 
+					mh.step, 
 					[null, minimum, null],
-					[minimum, evaluationStats.average(), maximum],
+					[minimum, graphStat.average(), maximum],
 					[null, maximum, null]
 				]);
 				runMinimum = Math.min(runMinimum, minimum - Math.abs(minimum) * 0.1);
@@ -71,7 +73,7 @@
 					valueRange: [runMinimum, runMaximum]
 				});
 			});
-			return metaheuristic.run().then(function (best) {
+			return mh.run().then(function (best) {
 				return console.log(best);
 			});
 		}); // run button click

@@ -24,7 +24,7 @@ function HelloWorldProblem(params) {
 	inveniemus.Problem.call(this, params); // Call to superclass constructor.
 	this.target = params.target;
 	this.__target__ = params.target.split('').map(function (chr) {
-		return c.charCodeAt(0);
+		return chr.charCodeAt(0);
 	});
 	this.__elementModel__ = this.__target__.map(function () {
 		return { min: 32, max: 126, discrete: true };
@@ -60,10 +60,12 @@ HelloWorldProblem.prototype.evaluation = function evaluation(element) {
 };
 ```
 
-Since the elements evaluation is a distance to the optimum, in order to get to it the evaluation must be minimized. This is specified by the `compare` method of the problem object. Optimization can be done in three possible ways: _maximization_, _minimization_ and _approximation_ (which is actually minimization of the distance to a given value, e.g. zero).
+Since the elements evaluation is a distance to the optimum, in order to get to it the evaluation must be minimized. This is specified by the `objectives` property of the problem object. This property holds an array of objectives, because Inveniemus supports multi-objective optimization. Still most frequently the objective is only one.
+
+Optimization can be done in three possible ways: _maximization_, _minimization_ and _approximation_ (which is actually minimization of the distance to a given value, e.g. zero). In an approximation the value to approximate is the objective. In a maximization the objective is `+Infinity` and in a minimization is `-Infinity`.
 
 ```javascript
-HelloWorldProblem.prototype.compare = inveniemus.Problem.prototype.minimization;
+HelloWorldProblem.prototype.objectives = [-Infinity];
 ```
 
 Finally, the problem may indicate when an element or list of elements is sufficient, and hence the optimization must stop. To indicate when an element is sufficient implement the `sufficientElement` method. To indicate when a list of elements is sufficient, implement the `sufficientElements` method. By default, a list of elements is sufficient if at least one of its elements is. Here defining the criteria for one element will work.
@@ -77,10 +79,13 @@ HelloWorldProblem.prototype.sufficientElement = function sufficientElement(eleme
 This problem can now be used with the metaheuristics provided by Inveniemus. In the following example it would be a random search.
 
 ```javascript
-var mh = new inveniemus.metaheuristic.Metaheuristic({ problem: new HelloWorldProblem("Hello world!") });
-mh.run().then(function () {
-	console.log("Best found: "+ mh.state[0] +" "+ JSON.stringify(mh.state[0].mapping()) +".");
-});
+(function () {
+	var problem = new HelloWorldProblem({ target: "Hello!" }),
+		mh = new inveniemus.Metaheuristic({ problem: problem });
+	mh.run().then(function () {
+		console.log("Best found: "+ mh.state[0] +" "+ JSON.stringify(mh.state[0].mapping()) +".");
+	});
+})();
 ```
 
 by [Leonardo Val](http://github.com/LeonardoVal).
