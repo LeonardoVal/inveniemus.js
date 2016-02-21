@@ -83,7 +83,7 @@ var Element = exports.Element = declare({
 				return value;
 			});
 		}
-		this.evaluation = +evaluation;
+		this.evaluation = evaluation;
 	},
 	
 	/** Whether this element is an actual solution or not is decided by `suffices()`. It holds the 
@@ -115,11 +115,6 @@ var Element = exports.Element = declare({
 			return e;
 		});
 	},
-	
-	/** The element's `resolution` is the minimal difference between elements' evaluations, below 
-	which two evaluations are considered equal.
-	*/
-	resolution: 1e-15,
 	
 	/** The [Hamming distance](http://en.wikipedia.org/wiki/Hamming_distance) between two arrays is 
 	the number of positions at which corresponding components are different. Arrays are assumed to 
@@ -315,26 +310,33 @@ var Element = exports.Element = declare({
 The Problem type represents a search or optimization problem in Inveniemus.
 */
 var Problem = exports.Problem = declare({
-	/** A problem should have a `title` to be displayed to the user.
-	*/
-	title: "",
-		
-	/** A `description` of the problem to be displayed to the user may also be appreciated.
-	*/
-	description: "",
-
-	/** Many operations in this class require a pseudorandom number generator. By default 
-	`base.Randomness.DEFAULT` is used.
-	*/
-	random: Randomness.DEFAULT,
-	
-	/** A Problem holds basically three things:	
+	/** The problem constructor takes the following parameters:	
 	*/
 	constructor: function Problem(params) {
+		params = params || {};
 		initialize(this, params)
-			.string('title', { coerce: true, ignore: true })
-			.string('description', { coerce: true, ignore: true })
-			.object('random', { ignore: true });
+			/** + A `title` to be displayed to the user.
+			*/
+			.string('title', { coerce: true, defaultValue: this.constructor.name || "" })
+			/** + A `description` of the problem to be displayed to the user may also be appreciated.
+			*/
+			.string('description', { coerce: true, defaultValue: "" })
+			/** + A `random` number generator, required by many operations. By default 
+				`base.Randomness.DEFAULT` is used.
+			*/
+			.object('random', { defaultValue: Randomness.DEFAULT });
+		/** + One or more `objectives`, which defines the mode of optimization. It may be either a
+			number or array of numbers, where `-Infinity` means minimization (the default),
+			`+Infinity` means maximization and a number means approximation to that value.
+		*/
+		var objectives = params.hasOwnProperty('objectives') ? params.objectives : -Infinity;
+		if (typeof params.objectives === 'number' && !isNaN(params.objectives)) {
+			this.objectives = [params.objectives];
+		} else if (Array.isArray(params.objectives)) {
+			this.objectives = params.objectives;
+		} else {
+			this.objectives = [-Infinity]; // Minimization is the default.
+		}
 	},
 
 	/** The `elementModel` is an array of ranges, each an array of two numbers defining the minimum
@@ -413,39 +415,74 @@ var Problem = exports.Problem = declare({
 	
 	/** How elements are compared with each other in the problem determines which kind of 
 	optimization is performed. The `compare` method implements the comparison between two elements. 
-	It follows the standard protocol of comparison functions; i.e. returns a positive number if 
-	`element2` is better than `element1`, a negative number if `element2` is worse then `element1`,
-	or zero otherwise. 
-	
-	Better and worse may mean less or greater evaluation (`minimization`), viceversa 
-	(`maximization`) or another criteria altogether. The default implementation is `minimization`.
+	It returns a positive number if `element2` is better than `element1`, a negative number if 
+	`element2` is worse then `element1`, or zero otherwise. Better and worse may mean less or 
+	greater evaluation (`minimization`), viceversa (`maximization`) or another criteria altogether.
 	*/
 	compare: function compare(element1, element2) {
-		return this.minimization(element1, element2);
+		if (this.objectives.length === 1) {
+			return this.singleObjectiveComparison(this.objectives[0], element1.evaluation, element2.evaluation);
+		} else {
+			return this.paretoComparison(this.objectives, element1.evaluation, element2.evaluation);
+		}
 	},
 	
-	/** A `maximization` compares two elements by evaluation in descending order.
+	/** A single objective optimization has three modes, given by the `objective` parameter: 
 	*/
-	maximization: function maximization(element1, element2) {
-		var d = element2.evaluation - element1.evaluation;
-		return isNaN(d) ? -Infinity : Math.abs(d) < element1.resolution ? 0 : d;
+	singleObjectiveComparison: function singleObjectiveComparison(objective, value1, value2) {
+		var d;
+		switch (objective) {
+			/** + `-Infinity` means minimization. */
+			case -Infinity: {
+				d = value2 - value1;
+				return isNaN(d) ? Infinity : d;
+			}
+			/** + `+Infinity` means maximization. */
+			case +Infinity: {
+				d = value1 - value2;
+				return isNaN(d) ? -Infinity : d;
+			}
+			/** + An actual number means approximation to said value. */ 
+			default: {
+				d = Math.abs(value2 - objective) - Math.abs(value1 - objective);
+				return isNaN(d) ? Infinity : d;
+			}
+		}
 	},
 	
-	/** A `minimization` compares two elements by evaluation in ascending order.
+	/** The [Pareto efficiency](https://en.wikipedia.org/wiki/Pareto_efficiency) is frequently used 
+	in multiobjective optimizations, yet it is not a complete order. The `paretoComparison` method 
+	takes an array of `objectives`, and two arrays of numbers to be compared. The result is an array 
+	of comparisons (-1, 0 or 1) with a `domination` property. If `domination` is:
+	
+	+ `< 0`: `element2` dominates `element1`.
+	
+	+ `> 0`: `element1` dominates `element2`.
+	
+	+ `= 0`: both elements are equally evaluated.
+	
+	+ `NaN`: elements could not be compared (i.e. their evaluations are different, but they do not 
+		dominate each other).
 	*/
-	minimization: function minimization(element1, element2) {
-		var d = element1.evaluation - element2.evaluation;
-		return isNaN(d) ? Infinity : Math.abs(d) < element1.resolution ? 0 : d;
+	paretoComparison: function paretoComparison(objectives, values1, values2) {
+		var worse = 0, better = 0,
+			problem = this,
+			result;
+		raiseIf(objectives.length !== values1.length, "Expected ", objectives.length, " evaluations, but got ", values1.length, "!");
+		raiseIf(objectives.length !== values2.length, "Expected ", objectives.length, " evaluations, but got ", values2.length, "!");
+		result = Iterable.zip(objectives, values1, values2).mapApply(function (objective, value1, value2) {
+			var r = problem.singleObjectiveComparison(objective, value1, value2);
+			if (r < 0) {
+				worse++;
+			} else if (r > 0) {
+				better++;
+			}
+			return r;
+		}).toArray();
+		result.domination = worse === 0 ? better : better === 0 ? -worse : NaN;
+		return result;
 	},
-		
-	/** An `approximation` compares two elements by distance of its evaluation to the given target 
-	value in ascending order.
-	*/
-	approximation: function approximation(target, element1, element2) {
-		var d = Math.abs(element1.evaluation - target) - Math.abs(element2.evaluation - target);
-		return isNaN(d) ? Infinity : Math.abs(d) < element1.resolution ? 0 : d;
-	},
-		
+	
 	// ## Utilities ################################################################################
 	
 	/** The default string representation of a Problem instance has this shape: 
@@ -601,11 +638,24 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		if (evalTime) evalTime.startTime();
 		elements = elements || this.state;
 		return Future.then(this.problem.evaluate(elements), function (results) {
-			elements.sort(mh.problem.compare.bind(mh.problem));
+			elements = mh.sort(elements);
 			if (evalTime) evalTime.addTime();
 			mh.onEvaluate(results);
 			return elements;
 		});
+	},
+	
+	/** `sort(elements)` TODO
+	*/	
+	sort: function sort(elements) {
+		elements = elements || this.state;
+		if (this.problem.objectives.length > 1) { // Multi-objective optimization.
+			elements = this.multiObjectiveSort(elements);
+		} else { // Single-objective optimization.
+			elements.sort(this.problem.compare.bind(this.problem));
+			elements.reverse();
+		}
+		return elements;
 	},
 	
 	/** `sieve(size=this.size)` cuts the current state down to the given size (or this.size by 
@@ -628,14 +678,32 @@ var Metaheuristic = exports.Metaheuristic = declare({
 
 	/** `analyze()` updates the process' statistics.
 	*/
-	analyze: function analyze() {
-		var keys = { key:'evaluation', step: this.step },
-			stat = this.statistics ? this.statistics.stat(keys) : new base.Statistic(keys);
-		this.state.forEach(function (element) {
-			stat.add(element.evaluation, element);
-		});
-		this.onAnalyze();
-		return stat;
+	analyze: function analyze(statistics) {
+		statistics = statistics || this.statistics;
+		var step = this.step;
+		if (statistics) {
+			if (typeof this.state[0].evaluation === 'number') { // Single-objective optimization.
+				var stat_evaluation = statistics.stat({ key:'evaluation', step: step });
+				this.state.forEach(function (element) {
+					stat_evaluation.add(element.evaluation, element);
+				});
+			} else if (Array.isArray(this.state[0].evaluation)) { // Multi-objective optimization.
+				var stats_evaluation = this.state[0].evaluation.map(function (_, i) {
+						return statistics.stat({ key:'evaluation', index: i, step: step });
+					}),
+					stat_dominators = statistics.stat({ key:'dominators', step: step }),
+					stat_dominated = statistics.stat({ key:'dominated', step: step });
+				this.state.forEach(function (element) {
+					element.evaluation.forEach(function (v, i) {
+						stats_evaluation[i].add(v, element);
+					});
+					stat_dominators.add(element.pareto.dominators.length, element);
+					stat_dominated.add(element.pareto.dominated.length, element);
+				});
+			}
+			this.onAnalyze();
+		}
+		return statistics;
 	},
 	
 	/** `advance()` performs one step of the optimization. If the process has not been initialized, 
@@ -752,7 +820,7 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	*/
 	onAdvance: function onAdvance() {
 		this.events.emit('advanced', this);
-		this.__log__('debug', 'Step ', this.step , ' has been completed. Nos proficimus.');
+		this.__log__('debug', 'Step ', this.step, ' has been completed. Nos proficimus.');
 	},
 	
 	/** + `analyzed` after the statistics are calculated.
@@ -767,6 +835,101 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	onFinish: function onFinish() {
 		this.events.emit('finished', this);
 		this.__log__('debug', 'Finished. Nos invenerunt!');
+	},
+	
+	// ## Multi-objective ##########################################################################
+	
+	/** A Pareto analysis of a set of elements compares all elements with each other, accounting the 
+	domination relationship between the elements. Every element gets a new property `pareto`, an 
+	object holding two arrays:
+	
+	+ `pareto.dominated` is a list of elements dominated by this element,
+	
+	+ `pareto.dominators` is a list of elements that dominate this element.
+	*/
+	paretoAnalysis: function paretoAnalysis(elements) {
+		elements = elements || this.state;
+		var len = elements.length,
+			i1, i2, elem1, elem2, domination;
+		for (i1 = 0; i1 < len; i1++) {
+			elements[i1].pareto = { dominated: [], dominators: [] };
+		}
+		for (i1 = 0; i1 < len; i1++) {
+			elem1 = elements[i1];
+			for (i2 = i1 + 1; i2 < len; i2++) {
+				elem2 = elements[i2];
+				domination = this.problem.compare(elem1, elem2).domination;
+				if (domination > 0) {
+					elem1.pareto.dominated.push(elem2);
+					elem2.pareto.dominators.push(elem1);
+				} else if (domination < 0) {
+					elem2.pareto.dominated.push(elem1);
+					elem1.pareto.dominators.push(elem2);
+				}
+			}
+		}
+		return elements;
+	},
+	
+	/** Sorting function used for multiobjective problems. By default uses `nonDominatedSort` (based
+	on NSGA).
+	*/
+	multiObjectiveSort: function multiObjectiveSort(elements) {
+		return this.nonDominatedSort(elements);
+	},
+	
+	/** The crowding distance is an estimation of the density of elements surrounding each element
+	in the given list (or the state by default). Every element will be added a `crowdingDistance` 
+	number property.
+	*/
+	crowdingDistance: function crowdingDistance(elements) {
+		elements = elements || this.state;
+		var es = elements.slice(), // shallow copy.
+			count = this.problem.objectives.length,
+			i, j;
+		for (i = 0; i < es.length; i++) {
+			es[i].crowdingDistance = 0;
+		}
+		for (i = 0; i < count; i++) {
+			es.sort(function (elem1, elem2) {
+				return elem1.evaluation[i] - elem2.evaluation[i];
+			});
+			es[0].crowdingDistance = Infinity;
+			es[es.length - 1].crowdingDistance = Infinity;
+			for (j = 1; j < es.length - 1; j++) {
+				es[j].crowdingDistance += es[j + 1].evaluation[i] - es[j - 1].evaluation[i]; 
+			}
+		}
+		return elements;
+	},
+	
+	/** The non-dominated sort is based on [_"A Fast Elitist Non-Dominated Sorting Genetic Algorithm
+	for Multi-Objective Optimization: NSGA-II"_ by Deb (2000)](http://citeseer.ist.psu.edu/viewdoc/summary?doi=10.1.1.18.4257).
+	*/
+	nonDominatedSort: function nonDominatedSort(elements) {
+		elements = this.paretoAnalysis(elements);
+		elements = this.crowdingDistance(elements);
+		elements.sort(function (elem1, elem2) {
+			return (elem1.pareto.dominators.length - elem2.pareto.dominators.length) ||
+				(elem2.crowdingDistance - elem1.crowdingDistance);
+		});
+		return elements;
+	},
+	
+	/** The Pareto strength of an element is defined as the sum of the amount of elements being 
+	dominated by all dominators of a given element. For more information see: [_"SPEA2: Improving 
+	the Strength Pareto Evolutionary Algorithm"_ by Zitzler et al (2001)](http://citeseer.ist.psu.edu/viewdoc/summary?doi=10.1.1.112.5073).
+	*/
+	strengthParetoSort: function strengthParetoSort(elements) {
+		elements = this.paretoAnalysis(elements);
+		iterable(elements).forEach(function (elem) {
+			elem.pareto.strength = iterable(elem.pareto.dominators).map(function (dominator) {
+				return dominator.pareto.dominated.length;
+			}).sum();
+		});
+		return elements.sort(function (elem1, elem2) { // Pareto strength must be minimized.
+			return elem1.pareto.strength - elem2.pareto.strength;
+		});
 	},
 	
 	// ## Utilities ################################################################################
@@ -851,7 +1014,7 @@ var HillClimbing = metaheuristics.HillClimbing = declare(Metaheuristic, {
 				return best;
 			});			
 		})).then(function (elems) {
-			elems.sort(mh.problem.compare.bind(mh.problem));
+			elems = mh.sort(elems);
 			mh.state = elems;
 			mh.__localOptima__ = localOptima;
 			mh.onUpdate();
@@ -1287,7 +1450,7 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 				return mh.random.randomBool(p) ? neighbour : elem;
 			});
 		})).then(function (elems) {
-			elems.sort(mh.problem.compare.bind(mh.problem));
+			elems = mh.sort(elems);
 			mh.state = elems;
 			mh.onUpdate();
 			return mh;
@@ -1402,8 +1565,8 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 		return Future.all(this.state.map(function (element) {
 			return mh.nextElement(element, globalBest);
 		})).then(function (elements) {
+			elements = mh.sort(elements);
 			mh.state = elements;
-			elements.sort(mh.problem.compare.bind(mh.problem));
 			if (mh.problem.compare(mh.__globalBest__, elements[0]) > 0) {
 				mh.__globalBest__ = elements[0];
 			}
@@ -1989,18 +2152,6 @@ var TestBed = problems.TestBed = declare(Problem, {
 			return spec.evaluation(element.values);
 		};
 		
-		/** The optimization type is defined by `spec.target`. Minimization is assumed by default.
-		*/
-		if (!spec.hasOwnProperty('target') || spec.target === -Infinity) {
-			this.compare = Problem.prototype.minimization;
-		} else if (spec.target === Infinity) { 
-			this.compare = Problem.prototype.maximization;
-		} else {
-			this.compare = function compare(e1, e2) {
-				return this.approximation(spec.target, e1, e2);
-			};
-		}
-			
 		/** If an optimum value is provided (`spec.optimumValue`) it is added to the termination
 		criteria.
 		*/
@@ -2029,7 +2180,7 @@ problems.testbeds = {
 		return new TestBed({
 			title: "Ackley testbed",
 			length: length,
-			target: -Infinity,
+			objectives: -Infinity,
 			minimumValue: -32.768, 
 			maximumValue: +32.768,			
 			optimumValue: 0,			
@@ -2053,7 +2204,7 @@ problems.testbeds = {
 		return new TestBed({
 			title: "cross-in-tray testbed",
 			length: 2,
-			target: target,
+			objectives: target,
 			minimumValue: -10,
 			maximumValue: +10,
 			evaluation: function evaluation(vs) {
@@ -2094,7 +2245,7 @@ problems.testbeds = {
 		return new TestBed({
 			title: "Levy testbed",
 			length: length,
-			target: -Infinity,
+			objectives: -Infinity,
 			minimumValue: -10,
 			maximumValue: +10,
 			optimumValue: 0,
@@ -2120,7 +2271,7 @@ problems.testbeds = {
 		return new TestBed({
 			title: "Michalewicz testbed",
 			length: length,
-			target: -Infinity,
+			objectives: -Infinity,
 			minimumValue: 0,
 			maximumValue: Math.PI,
 			evaluation: function evaluation(vs) {
@@ -2142,7 +2293,7 @@ problems.testbeds = {
 		return new TestBed({
 			title: "Perm(0,"+ d +","+ beta +") testbed",
 			length: d,
-			target: -Infinity,
+			objectives: -Infinity,
 			minimumValue: -d,
 			maximumValue: +d,
 			optimumValue: 0,
@@ -2167,7 +2318,7 @@ problems.testbeds = {
 		return new TestBed({
 			title: "Rastrigin testbed",
 			length: length,
-			target: -Infinity,
+			objectives: -Infinity,
 			minimumValue: -5.12,
 			maximumValue: +5.12,
 			optimumValue: 0,
@@ -2193,7 +2344,7 @@ problems.testbeds = {
 		return new TestBed({
 			title: "Rosenbrock testbed",
 			length: length,
-			target: -Infinity,
+			objectives: -Infinity,
 			optimumValue: 0,
 			evaluation: function evaluation(vs) {
 				var result = 0;
@@ -2212,7 +2363,7 @@ problems.testbeds = {
 		return new TestBed({
 			title: "Schwefel testbed",
 			length: length,
-			target: -Infinity,
+			objectives: -Infinity,
 			minimumValue: -500,
 			maximumValue: +500,
 			optimumValue: 0,
@@ -2235,7 +2386,7 @@ problems.testbeds = {
 		return new TestBed({
 			title: "sphere testbed",
 			length: length,
-			target: -Infinity,
+			objectives: -Infinity,
 			optimumValue: 0,
 			evaluation: function evaluation(vs) {
 				var result = 0;
@@ -2257,7 +2408,7 @@ problems.testbeds = {
 		return new TestBed({
 			title: "sum optimization testbed",			
 			length: length,
-			target: target,
+			objectives: target,
 			minimumValue:  0,
 			maximumValue: +1,
 			optimumValue: target === -Infinity ? 0 : target === +Infinity ? length : target,
@@ -2267,6 +2418,62 @@ problems.testbeds = {
 					result += vs[i];
 				}
 				return result;
+			}
+		});
+	},
+	
+	// ## Multi-objective ##########################################################################
+	
+	/** Multiobjective optimization problems taken from [_"Comparison of Multiobjective Evolutionary
+	Algorithms: Empirical Results"_ by Zitzler, Deb and Thiele (2000)](http://www.tik.ee.ethz.ch/sop/publicationListFiles/zdt2000a.pdf).
+	*/
+	ZDT1: function ZDT1(length) {
+		length = isNaN(length) ? 30 : Math.max(1, length|0);
+		return new TestBed({
+			title: "Zitzler-Deb-Thiele function 1",			
+			length: length,
+			objectives: [-Infinity, -Infinity],
+			minimumValue:  0,
+			maximumValue: +1,
+			evaluation: function evaluation(vs) {
+				var f1 = vs[0],
+					g = iterable(vs).tail().sum() / (vs.length - 1) * 9,
+					h = 1 - Math.sqrt(f1 / g);
+				return [f1, g * h];
+			}
+		});
+	},
+	
+	ZDT2: function ZDT2(length) {
+		length = isNaN(length) ? 30 : Math.max(1, length|0);
+		return new TestBed({
+			title: "Zitzler-Deb-Thiele function 2",			
+			length: length,
+			objectives: [-Infinity, -Infinity],
+			minimumValue:  0,
+			maximumValue: +1,
+			evaluation: function evaluation(vs) {
+				var f1 = vs[0],
+					g = iterable(vs).tail().sum() / (vs.length - 1) * 9,
+					h = 1 - Math.pow(f1 / g, 2);
+				return [f1, g * h];
+			}
+		});
+	},
+	
+	ZDT3: function ZDT3(length) {
+		length = isNaN(length) ? 30 : Math.max(1, length|0);
+		return new TestBed({
+			title: "Zitzler-Deb-Thiele function 3",			
+			length: length,
+			objectives: [-Infinity, -Infinity],
+			minimumValue:  0,
+			maximumValue: +1,
+			evaluation: function evaluation(vs) {
+				var f1 = vs[0],
+					g = iterable(vs).tail().sum() / (vs.length - 1) * 9,
+					h = 1 - Math.sqrt(f1 / g) - (f1 / g) * Math.sin(10 * Math.PI * f1);
+				return [f1, g * h];
 			}
 		});
 	}
