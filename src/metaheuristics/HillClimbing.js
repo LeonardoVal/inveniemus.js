@@ -38,7 +38,7 @@ var HillClimbing = metaheuristics.HillClimbing = declare(Metaheuristic, {
 				return best;
 			});			
 		})).then(function (elems) {
-			elems.sort(mh.problem.compare.bind(mh.problem));
+			elems = mh.sort(elems);
 			mh.state = elems;
 			mh.__localOptima__ = localOptima;
 			mh.onUpdate();

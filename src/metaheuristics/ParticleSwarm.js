@@ -92,8 +92,8 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 		return Future.all(this.state.map(function (element) {
 			return mh.nextElement(element, globalBest);
 		})).then(function (elements) {
+			elements = mh.sort(elements);
 			mh.state = elements;
-			elements.sort(mh.problem.compare.bind(mh.problem));
 			if (mh.problem.compare(mh.__globalBest__, elements[0]) > 0) {
 				mh.__globalBest__ = elements[0];
 			}

@@ -19,18 +19,6 @@ var TestBed = problems.TestBed = declare(Problem, {
 			return spec.evaluation(element.values);
 		};
 		
-		/** The optimization type is defined by `spec.target`. Minimization is assumed by default.
-		*/
-		if (!spec.hasOwnProperty('target') || spec.target === -Infinity) {
-			this.compare = Problem.prototype.minimization;
-		} else if (spec.target === Infinity) { 
-			this.compare = Problem.prototype.maximization;
-		} else {
-			this.compare = function compare(e1, e2) {
-				return this.approximation(spec.target, e1, e2);
-			};
-		}
-			
 		/** If an optimum value is provided (`spec.optimumValue`) it is added to the termination
 		criteria.
 		*/
@@ -59,7 +47,7 @@ problems.testbeds = {
 		return new TestBed({
 			title: "Ackley testbed",
 			length: length,
-			target: -Infinity,
+			objectives: -Infinity,
 			minimumValue: -32.768, 
 			maximumValue: +32.768,			
 			optimumValue: 0,			
@@ -83,7 +71,7 @@ problems.testbeds = {
 		return new TestBed({
 			title: "cross-in-tray testbed",
 			length: 2,
-			target: target,
+			objectives: target,
 			minimumValue: -10,
 			maximumValue: +10,
 			evaluation: function evaluation(vs) {
@@ -124,7 +112,7 @@ problems.testbeds = {
 		return new TestBed({
 			title: "Levy testbed",
 			length: length,
-			target: -Infinity,
+			objectives: -Infinity,
 			minimumValue: -10,
 			maximumValue: +10,
 			optimumValue: 0,
@@ -150,7 +138,7 @@ problems.testbeds = {
 		return new TestBed({
 			title: "Michalewicz testbed",
 			length: length,
-			target: -Infinity,
+			objectives: -Infinity,
 			minimumValue: 0,
 			maximumValue: Math.PI,
 			evaluation: function evaluation(vs) {
@@ -172,7 +160,7 @@ problems.testbeds = {
 		return new TestBed({
 			title: "Perm(0,"+ d +","+ beta +") testbed",
 			length: d,
-			target: -Infinity,
+			objectives: -Infinity,
 			minimumValue: -d,
 			maximumValue: +d,
 			optimumValue: 0,
@@ -197,7 +185,7 @@ problems.testbeds = {
 		return new TestBed({
 			title: "Rastrigin testbed",
 			length: length,
-			target: -Infinity,
+			objectives: -Infinity,
 			minimumValue: -5.12,
 			maximumValue: +5.12,
 			optimumValue: 0,
@@ -223,7 +211,7 @@ problems.testbeds = {
 		return new TestBed({
 			title: "Rosenbrock testbed",
 			length: length,
-			target: -Infinity,
+			objectives: -Infinity,
 			optimumValue: 0,
 			evaluation: function evaluation(vs) {
 				var result = 0;
@@ -242,7 +230,7 @@ problems.testbeds = {
 		return new TestBed({
 			title: "Schwefel testbed",
 			length: length,
-			target: -Infinity,
+			objectives: -Infinity,
 			minimumValue: -500,
 			maximumValue: +500,
 			optimumValue: 0,
@@ -265,7 +253,7 @@ problems.testbeds = {
 		return new TestBed({
 			title: "sphere testbed",
 			length: length,
-			target: -Infinity,
+			objectives: -Infinity,
 			optimumValue: 0,
 			evaluation: function evaluation(vs) {
 				var result = 0;
@@ -287,7 +275,7 @@ problems.testbeds = {
 		return new TestBed({
 			title: "sum optimization testbed",			
 			length: length,
-			target: target,
+			objectives: target,
 			minimumValue:  0,
 			maximumValue: +1,
 			optimumValue: target === -Infinity ? 0 : target === +Infinity ? length : target,
@@ -297,6 +285,62 @@ problems.testbeds = {
 					result += vs[i];
 				}
 				return result;
+			}
+		});
+	},
+	
+	// ## Multi-objective ##########################################################################
+	
+	/** Multiobjective optimization problems taken from [_"Comparison of Multiobjective Evolutionary
+	Algorithms: Empirical Results"_ by Zitzler, Deb and Thiele (2000)](http://www.tik.ee.ethz.ch/sop/publicationListFiles/zdt2000a.pdf).
+	*/
+	ZDT1: function ZDT1(length) {
+		length = isNaN(length) ? 30 : Math.max(1, length|0);
+		return new TestBed({
+			title: "Zitzler-Deb-Thiele function 1",			
+			length: length,
+			objectives: [-Infinity, -Infinity],
+			minimumValue:  0,
+			maximumValue: +1,
+			evaluation: function evaluation(vs) {
+				var f1 = vs[0],
+					g = iterable(vs).tail().sum() / (vs.length - 1) * 9,
+					h = 1 - Math.sqrt(f1 / g);
+				return [f1, g * h];
+			}
+		});
+	},
+	
+	ZDT2: function ZDT2(length) {
+		length = isNaN(length) ? 30 : Math.max(1, length|0);
+		return new TestBed({
+			title: "Zitzler-Deb-Thiele function 2",			
+			length: length,
+			objectives: [-Infinity, -Infinity],
+			minimumValue:  0,
+			maximumValue: +1,
+			evaluation: function evaluation(vs) {
+				var f1 = vs[0],
+					g = iterable(vs).tail().sum() / (vs.length - 1) * 9,
+					h = 1 - Math.pow(f1 / g, 2);
+				return [f1, g * h];
+			}
+		});
+	},
+	
+	ZDT3: function ZDT3(length) {
+		length = isNaN(length) ? 30 : Math.max(1, length|0);
+		return new TestBed({
+			title: "Zitzler-Deb-Thiele function 3",			
+			length: length,
+			objectives: [-Infinity, -Infinity],
+			minimumValue:  0,
+			maximumValue: +1,
+			evaluation: function evaluation(vs) {
+				var f1 = vs[0],
+					g = iterable(vs).tail().sum() / (vs.length - 1) * 9,
+					h = 1 - Math.sqrt(f1 / g) - (f1 / g) * Math.sin(10 * Math.PI * f1);
+				return [f1, g * h];
 			}
 		});
 	}

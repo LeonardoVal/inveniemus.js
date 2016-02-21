@@ -116,11 +116,24 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		if (evalTime) evalTime.startTime();
 		elements = elements || this.state;
 		return Future.then(this.problem.evaluate(elements), function (results) {
-			elements.sort(mh.problem.compare.bind(mh.problem));
+			elements = mh.sort(elements);
 			if (evalTime) evalTime.addTime();
 			mh.onEvaluate(results);
 			return elements;
 		});
+	},
+	
+	/** `sort(elements)` TODO
+	*/	
+	sort: function sort(elements) {
+		elements = elements || this.state;
+		if (this.problem.objectives.length > 1) { // Multi-objective optimization.
+			elements = this.multiObjectiveSort(elements);
+		} else { // Single-objective optimization.
+			elements.sort(this.problem.compare.bind(this.problem));
+			elements.reverse();
+		}
+		return elements;
 	},
 	
 	/** `sieve(size=this.size)` cuts the current state down to the given size (or this.size by 
@@ -143,14 +156,32 @@ var Metaheuristic = exports.Metaheuristic = declare({
 
 	/** `analyze()` updates the process' statistics.
 	*/
-	analyze: function analyze() {
-		var keys = { key:'evaluation', step: this.step },
-			stat = this.statistics ? this.statistics.stat(keys) : new base.Statistic(keys);
-		this.state.forEach(function (element) {
-			stat.add(element.evaluation, element);
-		});
-		this.onAnalyze();
-		return stat;
+	analyze: function analyze(statistics) {
+		statistics = statistics || this.statistics;
+		var step = this.step;
+		if (statistics) {
+			if (typeof this.state[0].evaluation === 'number') { // Single-objective optimization.
+				var stat_evaluation = statistics.stat({ key:'evaluation', step: step });
+				this.state.forEach(function (element) {
+					stat_evaluation.add(element.evaluation, element);
+				});
+			} else if (Array.isArray(this.state[0].evaluation)) { // Multi-objective optimization.
+				var stats_evaluation = this.state[0].evaluation.map(function (_, i) {
+						return statistics.stat({ key:'evaluation', index: i, step: step });
+					}),
+					stat_dominators = statistics.stat({ key:'dominators', step: step }),
+					stat_dominated = statistics.stat({ key:'dominated', step: step });
+				this.state.forEach(function (element) {
+					element.evaluation.forEach(function (v, i) {
+						stats_evaluation[i].add(v, element);
+					});
+					stat_dominators.add(element.pareto.dominators.length, element);
+					stat_dominated.add(element.pareto.dominated.length, element);
+				});
+			}
+			this.onAnalyze();
+		}
+		return statistics;
 	},
 	
 	/** `advance()` performs one step of the optimization. If the process has not been initialized, 
@@ -267,7 +298,7 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	*/
 	onAdvance: function onAdvance() {
 		this.events.emit('advanced', this);
-		this.__log__('debug', 'Step ', this.step , ' has been completed. Nos proficimus.');
+		this.__log__('debug', 'Step ', this.step, ' has been completed. Nos proficimus.');
 	},
 	
 	/** + `analyzed` after the statistics are calculated.
@@ -282,6 +313,101 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	onFinish: function onFinish() {
 		this.events.emit('finished', this);
 		this.__log__('debug', 'Finished. Nos invenerunt!');
+	},
+	
+	// ## Multi-objective ##########################################################################
+	
+	/** A Pareto analysis of a set of elements compares all elements with each other, accounting the 
+	domination relationship between the elements. Every element gets a new property `pareto`, an 
+	object holding two arrays:
+	
+	+ `pareto.dominated` is a list of elements dominated by this element,
+	
+	+ `pareto.dominators` is a list of elements that dominate this element.
+	*/
+	paretoAnalysis: function paretoAnalysis(elements) {
+		elements = elements || this.state;
+		var len = elements.length,
+			i1, i2, elem1, elem2, domination;
+		for (i1 = 0; i1 < len; i1++) {
+			elements[i1].pareto = { dominated: [], dominators: [] };
+		}
+		for (i1 = 0; i1 < len; i1++) {
+			elem1 = elements[i1];
+			for (i2 = i1 + 1; i2 < len; i2++) {
+				elem2 = elements[i2];
+				domination = this.problem.compare(elem1, elem2).domination;
+				if (domination > 0) {
+					elem1.pareto.dominated.push(elem2);
+					elem2.pareto.dominators.push(elem1);
+				} else if (domination < 0) {
+					elem2.pareto.dominated.push(elem1);
+					elem1.pareto.dominators.push(elem2);
+				}
+			}
+		}
+		return elements;
+	},
+	
+	/** Sorting function used for multiobjective problems. By default uses `nonDominatedSort` (based
+	on NSGA).
+	*/
+	multiObjectiveSort: function multiObjectiveSort(elements) {
+		return this.nonDominatedSort(elements);
+	},
+	
+	/** The crowding distance is an estimation of the density of elements surrounding each element
+	in the given list (or the state by default). Every element will be added a `crowdingDistance` 
+	number property.
+	*/
+	crowdingDistance: function crowdingDistance(elements) {
+		elements = elements || this.state;
+		var es = elements.slice(), // shallow copy.
+			count = this.problem.objectives.length,
+			i, j;
+		for (i = 0; i < es.length; i++) {
+			es[i].crowdingDistance = 0;
+		}
+		for (i = 0; i < count; i++) {
+			es.sort(function (elem1, elem2) {
+				return elem1.evaluation[i] - elem2.evaluation[i];
+			});
+			es[0].crowdingDistance = Infinity;
+			es[es.length - 1].crowdingDistance = Infinity;
+			for (j = 1; j < es.length - 1; j++) {
+				es[j].crowdingDistance += es[j + 1].evaluation[i] - es[j - 1].evaluation[i]; 
+			}
+		}
+		return elements;
+	},
+	
+	/** The non-dominated sort is based on [_"A Fast Elitist Non-Dominated Sorting Genetic Algorithm
+	for Multi-Objective Optimization: NSGA-II"_ by Deb (2000)](http://citeseer.ist.psu.edu/viewdoc/summary?doi=10.1.1.18.4257).
+	*/
+	nonDominatedSort: function nonDominatedSort(elements) {
+		elements = this.paretoAnalysis(elements);
+		elements = this.crowdingDistance(elements);
+		elements.sort(function (elem1, elem2) {
+			return (elem1.pareto.dominators.length - elem2.pareto.dominators.length) ||
+				(elem2.crowdingDistance - elem1.crowdingDistance);
+		});
+		return elements;
+	},
+	
+	/** The Pareto strength of an element is defined as the sum of the amount of elements being 
+	dominated by all dominators of a given element. For more information see: [_"SPEA2: Improving 
+	the Strength Pareto Evolutionary Algorithm"_ by Zitzler et al (2001)](http://citeseer.ist.psu.edu/viewdoc/summary?doi=10.1.1.112.5073).
+	*/
+	strengthParetoSort: function strengthParetoSort(elements) {
+		elements = this.paretoAnalysis(elements);
+		iterable(elements).forEach(function (elem) {
+			elem.pareto.strength = iterable(elem.pareto.dominators).map(function (dominator) {
+				return dominator.pareto.dominated.length;
+			}).sum();
+		});
+		return elements.sort(function (elem1, elem2) { // Pareto strength must be minimized.
+			return elem1.pareto.strength - elem2.pareto.strength;
+		});
 	},
 	
 	// ## Utilities ################################################################################

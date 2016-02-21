@@ -37,7 +37,7 @@ var Element = exports.Element = declare({
 				return value;
 			});
 		}
-		this.evaluation = +evaluation;
+		this.evaluation = evaluation;
 	},
 	
 	/** Whether this element is an actual solution or not is decided by `suffices()`. It holds the 
@@ -69,11 +69,6 @@ var Element = exports.Element = declare({
 			return e;
 		});
 	},
-	
-	/** The element's `resolution` is the minimal difference between elements' evaluations, below 
-	which two evaluations are considered equal.
-	*/
-	resolution: 1e-15,
 	
 	/** The [Hamming distance](http://en.wikipedia.org/wiki/Hamming_distance) between two arrays is 
 	the number of positions at which corresponding components are different. Arrays are assumed to 

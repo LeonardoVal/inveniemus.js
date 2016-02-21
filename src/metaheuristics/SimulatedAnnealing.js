@@ -80,7 +80,7 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 				return mh.random.randomBool(p) ? neighbour : elem;
 			});
 		})).then(function (elems) {
-			elems.sort(mh.problem.compare.bind(mh.problem));
+			elems = mh.sort(elems);
 			mh.state = elems;
 			mh.onUpdate();
 			return mh;

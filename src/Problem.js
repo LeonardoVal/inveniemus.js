@@ -3,26 +3,33 @@
 The Problem type represents a search or optimization problem in Inveniemus.
 */
 var Problem = exports.Problem = declare({
-	/** A problem should have a `title` to be displayed to the user.
-	*/
-	title: "",
-		
-	/** A `description` of the problem to be displayed to the user may also be appreciated.
-	*/
-	description: "",
-
-	/** Many operations in this class require a pseudorandom number generator. By default 
-	`base.Randomness.DEFAULT` is used.
-	*/
-	random: Randomness.DEFAULT,
-	
-	/** A Problem holds basically three things:	
+	/** The problem constructor takes the following parameters:	
 	*/
 	constructor: function Problem(params) {
+		params = params || {};
 		initialize(this, params)
-			.string('title', { coerce: true, ignore: true })
-			.string('description', { coerce: true, ignore: true })
-			.object('random', { ignore: true });
+			/** + A `title` to be displayed to the user.
+			*/
+			.string('title', { coerce: true, defaultValue: this.constructor.name || "" })
+			/** + A `description` of the problem to be displayed to the user may also be appreciated.
+			*/
+			.string('description', { coerce: true, defaultValue: "" })
+			/** + A `random` number generator, required by many operations. By default 
+				`base.Randomness.DEFAULT` is used.
+			*/
+			.object('random', { defaultValue: Randomness.DEFAULT });
+		/** + One or more `objectives`, which defines the mode of optimization. It may be either a
+			number or array of numbers, where `-Infinity` means minimization (the default),
+			`+Infinity` means maximization and a number means approximation to that value.
+		*/
+		var objectives = params.hasOwnProperty('objectives') ? params.objectives : -Infinity;
+		if (typeof params.objectives === 'number' && !isNaN(params.objectives)) {
+			this.objectives = [params.objectives];
+		} else if (Array.isArray(params.objectives)) {
+			this.objectives = params.objectives;
+		} else {
+			this.objectives = [-Infinity]; // Minimization is the default.
+		}
 	},
 
 	/** The `elementModel` is an array of ranges, each an array of two numbers defining the minimum
@@ -101,39 +108,74 @@ var Problem = exports.Problem = declare({
 	
 	/** How elements are compared with each other in the problem determines which kind of 
 	optimization is performed. The `compare` method implements the comparison between two elements. 
-	It follows the standard protocol of comparison functions; i.e. returns a positive number if 
-	`element2` is better than `element1`, a negative number if `element2` is worse then `element1`,
-	or zero otherwise. 
-	
-	Better and worse may mean less or greater evaluation (`minimization`), viceversa 
-	(`maximization`) or another criteria altogether. The default implementation is `minimization`.
+	It returns a positive number if `element2` is better than `element1`, a negative number if 
+	`element2` is worse then `element1`, or zero otherwise. Better and worse may mean less or 
+	greater evaluation (`minimization`), viceversa (`maximization`) or another criteria altogether.
 	*/
 	compare: function compare(element1, element2) {
-		return this.minimization(element1, element2);
+		if (this.objectives.length === 1) {
+			return this.singleObjectiveComparison(this.objectives[0], element1.evaluation, element2.evaluation);
+		} else {
+			return this.paretoComparison(this.objectives, element1.evaluation, element2.evaluation);
+		}
 	},
 	
-	/** A `maximization` compares two elements by evaluation in descending order.
+	/** A single objective optimization has three modes, given by the `objective` parameter: 
 	*/
-	maximization: function maximization(element1, element2) {
-		var d = element2.evaluation - element1.evaluation;
-		return isNaN(d) ? -Infinity : Math.abs(d) < element1.resolution ? 0 : d;
+	singleObjectiveComparison: function singleObjectiveComparison(objective, value1, value2) {
+		var d;
+		switch (objective) {
+			/** + `-Infinity` means minimization. */
+			case -Infinity: {
+				d = value2 - value1;
+				return isNaN(d) ? Infinity : d;
+			}
+			/** + `+Infinity` means maximization. */
+			case +Infinity: {
+				d = value1 - value2;
+				return isNaN(d) ? -Infinity : d;
+			}
+			/** + An actual number means approximation to said value. */ 
+			default: {
+				d = Math.abs(value2 - objective) - Math.abs(value1 - objective);
+				return isNaN(d) ? Infinity : d;
+			}
+		}
 	},
 	
-	/** A `minimization` compares two elements by evaluation in ascending order.
+	/** The [Pareto efficiency](https://en.wikipedia.org/wiki/Pareto_efficiency) is frequently used 
+	in multiobjective optimizations, yet it is not a complete order. The `paretoComparison` method 
+	takes an array of `objectives`, and two arrays of numbers to be compared. The result is an array 
+	of comparisons (-1, 0 or 1) with a `domination` property. If `domination` is:
+	
+	+ `< 0`: `element2` dominates `element1`.
+	
+	+ `> 0`: `element1` dominates `element2`.
+	
+	+ `= 0`: both elements are equally evaluated.
+	
+	+ `NaN`: elements could not be compared (i.e. their evaluations are different, but they do not 
+		dominate each other).
 	*/
-	minimization: function minimization(element1, element2) {
-		var d = element1.evaluation - element2.evaluation;
-		return isNaN(d) ? Infinity : Math.abs(d) < element1.resolution ? 0 : d;
+	paretoComparison: function paretoComparison(objectives, values1, values2) {
+		var worse = 0, better = 0,
+			problem = this,
+			result;
+		raiseIf(objectives.length !== values1.length, "Expected ", objectives.length, " evaluations, but got ", values1.length, "!");
+		raiseIf(objectives.length !== values2.length, "Expected ", objectives.length, " evaluations, but got ", values2.length, "!");
+		result = Iterable.zip(objectives, values1, values2).mapApply(function (objective, value1, value2) {
+			var r = problem.singleObjectiveComparison(objective, value1, value2);
+			if (r < 0) {
+				worse++;
+			} else if (r > 0) {
+				better++;
+			}
+			return r;
+		}).toArray();
+		result.domination = worse === 0 ? better : better === 0 ? -worse : NaN;
+		return result;
 	},
-		
-	/** An `approximation` compares two elements by distance of its evaluation to the given target 
-	value in ascending order.
-	*/
-	approximation: function approximation(target, element1, element2) {
-		var d = Math.abs(element1.evaluation - target) - Math.abs(element2.evaluation - target);
-		return isNaN(d) ? Infinity : Math.abs(d) < element1.resolution ? 0 : d;
-	},
-		
+	
 	// ## Utilities ################################################################################
 	
 	/** The default string representation of a Problem instance has this shape: 
