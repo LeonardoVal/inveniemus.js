@@ -18,7 +18,7 @@
 		metaheuristic = metaheuristic[1];
 		testbed = testbed[1];
 		describe(metaheuristicName +" with "+ testbedName, function () {
-			async_it(": basic test.", function () {
+			it("basic test.", function (done) {
 				var mh = new metaheuristic({ 
 					problem: testbed, 
 					size: SIZE, 
@@ -32,10 +32,10 @@
 					mh.state.forEach(function (elem) {
 						expect(elem instanceof inveniemus.Element).toBe(true); // All elements should inherit from Element.
 						expect(isNaN(elem.evaluation)).toBe(false); // All elements should be evaluated.
-						expect(mh.problem.compare(stepBest, elem)).not.toBeGreaterThan(0); // Elements should be properly sorted.
+						expect(mh.problem.compare(elem, stepBest)).not.toBeGreaterThan(0); // Elements should be properly sorted.
 					});
 				});
-				return mh.run();
+				return mh.run().then(done);
 			});
 		});
 	});
