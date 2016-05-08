@@ -69,10 +69,8 @@ module.exports = function(grunt) {
 			options: {
 				configFile: 'tests/karma.conf.js'
 			},
-			build: { browsers: ['PhantomJS'] },
-			chrome: { browsers: ['Chrome'] },
-			firefox: { browsers: ['Firefox'] },
-			iexplore: { browsers: ['IE'] }
+			test_chrome: { browsers: ['Chrome'] },
+			test_firefox: { browsers: ['Firefox'] }
 		},
 		uglify: { //////////////////////////////////////////////////////////////////////////////////
 			build: {
@@ -110,8 +108,8 @@ module.exports = function(grunt) {
 	
 // Register tasks. /////////////////////////////////////////////////////////////////////////////////
 	grunt.registerTask('compile', ['concat:build', 'jshint:build', 'uglify:build', 'copy:test']);
-	grunt.registerTask('test', ['compile', 'karma:build']); 
-	grunt.registerTask('test-all', ['test', 'karma:chrome', 'karma:firefox', 'karma:iexplore']);
+	grunt.registerTask('test', ['compile', 'karma:test_firefox']); 
+	grunt.registerTask('full-test', ['test', 'karma:test_chrome']);
 	grunt.registerTask('build', ['test', 'docker:build']);
 	grunt.registerTask('default', ['build']);
 };
