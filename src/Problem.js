@@ -75,8 +75,8 @@ var Problem = exports.Problem = declare({
 				var result = element.evaluate();
 				async = async || Future.__isFuture__(result);
 				return result;
-			});
-		return async ? Future.all(elements) : elements.toArray();
+			}).toArray();
+		return async ? Future.all(elements) : elements;
 	},
 	
 	/** Usually a numbers array is just too abstract to handle, and	another representation of the 

@@ -2,16 +2,11 @@
 	var Element = inveniemus.Element,
 		Problem = inveniemus.Problem,
 		RANDOM = base.Randomness.DEFAULT,
-		iterable = base.iterable;
+		iterable = base.iterable,
+		Future = base.Future;
 
-	function __randomElements__(problem, count) {
-		return RANDOM.randoms(count).map(function (r) {
-			return new Element(problem, undefined, r);
-		});
-	}
-		
 	describe("Problem", function () {
-		it("single objective comparison", function () {
+		it("single objective comparison", function () { ////////////////////////////////////////////
 			var problem = new Problem();
 			for (var i = 0; i < 30; i++) {
 				var evals = RANDOM.randoms(i + 2),
@@ -55,6 +50,29 @@
 			
 			expect(comparator.bind(null, [1], [1,2])).toThrow();
 			expect(comparator.bind(null, [1,2], [1,2,3])).toThrow();
-		});
+		}); // it "Pareto comparison"
+		
+		it("asynchronous evaluation", function (done) { ////////////////////////////////////////////
+			var problem = new Problem(),
+				oldEvaluation = problem.evaluation,
+				elements = 	base.Iterable.repeat(0, 10).map(function () {
+					return problem.newElement();
+				}).toArray();
+			problem.evaluation = function evaluation(element) {
+				var r = new Future();
+				setTimeout(function () {
+					r.resolve(oldEvaluation.call(problem, element));
+				}, 10);
+				return r;
+			};
+			var evaluations = problem.evaluate(elements);
+			expect(Future.__isFuture__(evaluations)).toBe(true);
+			return evaluations.then(function (es) {
+				es.forEach(function (e, i) {
+					expect(e).toBe(elements[i].evaluation);
+				});
+			}).then(done);
+		}); // it "asynchronous evaluation"
+		
 	}); //// describe "Problem"
 }); //// define.
