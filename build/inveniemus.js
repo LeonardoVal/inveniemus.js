@@ -66,24 +66,30 @@ var Element = exports.Element = declare({
 	*/
 	constructor: function Element(problem, values, evaluation) {
 		this.problem = problem;
-		var model = problem.elementModel();
+		var element = this,
+			model = problem.elementModel();
 		if (!values) {
-			this.values = model.map(function (range) {
-				if (range.discrete) {
-					return problem.random.randomInt(range.min, range.max + 1);
-				} else {
-					return problem.random.random(range.min, range.max);
-				}
+			this.values = model.map(function (_, i) {
+				return element.randomValue(i, problem.random);
 			});
 		} else {
-			this.values = values.map(function (value, i) {
+			this.values = values.map(function (v, i) {
 				var range = model[i];
-				raiseIf(isNaN(value), "Value #", i, " for element is NaN!");
-				value = clamp(+value, range.min, range.max);
-				return value;
+				raiseIf(isNaN(v), "Value #", i, " for element is NaN!");
+				return !range.discrete ? clamp(+v, range.min, range.max) :
+					Math.min(range.max, Math.floor(clamp(+v, range.min, range.max + 1)));
 			});
 		}
 		this.evaluation = evaluation;
+	},
+	
+	/** Returns a random value for a given position in the element's values.
+	*/
+	randomValue: function randomValue(i) {
+		var random = this.problem.random,
+			range = this.problem.elementModel()[i];
+		return !range ? NaN : range.discrete ? 
+			random.randomInt(range.min, range.max + 1) : random.random(range.min, range.max);			
 	},
 	
 	/** Whether this element is an actual solution or not is decided by `suffices()`. It holds the 
@@ -183,7 +189,8 @@ var Element = exports.Element = declare({
 	},
 	
 	/** The method `modification(index, value, ...)` returns a new and unevaluated copy of this 
-	element, with its values modified as specified. Values are always coerced to the [0,1] range.
+	element, with its values modified as specified. Values are always coerced to the element's 
+	model.
 	*/
 	modification: function modification() {
 		var newValues = this.values.slice(),
@@ -192,8 +199,6 @@ var Element = exports.Element = declare({
 		for (i = 0; i < arguments.length; i += 2) {
 			v = +arguments[i + 1];
 			raiseIf(isNaN(v), "Invalid value ", v, " for element!");
-			range = model[i];
-			v = clamp(v, range.min, range.max);
 			newValues[arguments[i] |0] = v;
 		}
 		return new this.constructor(this.problem, newValues);
@@ -287,11 +292,11 @@ var Element = exports.Element = declare({
 		return false;
 	},
 	
-	/** The default string representation of an Element instance has this shape: 
-	`"Element(values, evaluation)"`.
+	/** The default string representation of an Element instance is like `"[object class values]"`.
 	*/
 	toString: function toString() {
-		return "<"+ (this.constructor.name || 'Element') +" "+ JSON.stringify(this.values) +" "+ this.evaluation +">";
+		return "[object "+ (this.constructor.name || 'Element') +" "+ 
+			JSON.stringify(this.values) +" "+ this.evaluation +"]";
 	},
 	
 	/** Serialization and materialization using Sermat.
@@ -317,7 +322,7 @@ var Problem = exports.Problem = declare({
 		initialize(this, params)
 			/** + A `title` to be displayed to the user.
 			*/
-			.string('title', { coerce: true, defaultValue: this.constructor.name || "" })
+			.string('title', { coerce: true, defaultValue: "" })
 			/** + A `description` of the problem to be displayed to the user may also be appreciated.
 			*/
 			.string('description', { coerce: true, defaultValue: "" })
@@ -329,7 +334,8 @@ var Problem = exports.Problem = declare({
 			number or array of numbers, where `-Infinity` means minimization (the default),
 			`+Infinity` means maximization and a number means approximation to that value.
 		*/
-		var objectives = params.hasOwnProperty('objectives') ? params.objectives : -Infinity;
+		var objectives = params.hasOwnProperty('objectives') ? params.objectives : 
+			this.hasOwnProperty('objectives') ? this.objectives : -Infinity;
 		if (typeof params.objectives === 'number' && !isNaN(params.objectives)) {
 			this.objectives = [params.objectives];
 		} else if (Array.isArray(params.objectives)) {
@@ -468,8 +474,10 @@ var Problem = exports.Problem = declare({
 		var worse = 0, better = 0,
 			problem = this,
 			result;
-		raiseIf(objectives.length !== values1.length, "Expected ", objectives.length, " evaluations, but got ", values1.length, "!");
-		raiseIf(objectives.length !== values2.length, "Expected ", objectives.length, " evaluations, but got ", values2.length, "!");
+		raiseIf(objectives.length !== values1.length, "Expected ", objectives.length, 
+			" evaluations, but got ", values1.length, "!");
+		raiseIf(objectives.length !== values2.length, "Expected ", objectives.length,
+			" evaluations, but got ", values2.length, "!");
 		result = Iterable.zip(objectives, values1, values2).mapApply(function (objective, value1, value2) {
 			var r = problem.singleObjectiveComparison(objective, value1, value2);
 			if (r < 0) {
@@ -484,13 +492,6 @@ var Problem = exports.Problem = declare({
 	},
 	
 	// ## Utilities ################################################################################
-	
-	/** The default string representation of a Problem instance has this shape: 
-	`"Problem(params)"`.
-	*/
-	toString: function toString() {
-		return "<"+ (this.constructor.name || 'Problem') +" "+ JSON.stringify(this.title) +">";
-	},
 	
 	/** Returns a reconstruction of the parameters used in the construction of this instance.
 	*/
@@ -507,6 +508,12 @@ var Problem = exports.Problem = declare({
 			params.random = this.random;
 		}
 		return params;
+	},
+	
+	/** The default string representation of a Problem instance is like `"[object class title]"`.
+	*/
+	toString: function toString() {
+		return "[object "+ (this.constructor.name || 'Problem') +" "+ JSON.stringify(this.title) +"]";
 	},
 	
 	/** Serialization and materialization using Sermat.
@@ -934,11 +941,10 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	
 	// ## Utilities ################################################################################
 	
-	/** The default string representation of a Metaheuristic shows its constructor's name and its 
-	parameters.
+	/** The default string representation of a Metaheuristic is like `"[object class]"`.
 	*/
 	toString: function toString() {
-		return "<"+ (this.constructor.name || 'Metaheuristic') +" "+ this.problem +">";
+		return "[object "+ (this.constructor.name || 'Metaheuristic') +"]";
 	},
 	
 	/** Returns a reconstruction of the parameters used in the construction of this instance.
@@ -1254,9 +1260,8 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 		random value.
 		*/
 		singlepointUniformMutation: function singlepointUniformMutation(element) {
-			var model = this.problem.elementModel(),
-				i = this.random.randomInt(model.length);
-			return element.modification(i, this.random.random(model[i].min, model[i].max));
+			var i = this.random.randomInt(element.values.length);
+			return element.modification(i, element.randomValue(i));
 		},
 			
 		/** + `uniformMutation(maxPoints=Infinity)` builds a mutation function that makes at least 
