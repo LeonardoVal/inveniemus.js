@@ -412,11 +412,10 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	
 	// ## Utilities ################################################################################
 	
-	/** The default string representation of a Metaheuristic shows its constructor's name and its 
-	parameters.
+	/** The default string representation of a Metaheuristic is like `"[object class]"`.
 	*/
 	toString: function toString() {
-		return "<"+ (this.constructor.name || 'Metaheuristic') +" "+ this.problem +">";
+		return "[object "+ (this.constructor.name || 'Metaheuristic') +"]";
 	},
 	
 	/** Returns a reconstruction of the parameters used in the construction of this instance.
