@@ -205,9 +205,8 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 		random value.
 		*/
 		singlepointUniformMutation: function singlepointUniformMutation(element) {
-			var model = this.problem.elementModel(),
-				i = this.random.randomInt(model.length);
-			return element.modification(i, this.random.random(model[i].min, model[i].max));
+			var i = this.random.randomInt(element.values.length);
+			return element.modification(i, element.randomValue(i));
 		},
 			
 		/** + `uniformMutation(maxPoints=Infinity)` builds a mutation function that makes at least 
