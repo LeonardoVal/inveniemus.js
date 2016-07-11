@@ -10,7 +10,7 @@ var Problem = exports.Problem = declare({
 		initialize(this, params)
 			/** + A `title` to be displayed to the user.
 			*/
-			.string('title', { coerce: true, defaultValue: this.constructor.name || "" })
+			.string('title', { coerce: true, defaultValue: "" })
 			/** + A `description` of the problem to be displayed to the user may also be appreciated.
 			*/
 			.string('description', { coerce: true, defaultValue: "" })
@@ -22,7 +22,8 @@ var Problem = exports.Problem = declare({
 			number or array of numbers, where `-Infinity` means minimization (the default),
 			`+Infinity` means maximization and a number means approximation to that value.
 		*/
-		var objectives = params.hasOwnProperty('objectives') ? params.objectives : -Infinity;
+		var objectives = params.hasOwnProperty('objectives') ? params.objectives : 
+			this.hasOwnProperty('objectives') ? this.objectives : -Infinity;
 		if (typeof params.objectives === 'number' && !isNaN(params.objectives)) {
 			this.objectives = [params.objectives];
 		} else if (Array.isArray(params.objectives)) {
@@ -161,8 +162,10 @@ var Problem = exports.Problem = declare({
 		var worse = 0, better = 0,
 			problem = this,
 			result;
-		raiseIf(objectives.length !== values1.length, "Expected ", objectives.length, " evaluations, but got ", values1.length, "!");
-		raiseIf(objectives.length !== values2.length, "Expected ", objectives.length, " evaluations, but got ", values2.length, "!");
+		raiseIf(objectives.length !== values1.length, "Expected ", objectives.length, 
+			" evaluations, but got ", values1.length, "!");
+		raiseIf(objectives.length !== values2.length, "Expected ", objectives.length,
+			" evaluations, but got ", values2.length, "!");
 		result = Iterable.zip(objectives, values1, values2).mapApply(function (objective, value1, value2) {
 			var r = problem.singleObjectiveComparison(objective, value1, value2);
 			if (r < 0) {
@@ -177,13 +180,6 @@ var Problem = exports.Problem = declare({
 	},
 	
 	// ## Utilities ################################################################################
-	
-	/** The default string representation of a Problem instance has this shape: 
-	`"Problem(params)"`.
-	*/
-	toString: function toString() {
-		return "<"+ (this.constructor.name || 'Problem') +" "+ JSON.stringify(this.title) +">";
-	},
 	
 	/** Returns a reconstruction of the parameters used in the construction of this instance.
 	*/
@@ -200,6 +196,12 @@ var Problem = exports.Problem = declare({
 			params.random = this.random;
 		}
 		return params;
+	},
+	
+	/** The default string representation of a Problem instance is like `"[object class title]"`.
+	*/
+	toString: function toString() {
+		return "[object "+ (this.constructor.name || 'Problem') +" "+ JSON.stringify(this.title) +"]";
 	},
 	
 	/** Serialization and materialization using Sermat.
