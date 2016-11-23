@@ -2,8 +2,30 @@
 <html><head>
 	<title>Inveniemus console.</title>
 	<meta charset="UTF-8"/>
+	<style>
+body { font-family: "Merriweather", "PT Serif", Georgia, "Times New Roman", serif; }
+h1 { text-align: center; }
+a { color: black; text-decoration: none; }
+#reference tr td { padding: 0.5em; }
+#reference tr td:nth-child(1) { font-family: "Courier New", Courier, monospace; background-color: black; color: white; }
+	</style>
 	<script src="lib/require.js"></script>
 </head><body onload="main();">
+	<h1><a href="http://github.com/LeonardoVal/inveniemus.js" target="_blank">Inveniemus</a> tester</h1>
+	<p>Open your browser Javascript console. In Windows use: Ctrl+Shift+J in Chrome, Ctrl+Shift+K in Firefox, F12 in Internet Explorer, Ctrl+Shift+I in Opera.</p>
+	
+	<h2>Reference</h2>
+	<table id="reference"><tr>
+		<td>inveniemus</td>
+		<td>Inveniemus is globally accesible at <a href="javascript:console.log(window.inveniemus);"><code>window.inveniemus<code/></a>.</td>
+	</tr><tr>
+		<td>base<br/>Sermat</td>
+		<td>Inveniemus dependencies are also globally accesible at <a href="javascript:console.log(window.base);"><code>window.base</code></a> (<a href="http://github.com/LeonardoVal/creatartis-base" target="_blank"><code>creatartis-base.js</code></a>) and <a href="javascript:console.log(window.Sermat);"><code>window.Sermat</code></a> (<a href="http://github.com/LeonardoVal/sermat.js" target="_blank"><code>sermat.js</code></a>).</td>
+	</tr></table>
+
+	<p style="text-align:center;"><a href="mailto:leonardo.val@creatartis.com">&copy; 2015-2016 Leonardo Val</a> - 
+		<a href="http://github.com/LeonardoVal/inveniemus.js" target="_blank">inveniemus.js@GitHub</a>
+	</p>
 	<script type="text/javascript"> "use strict";
 function main() {
 	require.config({ 
@@ -17,10 +39,6 @@ function main() {
 		window.base = base;
 		window.Sermat = Sermat;
 		window.inveniemus = inveniemus;
-		(function (s){ // See: <http://jsconsole.com>.
-			s.src = 'lib/jsconsole/inject.js';
-			document.body.appendChild(s);
-		})(document.createElement('script'));
 	}, function (error) {
 		throw error;
 	});
