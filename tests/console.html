@@ -8,19 +8,23 @@ h1 { text-align: center; }
 a { color: black; text-decoration: none; }
 #reference tr td { padding: 0.5em; }
 #reference tr td:nth-child(1) { font-family: "Courier New", Courier, monospace; background-color: black; color: white; }
+#reference tr td:nth-child(1) a { color: white; }
 	</style>
 	<script src="lib/require.js"></script>
 </head><body onload="main();">
 	<h1><a href="http://github.com/LeonardoVal/inveniemus.js" target="_blank">Inveniemus</a> tester</h1>
 	<p>Open your browser Javascript console. In Windows use: Ctrl+Shift+J in Chrome, Ctrl+Shift+K in Firefox, F12 in Internet Explorer, Ctrl+Shift+I in Opera.</p>
-	
-	<h2>Reference</h2>
 	<table id="reference"><tr>
-		<td>inveniemus</td>
-		<td>Inveniemus is globally accesible at <a href="javascript:console.log(window.inveniemus);"><code>window.inveniemus<code/></a>.</td>
+		<td><a href="javascript:console.info('inveniemus');console.dir(inveniemus);">inveniemus</a></td>
+		<td>Inveniemus is a search and optimization library, focusing on <a href="http://en.wikipedia.org/wiki/Metaheuristic" target="_blank">metaheuristics</a>.</td>
 	</tr><tr>
-		<td>base<br/>Sermat</td>
-		<td>Inveniemus dependencies are also globally accesible at <a href="javascript:console.log(window.base);"><code>window.base</code></a> (<a href="http://github.com/LeonardoVal/creatartis-base" target="_blank"><code>creatartis-base.js</code></a>) and <a href="javascript:console.log(window.Sermat);"><code>window.Sermat</code></a> (<a href="http://github.com/LeonardoVal/sermat.js" target="_blank"><code>sermat.js</code></a>).</td>
+		<td><a href="javascript:" data-code="problem = new inveniemus.problems.HelloWorld()">inveniemus.problems.HelloWorld</a><br/>
+			<a href="javascript:" data-code="problem = new inveniemus.problems.NQueensPuzzle()">inveniemus.problems.NQueensPuzzle</a><br/>
+			<a href="javascript:" data-code="problem = new inveniemus.problems.KnapsackProblem()">inveniemus.problems.KnapsackProblem</a></td>
+		<td>This library includes implementations of some toy problems for testing purposes and as exemplars:
+			<a href="https://www.electricmonk.nl/log/2011/09/28/evolutionary-algorithm-evolving-hello-world/" target="_blank">the <em>"Hello world!"</em> problem</a>, 
+			<a href="http://en.wikipedia.org/wiki/Eight_queens_puzzle" target="_blank">the 8 queens puzzle (generalized for any number of queens)</a> and
+			<a href="http://en.wikipedia.org/wiki/Knapsack_problem" target="_blank"></a>the knapsack problem.</td>
 	</tr></table>
 
 	<p style="text-align:center;"><a href="mailto:leonardo.val@creatartis.com">&copy; 2015-2016 Leonardo Val</a> - 
@@ -41,6 +45,14 @@ function main() {
 		window.inveniemus = inveniemus;
 	}, function (error) {
 		throw error;
+	});
+	Array.prototype.slice.call(document.querySelectorAll('#reference tr td a')).forEach(function (jsLink) {
+		var label, code;
+		if (jsLink.href == "javascript:") {
+			code = '\"'+ (jsLink.getAttribute('data-code') || jsLink.textContent)
+				.replace(/\n/g,'\\n').replace(/\"/g, '\\\"') +'\"';
+			jsLink.href="javascript:console.info("+ code +");console.log(eval("+ code +"));";
+		}
 	});
 }
 	</script>
