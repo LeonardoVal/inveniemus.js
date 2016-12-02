@@ -2084,7 +2084,10 @@ problems.HelloWorld = declare(Problem, {
 	default).
 	*/	
 	constructor: function HelloWorld(params){
-		Problem.call(this, params);
+		/** Since elements' evaluation is a distance, this value must be minimized to guide the 
+			search towards the target string.
+		*/
+		Problem.call(this, base.copy({ objectives: -Infinity }, params));
 		initialize(this, params)
 			.string('target', { coerce: true, defaultValue: 'Hello world!' });
 		
@@ -2110,12 +2113,7 @@ problems.HelloWorld = declare(Problem, {
 	*/
 	evaluation: function evaluation(element) {
 		return element.manhattanDistance(this.__target__, element.values);
-	},		
-	
-	/** Since elements' evaluation is a distance, this value must be minimized to guide the search 
-	towards the target string.
-	*/
-	compare: Problem.prototype.minimization,
+	},
 	
 	/** An element is sufficient when its equal to the target string.
 	*/
@@ -2497,8 +2495,10 @@ problems.NQueensPuzzle = declare(Problem, {
 	
 	/** The constructor takes only one particular parameter:
 	*/	
-	constructor: function NQueensPuzzle(params){
-		Problem.call(this, params);
+	constructor: function NQueensPuzzle(params) {
+		/** Since the evaluation is defined as the number of shared diagonals, it must be minimized.
+		*/
+		Problem.call(this, base.copy({ objectives: -Infinity }, params));
 		initialize(this, params)
 			/** + `N=8`: the number of queens and both dimensions of the board.
 			*/
@@ -2529,10 +2529,6 @@ problems.NQueensPuzzle = declare(Problem, {
 		});
 		return count;
 	},
-	
-	/** Of course, the number of shared diagonals must be minimized.
-	*/
-	compare: Problem.prototype.minimization,
 	
 	/** It is sufficient when no pair of queens share diagonals.
 	*/
@@ -2581,8 +2577,11 @@ problems.KnapsackProblem = declare(Problem, {
 	
 	The parameters specific for this problem are:
 	*/	
-	constructor: function KnapsackProblem(params){
-		Problem.call(this, params);
+	constructor: function KnapsackProblem(params) {
+		/** The best selection of items is the one that maximizes worth, without exceeding the cost 
+			limit.
+		*/
+		Problem.call(this, base.copy({ objectives: +Infinity }, params));
 		initialize(this, params)
 			/** + `limit=15` is the cost limit that candidate solution should not exceed.
 			*/
@@ -2625,11 +2624,6 @@ problems.KnapsackProblem = declare(Problem, {
 		});
 		return cost > problem.limit ? -worth : worth; //FIXME Too punishing for going over the limit.
 	},
-	
-	/** The best selection of items is the one that maximizes worth, without exceeding the cost 
-	limit.
-	*/
-	compare: Problem.prototype.maximization,
 	
 	// ## Utilities ################################################################################
 	

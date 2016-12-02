@@ -3,33 +3,44 @@
 	<title>Inveniemus console.</title>
 	<meta charset="UTF-8"/>
 	<style>
-body { font-family: "Merriweather", "PT Serif", Georgia, "Times New Roman", serif; }
-h1 { text-align: center; }
-a { color: black; text-decoration: none; }
+body { font-family:"Merriweather","PT Serif",Georgia,"Times New Roman",serif; }
+a { color:inherit; text-decoration:none; }
+header { width:100%; text-align:center; }
+footer { width:100%; text-align:center; }
 #reference tr td { padding: 0.5em; }
-#reference tr td:nth-child(1) { font-family: "Courier New", Courier, monospace; background-color: black; color: white; }
-#reference tr td:nth-child(1) a { color: white; }
+#reference tr td:nth-child(1) { font-family:"Courier New",Courier,monospace; background-color:black; color:white; }
+#chart { width: 100%; }
+#chart_legend { float: right; }
 	</style>
-	<script src="lib/require.js"></script>
+	<script type="text/javascript" src="lib/require.js"></script>
+	<script type="text/javascript" src="lib/dygraph-combined.js"></script>
 </head><body onload="main();">
-	<h1><a href="http://github.com/LeonardoVal/inveniemus.js" target="_blank">Inveniemus</a> tester</h1>
-	<p>Open your browser Javascript console. In Windows use: Ctrl+Shift+J in Chrome, Ctrl+Shift+K in Firefox, F12 in Internet Explorer, Ctrl+Shift+I in Opera.</p>
-	<table id="reference"><tr>
-		<td><a href="javascript:console.info('inveniemus');console.dir(inveniemus);">inveniemus</a></td>
-		<td>Inveniemus is a search and optimization library, focusing on <a href="http://en.wikipedia.org/wiki/Metaheuristic" target="_blank">metaheuristics</a>.</td>
-	</tr><tr>
-		<td><a href="javascript:" data-code="problem = new inveniemus.problems.HelloWorld()">inveniemus.problems.HelloWorld</a><br/>
-			<a href="javascript:" data-code="problem = new inveniemus.problems.NQueensPuzzle()">inveniemus.problems.NQueensPuzzle</a><br/>
-			<a href="javascript:" data-code="problem = new inveniemus.problems.KnapsackProblem()">inveniemus.problems.KnapsackProblem</a></td>
-		<td>This library includes implementations of some toy problems for testing purposes and as exemplars:
-			<a href="https://www.electricmonk.nl/log/2011/09/28/evolutionary-algorithm-evolving-hello-world/" target="_blank">the <em>"Hello world!"</em> problem</a>, 
-			<a href="http://en.wikipedia.org/wiki/Eight_queens_puzzle" target="_blank">the 8 queens puzzle (generalized for any number of queens)</a> and
-			<a href="http://en.wikipedia.org/wiki/Knapsack_problem" target="_blank"></a>the knapsack problem.</td>
-	</tr></table>
-
-	<p style="text-align:center;"><a href="mailto:leonardo.val@creatartis.com">&copy; 2015-2016 Leonardo Val</a> - 
+	<header><h1><a href="http://github.com/LeonardoVal/inveniemus.js" target="_blank">Inveniemus</a> tester</h1></header>
+	<div id="content">
+		<p>Open your browser Javascript console. In Windows use: Ctrl+Shift+J in Chrome, Ctrl+Shift+K in Firefox, F12 in Internet Explorer, Ctrl+Shift+I in Opera.</p>
+		<table id="reference"><tr>
+			<td><a href="javascript:console.info('inveniemus');console.dir(inveniemus);">inveniemus</a></td>
+			<td>Inveniemus is a search and optimization library, focusing on <a href="http://en.wikipedia.org/wiki/Metaheuristic" target="_blank">metaheuristics</a>.</td>
+		</tr><tr>
+			<td><a href="javascript:console.dir(inveniemus.problems.testbeds);">problems</a></br>
+				<a href="javascript:console.dir(inveniemus.problems.testbeds);">problems.testbeds</a></td>
+			<td>This library includes many implementations of some toy problems for testing purposes and as exemplars. Among the most simple ones there are:
+				the <a href="javascript:" data-code="problem = new inveniemus.problems.HelloWorld()"><em>"Hello world!"</em> problem</a> <a href="https://www.electricmonk.nl/log/2011/09/28/evolutionary-algorithm-evolving-hello-world/" target="_blank">[ref]</a>,
+				the <a href="javascript:" data-code="problem = new inveniemus.problems.testbeds.sumOptimization(10)"><em>sum optimization problems</em></a>, 
+				the <a href="javascript:" data-code="problem = new inveniemus.problems.NQueensPuzzle()"><em>8 queens puzzle</em> <a href="http://en.wikipedia.org/wiki/Eight_queens_puzzle" target="_blank">[ref]</a> and 
+				the <a href="javascript:" data-code="problem = new inveniemus.problems.KnapsackProblem()"><em>knapsack problem</em></a> <a href="http://en.wikipedia.org/wiki/Knapsack_problem" target="_blank">[ref]</a>.
+		</tr><tr>
+			<td><a href="javascript:" data-code="RUNNER.run(new inveniemus.Metaheuristic({size:100, steps:100, problem:problem}))">Metaheuristic</a><br/>
+				<a href="javascript:console.dir(inveniemus.metaheuristics);">metaheuristics</a></td>
+			<td><a href="javascript:console.dir(inveniemus.Metaheuristic);"><code>Metaheuristic</code> is the base class of all optimization methods. By itself it performs a random search.</td>
+		</tr></table>
+		<p>The graph below can be used to show the execution of the optimization methods. Click in the examples above or simply use <code>RUNNER.run(<em>metaheuristic</em>)</code>.
+		<div id="chart"></div>
+		<div id="chart_legend"></div><br/>
+	</div>
+	<footer><a href="mailto:leonardo.val@creatartis.com">&copy; 2015-2016 Leonardo Val</a> - 
 		<a href="http://github.com/LeonardoVal/inveniemus.js" target="_blank">inveniemus.js@GitHub</a>
-	</p>
+	</footer>
 	<script type="text/javascript"> "use strict";
 function main() {
 	require.config({ 
@@ -43,6 +54,47 @@ function main() {
 		window.base = base;
 		window.Sermat = Sermat;
 		window.inveniemus = inveniemus;
+		window.problem = new inveniemus.problems.testbeds.sumOptimization(10);
+		window.RUNNER = {
+			graph: new Dygraph(document.getElementById("chart"), [], {
+				labels: ['step', 'minimum', 'average', 'maximum'],
+				colors: ['red', 'black', 'blue'],
+				width: document.body.offsetWidth,
+				drawPoints: true,
+				customBars: true,
+				showRoller: false,
+				showRangeSelector: true, rangeSelectorHeight: 30,
+				labelsDiv: "chart_legend", legend: "always"
+			}),
+			run: function run(mh) {
+				var graphData = [],
+					runMinimum = Infinity,
+					runMaximum = -Infinity,
+					graph = this.graph;
+				mh = mh || window.mh;
+				mh.events.on('advanced', function () { // Update evaluationGraph data with the run statistics.
+					var graphStat = mh.problem.objectives.length > 1
+						? mh.statistics.stat({key:'dominators', step: mh.step})
+						: mh.statistics.stat({key:'evaluation', step: mh.step}),
+						minimum = graphStat.minimum(),
+						maximum = graphStat.maximum();
+					graphData.push([ mh.step, 
+						[null, minimum, null],
+						[minimum, graphStat.average(), maximum],
+						[null, maximum, null]
+					]);
+					runMinimum = Math.min(runMinimum, minimum - Math.abs(minimum) * 0.1);
+					runMaximum = Math.max(runMaximum, maximum + Math.abs(maximum) * 0.1);
+					graph.updateOptions({ 
+						file: graphData,
+						valueRange: [runMinimum, runMaximum]
+					});
+				});
+				return mh.run().then(function (best) {
+					return console.log(best);
+				});
+			}
+		};
 	}, function (error) {
 		throw error;
 	});
