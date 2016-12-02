@@ -12,7 +12,10 @@ problems.HelloWorld = declare(Problem, {
 	default).
 	*/	
 	constructor: function HelloWorld(params){
-		Problem.call(this, params);
+		/** Since elements' evaluation is a distance, this value must be minimized to guide the 
+			search towards the target string.
+		*/
+		Problem.call(this, base.copy({ objectives: -Infinity }, params));
 		initialize(this, params)
 			.string('target', { coerce: true, defaultValue: 'Hello world!' });
 		
@@ -38,12 +41,7 @@ problems.HelloWorld = declare(Problem, {
 	*/
 	evaluation: function evaluation(element) {
 		return element.manhattanDistance(this.__target__, element.values);
-	},		
-	
-	/** Since elements' evaluation is a distance, this value must be minimized to guide the search 
-	towards the target string.
-	*/
-	compare: Problem.prototype.minimization,
+	},
 	
 	/** An element is sufficient when its equal to the target string.
 	*/

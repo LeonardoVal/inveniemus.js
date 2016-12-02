@@ -26,8 +26,11 @@ problems.KnapsackProblem = declare(Problem, {
 	
 	The parameters specific for this problem are:
 	*/	
-	constructor: function KnapsackProblem(params){
-		Problem.call(this, params);
+	constructor: function KnapsackProblem(params) {
+		/** The best selection of items is the one that maximizes worth, without exceeding the cost 
+			limit.
+		*/
+		Problem.call(this, base.copy({ objectives: +Infinity }, params));
 		initialize(this, params)
 			/** + `limit=15` is the cost limit that candidate solution should not exceed.
 			*/
@@ -70,11 +73,6 @@ problems.KnapsackProblem = declare(Problem, {
 		});
 		return cost > problem.limit ? -worth : worth; //FIXME Too punishing for going over the limit.
 	},
-	
-	/** The best selection of items is the one that maximizes worth, without exceeding the cost 
-	limit.
-	*/
-	compare: Problem.prototype.maximization,
 	
 	// ## Utilities ################################################################################
 	

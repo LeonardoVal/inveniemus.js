@@ -11,8 +11,10 @@ problems.NQueensPuzzle = declare(Problem, {
 	
 	/** The constructor takes only one particular parameter:
 	*/	
-	constructor: function NQueensPuzzle(params){
-		Problem.call(this, params);
+	constructor: function NQueensPuzzle(params) {
+		/** Since the evaluation is defined as the number of shared diagonals, it must be minimized.
+		*/
+		Problem.call(this, base.copy({ objectives: -Infinity }, params));
 		initialize(this, params)
 			/** + `N=8`: the number of queens and both dimensions of the board.
 			*/
@@ -43,10 +45,6 @@ problems.NQueensPuzzle = declare(Problem, {
 		});
 		return count;
 	},
-	
-	/** Of course, the number of shared diagonals must be minimized.
-	*/
-	compare: Problem.prototype.minimization,
 	
 	/** It is sufficient when no pair of queens share diagonals.
 	*/
