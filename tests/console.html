@@ -7,38 +7,36 @@ body { font-family:"Merriweather","PT Serif",Georgia,"Times New Roman",serif; }
 a { color:inherit; text-decoration:none; }
 header { width:100%; text-align:center; }
 footer { width:100%; text-align:center; }
-#reference tr td { padding: 0.5em; }
-#reference tr td:nth-child(1) { font-family:"Courier New",Courier,monospace; background-color:black; color:white; }
-#chart { width: 100%; }
-#chart_legend { float: right; }
+#chart { height:320px; width:100%; margin-bottom:10px; }
 	</style>
 	<script type="text/javascript" src="lib/require.js"></script>
 	<script type="text/javascript" src="lib/dygraph-combined.js"></script>
 </head><body onload="main();">
-	<header><h1><a href="http://github.com/LeonardoVal/inveniemus.js" target="_blank">Inveniemus</a> tester</h1></header>
-	<div id="content">
-		<p>Open your browser Javascript console. In Windows use: Ctrl+Shift+J in Chrome, Ctrl+Shift+K in Firefox, F12 in Internet Explorer, Ctrl+Shift+I in Opera.</p>
-		<table id="reference"><tr>
-			<td><a href="javascript:console.info('inveniemus');console.dir(inveniemus);">inveniemus</a></td>
-			<td>Inveniemus is a search and optimization library, focusing on <a href="http://en.wikipedia.org/wiki/Metaheuristic" target="_blank">metaheuristics</a>.</td>
-		</tr><tr>
-			<td><a href="javascript:console.dir(inveniemus.problems.testbeds);">problems</a></br>
-				<a href="javascript:console.dir(inveniemus.problems.testbeds);">problems.testbeds</a></td>
-			<td>This library includes many implementations of some toy problems for testing purposes and as exemplars. Among the most simple ones there are:
-				the <a href="javascript:" data-code="problem = new inveniemus.problems.HelloWorld()"><em>"Hello world!"</em> problem</a> <a href="https://www.electricmonk.nl/log/2011/09/28/evolutionary-algorithm-evolving-hello-world/" target="_blank">[ref]</a>,
-				the <a href="javascript:" data-code="problem = new inveniemus.problems.testbeds.sumOptimization(10)"><em>sum optimization problems</em></a>, 
-				the <a href="javascript:" data-code="problem = new inveniemus.problems.NQueensPuzzle()"><em>8 queens puzzle</em> <a href="http://en.wikipedia.org/wiki/Eight_queens_puzzle" target="_blank">[ref]</a> and 
-				the <a href="javascript:" data-code="problem = new inveniemus.problems.KnapsackProblem()"><em>knapsack problem</em></a> <a href="http://en.wikipedia.org/wiki/Knapsack_problem" target="_blank">[ref]</a>.
-		</tr><tr>
-			<td><a href="javascript:" data-code="RUNNER.run(new inveniemus.Metaheuristic({size:100, steps:100, problem:problem}))">Metaheuristic</a><br/>
-				<a href="javascript:console.dir(inveniemus.metaheuristics);">metaheuristics</a></td>
-			<td><a href="javascript:console.dir(inveniemus.Metaheuristic);"><code>Metaheuristic</code> is the base class of all optimization methods. By itself it performs a random search.</td>
-		</tr></table>
-		<p>The graph below can be used to show the execution of the optimization methods. Click in the examples above or simply use <code>RUNNER.run(<em>metaheuristic</em>)</code>.
-		<div id="chart"></div>
-		<div id="chart_legend"></div><br/>
-	</div>
-	<footer><a href="mailto:leonardo.val@creatartis.com">&copy; 2015-2016 Leonardo Val</a> - 
+	<header style="text-align:center; width:100%;"><h1><a href="http://github.com/LeonardoVal/inveniemus.js" target="_blank">Inveniemus</a> tester</h1></header>
+	<p>Open your browser Javascript console. In Windows use: Ctrl+Shift+J in Chrome, Ctrl+Shift+K in Firefox, F12 in Internet Explorer, Ctrl+Shift+I in Opera.</p>
+	<p>Inveniemus (<a href="javascript:console.info('inveniemus');console.dir(inveniemus);"><code>inveniemus</code></a>) is a search and optimization library, focusing on <a href="http://en.wikipedia.org/wiki/Metaheuristic" target="_blank">metaheuristics</a>. This library includes many implementations of some toy <a href="javascript:console.dir(inveniemus.problems.testbeds);"><code>problems</code></a> for testing purposes (<a href="javascript:console.dir(inveniemus.problems.testbeds);"><code>problems.testbeds</code></a>) and as exemplars. Among the most simple ones there are:</p>
+	<ul>
+		<li><a href="javascript:" data-code="problem = new inveniemus.problems.HelloWorld()"><code>HelloWorld</code></a>: <a href="https://www.electricmonk.nl/log/2011/09/28/evolutionary-algorithm-evolving-hello-world/" target="_blank">the <em>"Hello world!"</em> problem for metaheuristics</a>,</li>
+		<li><a href="javascript:" data-code="problem = new inveniemus.problems.testbeds.sumOptimization(10)"><code>sumOptimization()</code></a>: sum optimization problems,</li>
+		<li><a href="javascript:" data-code="problem = new inveniemus.problems.NQueensPuzzle()"><code>NQueensPuzzle</code></a>: <a href="http://en.wikipedia.org/wiki/Eight_queens_puzzle" target="_blank">the <em>8 queens puzzle</em></a> and</li>
+		<li><a href="javascript:" data-code="problem = new inveniemus.problems.KnapsackProblem()"><code>KnapsackProblem</code></a>: <a href="http://en.wikipedia.org/wiki/Knapsack_problem" target="_blank">the <em>knapsack problem</em></a>.</li>
+	</ul>
+	<p><a href="javascript:console.dir(inveniemus.Metaheuristic);"><code>Metaheuristic</code> is the base class of all optimization methods. By itself it performs a <a href="javascript:" data-code="RUNNER.run(new inveniemus.Metaheuristic({size:100, steps:100, problem:problem}))"><em>random search</em></a>. Other methods are implemented in subclasses (<a href="javascript:console.dir(inveniemus.metaheuristics);"><code>metaheuristics</code></a>), such as:</p>
+	<ul>
+		<li><a href="javascript:" data-code="RUNNER.run(new inveniemus.metaheuristics.BeamSearch({ problem: problem, size:20, steps:50 }))"><code>BeamSearch</code></a>: <a href="https://en.wikipedia.org/wiki/Beam_search" target="_blank">a variant of <em>beam search</em></a>,</li>
+		<li><a href="javascript:" data-code="RUNNER.run(new inveniemus.metaheuristics.DifferentialEvolution({ problem: problem, size: 50, steps: 30 }))"><code>DifferentialEvolution</code></a>: ,</li>
+		<li><a href="javascript:" data-code="RUNNER.run(new inveniemus.metaheuristics.DistributionEstimation({ problem: problem, size: 50, steps: 50 }))"><code>DistributionEstimation</code></a>: ,</li>
+		<li><a href="javascript:" data-code="RUNNER.run(new inveniemus.metaheuristics.EvolutionStrategy({ problem: problem, size: 10, steps: 30, mutantCount: 5 }))"><code>EvolutionStrategy</code></a>: ,</li>
+		<li><a href="javascript:" data-code="RUNNER.run(new inveniemus.metaheuristics.GeneticAlgorithm({ problem: problem, mutationRate: 0.4, size: 100, steps: 50 }))"><code>GeneticAlgorithm</code></a>: ,</li>
+		<li><a href="javascript:" data-code="RUNNER.run(new inveniemus.metaheuristics.GradientDescent({ problem: problem, size: 1, steps: 20 }))"><code>GradientDescent</code></a>: ,</li>
+		<li><a href="javascript:" data-code="RUNNER.run(new inveniemus.metaheuristics.HarmonySearch({ problem: problem, size: 30, steps: 200 }))"><code>HarmonySearch</code></a>: ,</li>
+		<li><a href="javascript:" data-code="RUNNER.run(new inveniemus.metaheuristics.HillClimbing({ problem: problem, delta: 0.1, steps: 100 }))"><code>HillClimbing</code></a>: ,</li>
+		<li><a href="javascript:" data-code="RUNNER.run(new inveniemus.metaheuristics.SimulatedAnnealing({ problem: problem, delta: 0.1, size: 20, maximumTemperature: 0.1 }))"><code>SimulatedAnnealing</code></a>: ,</li>
+		<li><a href="javascript:" data-code="RUNNER.run(new inveniemus.metaheuristics.ParticleSwarm({ problem: problem, size: 20, steps: 30 }))"><code>ParticleSwarm</code></a>: ,</li>
+	</ul>
+	<p>The graph below can be used to show the execution of the optimization methods. Click in the examples above or simply use <code>RUNNER.run(<em>metaheuristic</em>)</code>.
+	<div id="chart"></div>
+	<footer style="text-align:center; width:100%;"><a href="mailto:leonardo.val@creatartis.com">&copy; 2015-2016 Leonardo Val</a> - 
 		<a href="http://github.com/LeonardoVal/inveniemus.js" target="_blank">inveniemus.js@GitHub</a>
 	</footer>
 	<script type="text/javascript"> "use strict";
@@ -59,12 +57,10 @@ function main() {
 			graph: new Dygraph(document.getElementById("chart"), [], {
 				labels: ['step', 'minimum', 'average', 'maximum'],
 				colors: ['red', 'black', 'blue'],
-				width: document.body.offsetWidth,
-				drawPoints: true,
-				customBars: true,
-				showRoller: false,
-				showRangeSelector: true, rangeSelectorHeight: 30,
-				labelsDiv: "chart_legend", legend: "always"
+				//width: document.body.offsetWidth,
+				drawPoints: false, customBars: true, 
+				showRoller: false,	showRangeSelector: false, 
+				legend: "always", labelsDivWidth: 350
 			}),
 			run: function run(mh) {
 				var graphData = [],
@@ -98,9 +94,9 @@ function main() {
 	}, function (error) {
 		throw error;
 	});
-	Array.prototype.slice.call(document.querySelectorAll('#reference tr td a')).forEach(function (jsLink) {
+	Array.prototype.slice.call(document.querySelectorAll('a')).forEach(function (jsLink) {
 		var label, code;
-		if (jsLink.href == "javascript:") {
+		if (jsLink.href === "javascript:") {
 			code = '\"'+ (jsLink.getAttribute('data-code') || jsLink.textContent)
 				.replace(/\n/g,'\\n').replace(/\"/g, '\\\"') +'\"';
 			jsLink.href="javascript:console.info("+ code +");console.log(eval("+ code +"));";
