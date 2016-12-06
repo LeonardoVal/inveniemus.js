@@ -73,7 +73,7 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 			result = this.problem.newElement(nextValues);
 		return Future.then(result.evaluate(), function () {
 			result.__velocity__ = nextVelocity;
-			result.__localBest__ = mh.problem.compare(element.__localBest__, result) > 0 ? result : element.__localBest__;
+			result.__localBest__ = result.isBetterThan(element.__localBest__) ? result : element.__localBest__;
 			return result;
 		});		
 	},
@@ -94,7 +94,7 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 		})).then(function (elements) {
 			elements = mh.sort(elements);
 			mh.state = elements;
-			if (mh.problem.compare(mh.__globalBest__, elements[0]) > 0) {
+			if (mh.problem.compare(mh.__globalBest__, elements[0]) < 0) {
 				mh.__globalBest__ = elements[0];
 			}
 			mh.onUpdate();

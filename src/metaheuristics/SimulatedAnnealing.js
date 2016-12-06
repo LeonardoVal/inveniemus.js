@@ -43,7 +43,7 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 	*/
 	acceptance: function acceptance(current, neighbour, temp) {
 		temp = isNaN(temp) ? this.temperature() : +temp;
-		if (this.problem.compare(current, neighbour) > 0) {
+		if (neighbour.isBetterThan(current)) {
 			return 1; // Should always accept a better neighbour.
 		} else {
 			var d = -Math.abs(neighbour.evaluation - current.evaluation);

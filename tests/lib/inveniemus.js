@@ -164,6 +164,12 @@ var Element = exports.Element = declare({
 		return length === 0 ? 0 : Math.sqrt(error / length);
 	},
 
+	/** Finding out if this element is better than other uses the problem's `compare` method.
+	*/
+	isBetterThan: function isBetterThan(other) {
+		return this.problem.compare(this, other) > 0;
+	},
+	
 	// ## Expansions ###############################################################################
 	
 	/** An element's `neighbourhood` is a set of new elements, with values belonging to the n 
@@ -1418,7 +1424,7 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 	*/
 	acceptance: function acceptance(current, neighbour, temp) {
 		temp = isNaN(temp) ? this.temperature() : +temp;
-		if (this.problem.compare(current, neighbour) > 0) {
+		if (neighbour.isBetterThan(current)) {
 			return 1; // Should always accept a better neighbour.
 		} else {
 			var d = -Math.abs(neighbour.evaluation - current.evaluation);
@@ -1551,7 +1557,7 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 			result = this.problem.newElement(nextValues);
 		return Future.then(result.evaluate(), function () {
 			result.__velocity__ = nextVelocity;
-			result.__localBest__ = mh.problem.compare(element.__localBest__, result) > 0 ? result : element.__localBest__;
+			result.__localBest__ = result.isBetterThan(element.__localBest__) ? result : element.__localBest__;
 			return result;
 		});		
 	},
@@ -1572,7 +1578,7 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 		})).then(function (elements) {
 			elements = mh.sort(elements);
 			mh.state = elements;
-			if (mh.problem.compare(mh.__globalBest__, elements[0]) > 0) {
+			if (mh.problem.compare(mh.__globalBest__, elements[0]) < 0) {
 				mh.__globalBest__ = elements[0];
 			}
 			mh.onUpdate();

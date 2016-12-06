@@ -118,6 +118,12 @@ var Element = exports.Element = declare({
 		return length === 0 ? 0 : Math.sqrt(error / length);
 	},
 
+	/** Finding out if this element is better than other uses the problem's `compare` method.
+	*/
+	isBetterThan: function isBetterThan(other) {
+		return this.problem.compare(this, other) > 0;
+	},
+	
 	// ## Expansions ###############################################################################
 	
 	/** An element's `neighbourhood` is a set of new elements, with values belonging to the n 
