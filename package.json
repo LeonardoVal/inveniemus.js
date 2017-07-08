@@ -1,9 +1,9 @@
 ﻿{
 	"name": "inveniemus",
 	"description": "A search and optimization library, focusing on metaheuristics.",
-	"keywords": [ 
-		"search", "optimization", "metaheuristic", "hill climbing", 
-		"evolutionary computing", "genetic algorithm" 
+	"keywords": [
+		"search", "optimization", "metaheuristic", "hill climbing",
+		"evolutionary computing", "genetic algorithm"
 	],
 	"version": "0.1.5",
 	"author": {
@@ -16,13 +16,13 @@
 		{ "name": "Gonzalo Martínez", "email": "gonzalo.martinez@live.com" },
 		{ "name": "Mathías Lepratte", "email": "mlepratte3108@hotmail.com" }
 	],
-	"keywords": [ 
-		"search", "optimization", "metaheuristic", "hill climbing", 
+	"keywords": [
+		"search", "optimization", "metaheuristic", "hill climbing",
 		"evolutionary computing", "genetic algorithm"
 	],
 	"license": "MIT",
 	"repository": {
-		"type": "git", 
+		"type": "git",
 		"url": "http://github.com/LeonardoVal/inveniemus"
 	},
 	"main": "build/inveniemus.min.js",
@@ -30,9 +30,9 @@
 		"build",
 		"LICENSE.md"
 	],
-	"dependencies": { 
+	"dependencies": {
 		"creatartis-base": "~0.1.7",
-		"sermat": "~0.0.7"
+		"sermat": "~0.0.8"
 	},
 	"devDependencies": {
 		"requirejs": "~2.2.0",
