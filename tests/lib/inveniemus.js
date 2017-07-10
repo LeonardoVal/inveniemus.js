@@ -2,13 +2,13 @@
 */
 (function (global, init) { "use strict"; // Universal Module Definition.
 	if (typeof define === 'function' && define.amd) {
-		define(['creatartis-base'], init); // AMD module.
+		define(['creatartis-base', 'sermat'], init); // AMD module.
 	} else if (typeof module === 'object' && module.exports) {
-		module.exports = init(require('creatartis-base')); // CommonJS module.
+		module.exports = init(require('creatartis-base'), require('sermat')); // CommonJS module.
 	} else { // Browser or web worker (probably).
-		global.inveniemus = init(global.base);
+		global.inveniemus = init(global.base, global.Sermat);
 	}
-})(this, function __init__(base){ "use strict";
+})(this, function __init__(base, Sermat){ "use strict";
 // Import synonyms. ////////////////////////////////////////////////////////////////////////////////
 	var declare = base.declare,
 		initialize = base.initialize,
@@ -132,7 +132,7 @@ var Element = exports.Element = declare({
 		var elem = this;
 		return Future.then(this.problem.evaluation(this), function (e) {
 			elem.evaluation = Array.isArray(e) ? e : isNaN(e) ? null : [+e];
-			raiseIf(elem.evaluation === null, 'The evaluation of element ', elem, ' is null!');
+			raiseIf(elem.evaluation === null, 'The evaluation of ', elem, ' is null!');
 			return elem.evaluation;
 		});
 	},
@@ -229,7 +229,7 @@ var Element = exports.Element = declare({
 			pos;
 		for (var i = 0; i < arguments.length; i += 2) {
 			pos = arguments[i] |0;
-			newValues[pos] = clamp(newValues[pos] + arguments[i + 1], 0, this.model[i].n - 1);
+			newValues[pos] = clamp(arguments[i + 1], 0, this.model[i].n - 1);
 		}
 		return new this.constructor(newValues);
 	},
@@ -404,7 +404,7 @@ var Problem = exports.Problem = declare({
 	if the evaluation has to be done asynchronously.
 	*/
 	evaluation: function evaluation(element) {
-		return iterable(element.values).sum();
+		return iterable(Array.prototype.slice.call(element.values)).sum(); //FIXME Array conversion.
 	},
 
 	/** The `evaluate` method is used to assign an evaluation to all the given `elements`. By
@@ -1447,8 +1447,11 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 	*/
 	randomNeighbour: function randomNeighbour(element, radius) {
 		radius = isNaN(radius) ? this.delta : +radius;
-		var i = this.random.randomInt(element.values.length);
-		return element.modification(i, this.random.randomBool() ? +radius : -radius);
+		var i = this.random.randomInt(element.values.length),
+			v = element.values[i];
+		return element.modification(i, 
+			clamp(this.random.randomBool() ? v + radius : v - radius, 0, element.model[i].n - 1)
+		);
 	},
 
 	/** The `acceptance(current, neighbour, temp=this.temperature())` is the probability of
@@ -1823,7 +1826,7 @@ var HarmonySearch = metaheuristics.HarmonySearch = declare(Metaheuristic, {
 							value += random.random(-span, +span) * mh.fretWidth;
 						*/
 					}
-					return value;
+					return clamp(value, 0, range.n - 1);
 				} else {
 					return random.randomInt(0, range.n) |0;
 				}
@@ -2080,15 +2083,17 @@ var GradientDescent = metaheuristics.GradientDescent = declare(Metaheuristic, {
 	*/
 	gradientFiniteDifferences: function gradientFiniteDifferences(element, width) {
 		width = isNaN(width) ? this.estimatorWidth() : +width;
-		var mh = this;
-		return Future.all(element.values.map(function (value, i) {
+		var mh = this,
+			values = Array.prototype.slice.call(element.values);
+		return Future.all(values.map(function (value, i) {
 			var left = element.modification(i, value - width),
 				right = element.modification(i, value + width);
 			return Future.then(left.evaluate(), function (leftEvaluation) {
 				return Future.then(right.evaluate(), function (rightEvaluation) {
 					var comp = mh.problem.compare(left, right);
 					comp = comp === 0 ? comp : comp > 0 ? 1 : -1;
-					return (leftEvaluation - rightEvaluation) * comp / 2 / width;
+					//FIXME Does not support multiobjective optimization.
+					return (leftEvaluation[0] - rightEvaluation[0]) * comp / 2 / width;
 				});
 			});
 		}));
@@ -2829,12 +2834,15 @@ var AssociationRuleLearning = problems.AssociationRuleLearning = declare(Problem
 
 
 // See __prologue__.js
-	base.Iterable.chain(exports, metaheuristics, problems).forEachApply(function (id, def) {
-		if (typeof def === 'function' && def.__SERMAT__ && def.__SERMAT__.identifier) {
-			def.__SERMAT__.identifier = exports.__package__ +'.'+ def.__SERMAT__.identifier;
-			exports.__SERMAT__.include.push(def);
-		}
+	[Element, Problem, Metaheuristic,
+	// metaheuristics.
+	// problems.
+	].forEach(function (type) {
+		type.__SERMAT__.identifier = exports.__package__ +'.'+ type.__SERMAT__.identifier;
+		exports.__SERMAT__.include.push(type);
 	});
+	Sermat.include(exports); // Inveniemus uses Sermat internally.
+
 	return exports;
 });
 //# sourceMappingURL=inveniemus.js.map
