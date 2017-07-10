@@ -46,7 +46,7 @@ var HarmonySearch = metaheuristics.HarmonySearch = declare(Metaheuristic, {
 							value += random.random(-span, +span) * mh.fretWidth;
 						*/
 					}
-					return value;
+					return clamp(value, 0, range.n - 1);
 				} else {
 					return random.randomInt(0, range.n) |0;
 				}
