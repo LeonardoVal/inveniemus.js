@@ -80,15 +80,17 @@ var GradientDescent = metaheuristics.GradientDescent = declare(Metaheuristic, {
 	*/
 	gradientFiniteDifferences: function gradientFiniteDifferences(element, width) {
 		width = isNaN(width) ? this.estimatorWidth() : +width;
-		var mh = this;
-		return Future.all(element.values.map(function (value, i) {
+		var mh = this,
+			values = Array.prototype.slice.call(element.values);
+		return Future.all(values.map(function (value, i) {
 			var left = element.modification(i, value - width),
 				right = element.modification(i, value + width);
 			return Future.then(left.evaluate(), function (leftEvaluation) {
 				return Future.then(right.evaluate(), function (rightEvaluation) {
 					var comp = mh.problem.compare(left, right);
 					comp = comp === 0 ? comp : comp > 0 ? 1 : -1;
-					return (leftEvaluation - rightEvaluation) * comp / 2 / width;
+					//FIXME Does not support multiobjective optimization.
+					return (leftEvaluation[0] - rightEvaluation[0]) * comp / 2 / width;
 				});
 			});
 		}));
