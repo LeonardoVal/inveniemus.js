@@ -1,60 +1,74 @@
 ﻿/**	# Element
 
-Element is the term used in Inveniemus for representations of 
-[candidate solutions](http://en.wikipedia.org/wiki/Feasible_region) in a search or optimization 
+Element is the term used in Inveniemus for representations of
+[candidate solutions](http://en.wikipedia.org/wiki/Feasible_region) in a search or optimization
 [problem](Problem.js.html). Implementations may declare their own subclass of `Element` to represent
 their candidate solutions.
 */
 var Element = exports.Element = declare({
-	/** All elements are defined by a `problem`, an array of numbers (i.e. the element's `values`, 
-	random numbers by default) and an `evaluation` (`NaN` by default). The element's values are 
+	/** All elements are defined by a `problem`, an array of numbers (i.e. the element's `values`,
+	random numbers by default) and an `evaluation` (`NaN` by default). The element's values are
 	coerced to be in the range provided by the problem's element model.
-	
-	The `values` store all data about the candidate solution this element represents. This may 
+
+	The `values` store all data about the candidate solution this element represents. This may
 	appear to abstract and stark, but it helps to separate the problem definition from the search
 	or optimization strategy.
-	
-	The element's `evaluation` is a numerical assessment of the represented candidate solution. 
-	Usually is a measure of how well the problem is solved, or how close the element is to a real 
+
+	The element's `evaluation` is a numerical assessment of the represented candidate solution.
+	Usually is a measure of how well the problem is solved, or how close the element is to a real
 	solution. It guides almost all of the metaheuristics.
 	*/
-	constructor: function Element(problem, values, evaluation) {
-		this.problem = problem;
-		var element = this,
-			model = problem.elementModel();
-		if (!values) {
-			this.values = model.map(function (_, i) {
-				return element.randomValue(i, problem.random);
-			});
-		} else {
-			this.values = values.map(function (v, i) {
-				var range = model[i];
-				raiseIf(isNaN(v), "Value #", i, " for element is NaN!");
-				return !range.discrete ? clamp(+v, range.min, range.max) :
-					Math.min(range.max, Math.floor(clamp(+v, range.min, range.max + 1)));
-			});
-		}
-		this.evaluation = evaluation;
+	constructor: function Element(values, evaluation) {
+		this.values = !values ? this.randomValues() : this.checkValues(values, false);
+		this.evaluation = Array.isArray(evaluation) ? evaluation :
+			isNaN(evaluation) ? null : [+evaluation];
 	},
-	
-	/** Returns a random value for a given position in the element's values.
+
+	/** The default element `model` defines 10 dimensions with 2^32 values. Please override.
+	*/
+	model: Iterable.repeat({ n: Math.pow(2,32) }, 10).toArray(),
+
+	/**FIXME Returns a random value array of values corresponding the element's model.
 	*/
 	randomValue: function randomValue(i) {
-		var random = this.problem.random,
-			range = this.problem.elementModel()[i];
-		return !range ? NaN : range.discrete ? 
-			random.randomInt(range.min, range.max + 1) : random.random(range.min, range.max);			
+		return this.problem.random.randomInt(0, this.model[i].n) |0;
 	},
-	
-	/** Whether this element is an actual solution or not is decided by `suffices()`. It holds the 
-	implementation of the goal test in search problems. More complex criteria may be implemented in 
+
+	randomValues: function randomValues() {
+		var random = this.problem.random;
+		return new Uint32Array(this.model.map(function (model) {
+			return random.randomInt(0, model.n);
+		}));
+	},
+
+	/** Checks all given `values`. If `coerce` is false any invalid values raises an error. Else
+	values are coerced to fit the element's model.
+	*/
+	checkValues: function checkValues(values, coerce) {
+		return new Uint32Array(this.model.map(function (model, i) {
+			var v = values[i],
+				n = model.n;
+			if (isNaN(v)) {
+				raiseIf(!coerce, "Value #", i, " (", v, ") is NaN!");
+				return 0;
+			}
+			if (v < 0 || v >= n) {
+				raiseIf(!coerce, "Value #", i, " (", v, ") is out of range [0,", n-1, "]!");
+				return v < 0 ? 0 : n - 1;
+			}
+			return v;
+		}));
+	},
+
+	/** Whether this element is an actual solution or not is decided by `suffices()`. It holds the
+	implementation of the goal test in search problems. More complex criteria may be implemented in
 	`Problem.suffices`. By default it returns false.
 	*/
 	suffices: function suffices() {
 		return this.problem.sufficientElement(this);
 	},
 
-	/** The `emblem` of an element is a string that represents it and can be displayed to the user. 
+	/** The `emblem` of an element is a string that represents it and can be displayed to the user.
 	By default returns the string conversion of the element.
 	*/
 	emblem: function emblem() {
@@ -63,50 +77,59 @@ var Element = exports.Element = declare({
 
 	// ## Evaluations ##############################################################################
 
-	/** The element's `evaluation` is calculated by `evaluate()`, which assigns and returns this 
-	number. It may return a promise if the evaluation has to be done asynchronously. This can be 
-	interpreted as the solution's cost in a search problem or the target function of an optimization 
+	/** The element's `evaluation` is calculated by `evaluate()`, which assigns and returns this
+	number. It may return a promise if the evaluation has to be done asynchronously. This can be
+	interpreted as the solution's cost in a search problem or the target function of an optimization
 	problem. The default behaviour is adding up this element's values, useful only for testing.
 	*/
 	evaluate: function evaluate() {
 		var elem = this;
 		return Future.then(this.problem.evaluation(this), function (e) {
-			elem.evaluation = e;
-			return e;
+			elem.evaluation = Array.isArray(e) ? e : isNaN(e) ? null : [+e];
+			raiseIf(elem.evaluation === null, 'The evaluation of element ', elem, ' is null!');
+			return elem.evaluation;
 		});
 	},
-	
-	/** The [Hamming distance](http://en.wikipedia.org/wiki/Hamming_distance) between two arrays is 
-	the number of positions at which corresponding components are different. Arrays are assumed to 
+
+	/** The [Hamming distance](http://en.wikipedia.org/wiki/Hamming_distance) between two arrays is
+	the number of positions at which corresponding components are different. Arrays are assumed to
 	be of the same length. If they are not, only the common parts are considered.
 	*/
 	hammingDistance: function hammingDistance(array1, array2) {
-		return iterable(array1).zip(array2).filter(function (pair) {
-			return pair[0] != pair[1];
-		}).count();
+		var count = 0;
+		for (var i = 0, len = Math.min(array1.length, array2.length); i < len; i++) {
+			if (array1[i] !== array2[i]) {
+				count++;
+			}
+		}
+		return count;
 	},
 
-	/** The [Manhattan distance](http://en.wikipedia.org/wiki/Manhattan_distance) between two arrays 
+	/** The [Manhattan distance](http://en.wikipedia.org/wiki/Manhattan_distance) between two arrays
 	is the sum of the absolute differences of corresponding positions.
 	*/
 	manhattanDistance: function manhattanDistance(array1, array2) {
-		return iterable(array1).zip(array2).map(function (pair) {
-			return Math.abs(pair[0] - pair[1]);
-		}).sum();
+		var sum = 0;
+		for (var i = 0, len = Math.min(array1.length, array2.length); i < len; i++) {
+			sum += Math.abs(array1[i] - array2[i]);
+		}
+		return sum;
 	},
 
-	/** The [euclidean distance](http://en.wikipedia.org/wiki/Euclidean_distance) between two arrays 
+	/** The [euclidean distance](http://en.wikipedia.org/wiki/Euclidean_distance) between two arrays
 	is another option for evaluation.
 	*/
 	euclideanDistance: function euclideanDistance(array1, array2) {
-		return Math.sqrt(iterable(array1).zip(array2).map(function (pair) {
-			return Math.pow(pair[0] - pair[1], 2);
-		}).sum());
+		var sum = 0;
+		for (var i = 0, len = Math.min(array1.length, array2.length); i < len; i++) {
+			sum += Math.pow(array1[i] - array2[i], 2);
+		}
+		return Math.sqrt(sum);
 	},
 
 	/** Another common evaluation is the [root mean squared error](http://en.wikipedia.org/wiki/Root_mean_squared_error).
-	The method `rootMeanSquaredError` takes a function `f` (usually a mapping of this element) and 
-	some `data`. This `data` must be an iterable of arrays, in which the first element is the 
+	The method `rootMeanSquaredError` takes a function `f` (usually a mapping of this element) and
+	some `data`. This `data` must be an iterable of arrays, in which the first element is the
 	expected result and the rest are the arguments for the function.
 	*/
 	rootMeanSquaredError: function rootMeanSquaredError(f, data) {
@@ -123,95 +146,96 @@ var Element = exports.Element = declare({
 	isBetterThan: function isBetterThan(other) {
 		return this.problem.compare(this, other) > 0;
 	},
-	
+
 	// ## Expansions ###############################################################################
-	
-	/** An element's `neighbourhood` is a set of new elements, with values belonging to the n 
-	dimensional ball around this element's values with the given `radius` (1% by default). 
+
+	/** An element's `neighbourhood` is a set of new elements, with values belonging to the n
+	dimensional ball around this element's values with the given `radius` (1% by default).
 	*/
 	neighbourhood: function neighbourhood(radius) {
-		var elem = this,
-			neighbours = [],
-			model = this.problem.elementModel();
-		this.values.forEach(function (value, i) {
-			var range = model[i],
-				d = Array.isArray(radius) ? radius[i] : !isNaN(radius) ? radius : range.discrete ? 1 : 0.1,
-				v = value + d;
-			if (v <= range.max) {
-				neighbours.push(elem.modification(i, v));
+		var neighbours = [],
+			model = this.model,
+			values = this.values,
+			d = Math.abs(Array.isArray(radius) ? radius[i] : radius),
+			n, value;
+		if (isNaN(d)) {
+			d = 1;
+		}
+		for (var i = 0, len = values.length; i < len; i++) {
+			value = values[i];
+			n = model[i].n;
+			if (value > 0) {
+				neighbours.push(this.modification(i, Math.max(0, value - d)));
 			}
-			v = value - d;
-			if (v >= range.min) {
-				neighbours.push(elem.modification(i, v));
+			if (value < n - 1) {
+				neighbours.push(this.modification(i, Math.min(n - 1, value + d)));
 			}
-		});
+		}
 		return neighbours;
 	},
-	
-	/** The method `modification(index, value, ...)` returns a new and unevaluated copy of this 
-	element, with its values modified as specified. Values are always coerced to the element's 
+
+	/** The method `modification(index, value, ...)` returns a new and unevaluated copy of this
+	element, with its values modified as specified. Values are always coerced to the element's
 	model.
 	*/
 	modification: function modification() {
 		var newValues = this.values.slice(),
-			model = this.problem.elementModel(),
-			range, i, v;
-		for (i = 0; i < arguments.length; i += 2) {
-			v = +arguments[i + 1];
-			raiseIf(isNaN(v), "Invalid value ", v, " for element!");
-			newValues[arguments[i] |0] = v;
+			pos;
+		for (var i = 0; i < arguments.length; i += 2) {
+			pos = arguments[i] |0;
+			newValues[pos] = clamp(newValues[pos] + arguments[i + 1], 0, this.model[i].n - 1);
 		}
-		return new this.constructor(this.problem, newValues);
+		return new this.constructor(newValues);
 	},
-	
+
 	// ## Mappings #################################################################################
-	
+
 	/** Gives an alternate representation of this element. See `Problem.mapping()`.
 	*/
 	mapping: function mapping() {
 		return this.problem.mapping(this);
 	},
-	
-	/** A range mapping builds an array of equal length of this element's `values`. Each value is 
+
+	/** A range mapping builds an array of equal length of this element's `values`. Each value is
 	translated from the element model's range to the given range.
 	*/
 	rangeMapping: function rangeMapping() {
 		var args = arguments,
-			model = this.problem.elementModel(),
+			model = this.model,
 			lastRange = args[args.length - 1];
 		raiseIf(args.length < 1, "Element.rangeMapping() expects at least one argument!");
-		return this.values.map(function (v, i) {
-			var rangeFrom = model[i],
+		return Array.prototype.map.call(this.values, function (v, i) {
+			var n = model[i].n,
 				rangeTo = args.length > i ? args[i] : lastRange;
-			v = (v - rangeFrom.min) / (rangeFrom.max - rangeFrom.min) * (rangeTo[1] - rangeTo[0]) + rangeTo[0];
+			v = v / n * (rangeTo[1] - rangeTo[0]) + rangeTo[0];
 			return clamp(v, rangeTo[0], rangeTo[1]);
 		});
 	},
-	
+
 	/** The `normalizedValues` of an element is a mapping to the range [0,1].
 	*/
 	normalizedValues: function normalizedValues() {
 		return this.rangeMapping([0, 1]);
 	},
-	
-	/** An array mapping builds an array of equal length of this element's `values`. Each value is 
-	used to index the corresponding items argument. If there are less arguments than the element's 
+
+	/** An array mapping builds an array of equal length of this element's `values`. Each value is
+	used to index the corresponding items argument. If there are less arguments than the element's
 	`length`, the last one is used for the rest of the values.
 	*/
 	arrayMapping: function arrayMapping() {
 		var args = arguments,
 			lastItems = args[args.length - 1],
-			model = this.problem.elementModel();
+			model = this.model;
 		raiseIf(args.length < 1, "Element.arrayMapping() expects at least one argument!");
-		return this.values.map(function (v, i) {
+		return Array.prototype.map.call(this.values, function (v, i) {
 			var items = args.length > i ? args[i] : lastItems,
-				range = model[i],
-				index = Math.floor((v - range.min) / (range.max - range.min) * items.length);
+				n = model[i].n,
+				index = Math.floor(v / n * items.length);
 			return items[index];
 		});
 	},
-	
-	/** A set mapping builds an array of equal length of this element's `values`. Each value is used 
+
+	/** A set mapping builds an array of equal length of this element's `values`. Each value is used
 	to select one item. Items are not selected more than once.
 	*/
 	setMapping: function setMapping(items, full) {
@@ -228,16 +252,16 @@ var Element = exports.Element = declare({
 		}
 		return result;
 	},
-	
+
 	// ## Other utilities ##########################################################################
 
 	/** A `clone` is a copy of this element.
 	*/
 	clone: function clone() {
-		return new this.constructor(this.problem, this.values, this.evaluation);
+		return new this.constructor(this.values, this.evaluation);
 	},
-	
-	/** Two elements can be compared with `equals(other)`. It checks if the other element has the 
+
+	/** Two elements can be compared with `equals(other)`. It checks if the other element has the
 	same values and constructor than this one.
 	*/
 	equals: function equals(other) {
@@ -251,20 +275,22 @@ var Element = exports.Element = declare({
 		}
 		return false;
 	},
-	
-	/** The default string representation of an Element instance is like `"[object class values]"`.
+
+	/** The default string representation of an Element is its Sermat serialization.
 	*/
 	toString: function toString() {
-		return "[object "+ (this.constructor.name || 'Element') +" "+ 
-			JSON.stringify(this.values) +" "+ this.evaluation +"]";
+		return Sermat.ser(this);
 	},
-	
+
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
 		identifier: 'Element',
 		serializer: function serialize_Element(obj) {
-			return [obj.problem, obj.values, obj.evaluation];
+			return [obj.problem, Array.prototype.slice.call(obj.values), obj.evaluation];
+		},
+		materializer: function materialize_Element(obj, args) {
+			return !args ? null : new args[0].Element(args[1], arg[2]);
 		}
 	}
 }); // declare Element.

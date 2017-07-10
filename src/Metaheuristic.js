@@ -1,15 +1,15 @@
 ﻿/**	# Metaheuristic
 
-A [Metaheuristic](http://en.wikipedia.org/wiki/Metaheuristic) is an optimization algorithm (which 
-can also be used for searching). This is the base class of all metaheuristic algorithms, and hence 
+A [Metaheuristic](http://en.wikipedia.org/wiki/Metaheuristic) is an optimization algorithm (which
+can also be used for searching). This is the base class of all metaheuristic algorithms, and hence
 of all metaheuristic runs.
 */
 var Metaheuristic = exports.Metaheuristic = declare({
 	/** Each metaheuristic has its own `logger`, to track its process.
 	*/
 	logger: new Logger('inveniemus', Logger.ROOT, 'INFO'),
-	
-	/** The constructor takes a `params` object with the metaheuristic parameters. Although the 
+
+	/** The constructor takes a `params` object with the metaheuristic parameters. Although the
 	different algorithms have particular parameters of their own, some apply to all.
 	*/
 	constructor: function Metaheuristic(params) {
@@ -17,7 +17,7 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		/** First, the definition of the `problem` this metaheuristic is meant to solve.
 		*/
 			.object('problem', { defaultValue: null })
-		/** The optimization's `size` is the amount of candidate solutions the metaheuristic treats 
+		/** The optimization's `size` is the amount of candidate solutions the metaheuristic treats
 		at each step. By default it is 100.
 		*/
 			.number('size', { defaultValue: 100, coerce: true })
@@ -27,12 +27,12 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		/** All optimizations perform a certain number of iterations or `steps` (100 by default).
 		*/
 			.number('steps', { defaultValue: 100, coerce: true })
-		/** The property `step` indicates the current iteration of this optimization, or a negative 
+		/** The property `step` indicates the current iteration of this optimization, or a negative
 		number if it has not started yet.
 		*/
 			.integer('step', { defaultValue: -1, coerce: true })
-		/** Most metaheuristic are stochastic processes, hence the need for a pseudo-random number 
-		generator. By default `base.Randomness.DEFAULT` is used, yet it is strongly advised to 
+		/** Most metaheuristic are stochastic processes, hence the need for a pseudo-random number
+		generator. By default `base.Randomness.DEFAULT` is used, yet it is strongly advised to
 		provide one.
 		*/
 			.object('random', { defaultValue: Randomness.DEFAULT })
@@ -40,34 +40,34 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		*/
 			.object('statistics', { defaultValue: new Statistics() })
 			.object('logger', { ignore: true });
-		this.events = new Events({ 
+		this.events = new Events({
 			events: ["initiated", "updated", "expanded", "evaluated", "sieved", "advanced", "analyzed", "finished"]
 		});
 	},
-	
+
 	__log__: function __log__(level) {
 		if (this.logger) {
 			this.logger[level].apply(this.logger, arguments);
 		}
 	},
-	
+
 	// ## Basic workflow ###########################################################################
-	
-	/**	`initiate(size=this.size)` builds and initiates this metaheuristic state with size new 
+
+	/**	`initiate(size=this.size)` builds and initiates this metaheuristic state with size new
 	cursors. The elements are build using the `initial()` function.
 	*/
 	initiate: function initiate(size) {
 		size = isNaN(size) ? this.size : +size >> 0;
 		this.state = new Array(size);
 		for (var i = 0; i < size; i++) {
-			this.state[i] = this.problem.newElement(); // Element with random values.
+			this.state[i] = new this.problem.Element(); // Element with random values.
 		}
 		this.onInitiate();
 	},
-	
-	/** `update()` updates this metaheuristic's state. It assumes the state has been initialized. 
-	The process may be asynchronous, so it returns a future. The default implementation first 
-	expands the state by calling `expand()`, then evaluates the added elements by calling 
+
+	/** `update()` updates this metaheuristic's state. It assumes the state has been initialized.
+	The process may be asynchronous, so it returns a future. The default implementation first
+	expands the state by calling `expand()`, then evaluates the added elements by calling
 	`evaluate()`, and finally removes the worst elements with `sieve()`.
 	*/
 	update: function update() {
@@ -79,8 +79,8 @@ var Metaheuristic = exports.Metaheuristic = declare({
 			return mh;
 		});
 	},
-	
-	/** `expand(expansion=[])` adds to this metaheuristic's state the given expansion. If none is 
+
+	/** `expand(expansion=[])` adds to this metaheuristic's state the given expansion. If none is
 	given, `expansion()` is called to get new expansion.
 	*/
 	expand: function expand(expansion) {
@@ -92,22 +92,22 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		}
 		this.onExpand();
 	},
-	
-	/** `expansion(size)` returns an array of new elements to add to the current state. The default 
-	implementation generates new random elements.		
+
+	/** `expansion(size)` returns an array of new elements to add to the current state. The default
+	implementation generates new random elements.
 	*/
 	expansion: function expansion(size) {
 		var expansionRate = isNaN(this.expansionRate) ? 0.5 : +this.expansionRate;
 		size = isNaN(size) ? Math.floor(expansionRate * this.size) : +size;
 		var elems = new Array(size), i;
 		for (i = 0; i < size; i++){
-			elems[i] = this.problem.newElement();
+			elems[i] = new this.problem.Element();
 		}
 		return elems;
 	},
-	
-	/** `evaluate(elements)` evaluates all the elements in `state` with no evaluation, using its 
-	evaluation method. After that sorts the state with the `compare` method of the problem. May 
+
+	/** `evaluate(elements)` evaluates all the elements in `state` with no evaluation, using its
+	evaluation method. After that sorts the state with the `compare` method of the problem. May
 	return a future, if any evaluation is asynchronous.
 	*/
 	evaluate: function evaluate(elements) {
@@ -122,9 +122,9 @@ var Metaheuristic = exports.Metaheuristic = declare({
 			return elements;
 		});
 	},
-	
+
 	/** `sort(elements)` TODO
-	*/	
+	*/
 	sort: function sort(elements) {
 		elements = elements || this.state;
 		if (this.problem.objectives.length > 1) { // Multi-objective optimization.
@@ -135,8 +135,8 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		}
 		return elements;
 	},
-	
-	/** `sieve(size=this.size)` cuts the current state down to the given size (or this.size by 
+
+	/** `sieve(size=this.size)` cuts the current state down to the given size (or this.size by
 	default). This is usually used after expanding and evaluating the state.
 	*/
 	sieve: function sieve(size) {
@@ -146,8 +146,8 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		}
 		this.onSieve();
 	},
-	
-	/** `finished()` termination criteria for this metaheuristic. By default it checks if the number 
+
+	/** `finished()` termination criteria for this metaheuristic. By default it checks if the number
 	of passed iterations is not greater than `steps`.
 	*/
 	finished: function finished() {
@@ -160,12 +160,12 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		statistics = statistics || this.statistics;
 		var step = this.step;
 		if (statistics) {
-			if (typeof this.state[0].evaluation === 'number') { // Single-objective optimization.
+			if (this.state[0].evaluation.length === 1) { // Single-objective optimization.
 				var stat_evaluation = statistics.stat({ key:'evaluation', step: step });
 				this.state.forEach(function (element) {
-					stat_evaluation.add(element.evaluation, element);
+					stat_evaluation.add(element.evaluation[0], element);
 				});
-			} else if (Array.isArray(this.state[0].evaluation)) { // Multi-objective optimization.
+			} else { // Multi-objective optimization.
 				var stats_evaluation = this.state[0].evaluation.map(function (_, i) {
 						return statistics.stat({ key:'evaluation', index: i, step: step });
 					}),
@@ -183,12 +183,12 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		}
 		return statistics;
 	},
-	
-	/** `advance()` performs one step of the optimization. If the process has not been initialized, 
+
+	/** `advance()` performs one step of the optimization. If the process has not been initialized,
 	it does so. Returns a future if any step is asynchronous.
 	*/
 	advance: function advance() {
-		var mh = this, 
+		var mh = this,
 			stepTime = this.statistics && this.statistics.stat({key: 'step_time'}),
 			result;
 		if (isNaN(this.step) || +this.step < 0) {
@@ -208,12 +208,12 @@ var Metaheuristic = exports.Metaheuristic = declare({
 			return mh;
 		});
 	},
-	
-	/** `run()` returns a future that is resolved when the whole search process is finished. The 
+
+	/** `run()` returns a future that is resolved when the whole search process is finished. The
 	value is the best cursor after the last step. It always returns a future.
 	*/
 	run: function run() {
-		var mh = this, 
+		var mh = this,
 			advance = this.advance.bind(this),
 			continues = function continues() {
 				return !mh.finished();
@@ -224,17 +224,17 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		});
 	},
 
-	/** `reset()` reset the process to start over again. Basically cleans the statistics and sets 
+	/** `reset()` reset the process to start over again. Basically cleans the statistics and sets
 	the current `step` to -1.
 	*/
 	reset: function reset() {
 		this.step = -1;
 		if (this.statistics) this.statistics.reset();
 	},
-	
+
 	// ## State control ############################################################################
-	
-	/** The `nub` method eliminates repeated elements inside the state. Use responsibly, since this 
+
+	/** The `nub` method eliminates repeated elements inside the state. Use responsibly, since this
 	is an expensive operation. Returns the size of the resulting state.
 	*/
 	nub: function nub(precision) {
@@ -254,75 +254,75 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		}).toArray();
 		return this.state.length;
 	},
-	
+
 	// ## Events ###################################################################################
-	
-	/** For better customization the `events` handler emits the following events: 
-		
+
+	/** For better customization the `events` handler emits the following events:
+
 	+ `initiated` when the state has been initialized.
 	*/
 	onInitiate: function onInitiate() {
 		this.events.emit('initiated', this);
 		this.__log__('debug', 'State has been initiated. Nos coepimus.');
 	},
-	
+
 	/** + `updated` when the state has been expanded, evaluated and sieved.
 	*/
 	onUpdate: function onUpdate() {
 		this.events.emit('updated', this);
 		this.__log__('debug', 'State has been updated. Mutatis mutandis.');
 	},
-	
+
 	/** + `expanded` after new elements are added to the state.
 	*/
 	onExpand: function onExpand() {
 		this.events.emit('expanded', this);
 		this.__log__('debug', 'State has been expanded. Nos exploramus.');
 	},
-	
+
 	/** + `evaluated` after the elements in the state are evaluated.
 	*/
 	onEvaluate: function onEvaluate(elements) {
 		this.events.emit('evaluated', this, elements);
 		this.__log__('debug', 'Evaluated and sorted ', elements.length, ' elements. Appretiatus sunt.');
 	},
-	
+
 	/** + `sieved` after elements are removed from the state.
 	*/
 	onSieve: function onSieve() {
 		this.events.emit('sieved', this);
 		this.__log__('debug', 'State has been sieved. Haec est viam.');
 	},
-	
+
 	/** + `advanced` when one full iteration is completed.
 	*/
 	onAdvance: function onAdvance() {
 		this.events.emit('advanced', this);
 		this.__log__('debug', 'Step ', this.step, ' has been completed. Nos proficimus.');
 	},
-	
+
 	/** + `analyzed` after the statistics are calculated.
 	*/
 	onAnalyze: function onAnalyze() {
 		this.events.emit('analyzed', this);
 		this.__log__('debug', 'Statistics have been gathered. Haec sunt numeri.');
 	},
-	
+
 	/** + `finished` when the run finishes.
 	*/
 	onFinish: function onFinish() {
 		this.events.emit('finished', this);
 		this.__log__('debug', 'Finished. Nos invenerunt!');
 	},
-	
+
 	// ## Multi-objective ##########################################################################
-	
-	/** A Pareto analysis of a set of elements compares all elements with each other, accounting the 
-	domination relationship between the elements. Every element gets a new property `pareto`, an 
+
+	/** A Pareto analysis of a set of elements compares all elements with each other, accounting the
+	domination relationship between the elements. Every element gets a new property `pareto`, an
 	object holding two arrays:
-	
+
 	+ `pareto.dominated` is a list of elements dominated by this element,
-	
+
 	+ `pareto.dominators` is a list of elements that dominate this element.
 	*/
 	paretoAnalysis: function paretoAnalysis(elements) {
@@ -348,16 +348,16 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		}
 		return elements;
 	},
-	
+
 	/** Sorting function used for multiobjective problems. By default uses `nonDominatedSort` (based
 	on NSGA).
 	*/
 	multiObjectiveSort: function multiObjectiveSort(elements) {
 		return this.nonDominatedSort(elements);
 	},
-	
+
 	/** The crowding distance is an estimation of the density of elements surrounding each element
-	in the given list (or the state by default). Every element will be added a `crowdingDistance` 
+	in the given list (or the state by default). Every element will be added a `crowdingDistance`
 	number property.
 	*/
 	crowdingDistance: function crowdingDistance(elements) {
@@ -375,12 +375,12 @@ var Metaheuristic = exports.Metaheuristic = declare({
 			es[0].crowdingDistance = Infinity;
 			es[es.length - 1].crowdingDistance = Infinity;
 			for (j = 1; j < es.length - 1; j++) {
-				es[j].crowdingDistance += es[j + 1].evaluation[i] - es[j - 1].evaluation[i]; 
+				es[j].crowdingDistance += es[j + 1].evaluation[i] - es[j - 1].evaluation[i];
 			}
 		}
 		return elements;
 	},
-	
+
 	/** The non-dominated sort is based on [_"A Fast Elitist Non-Dominated Sorting Genetic Algorithm
 	for Multi-Objective Optimization: NSGA-II"_ by Deb (2000)](http://citeseer.ist.psu.edu/viewdoc/summary?doi=10.1.1.18.4257).
 	*/
@@ -393,9 +393,9 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		});
 		return elements;
 	},
-	
-	/** The Pareto strength of an element is defined as the sum of the amount of elements being 
-	dominated by all dominators of a given element. For more information see: [_"SPEA2: Improving 
+
+	/** The Pareto strength of an element is defined as the sum of the amount of elements being
+	dominated by all dominators of a given element. For more information see: [_"SPEA2: Improving
 	the Strength Pareto Evolutionary Algorithm"_ by Zitzler et al (2001)](http://citeseer.ist.psu.edu/viewdoc/summary?doi=10.1.1.112.5073).
 	*/
 	strengthParetoSort: function strengthParetoSort(elements) {
@@ -409,15 +409,15 @@ var Metaheuristic = exports.Metaheuristic = declare({
 			return elem1.pareto.strength - elem2.pareto.strength;
 		});
 	},
-	
+
 	// ## Utilities ################################################################################
-	
+
 	/** The default string representation of a Metaheuristic is like `"[object class]"`.
 	*/
 	toString: function toString() {
 		return "[object "+ (this.constructor.name || 'Metaheuristic') +"]";
 	},
-	
+
 	/** Returns a reconstruction of the parameters used in the construction of this instance.
 	*/
 	__params__: function __params__() {
@@ -440,7 +440,7 @@ var Metaheuristic = exports.Metaheuristic = declare({
 		}
 		return params;
 	},
-	
+
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
