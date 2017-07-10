@@ -7,18 +7,17 @@ Problem builder for test beds of algorithms in this library.
 */
 var TestBed = problems.TestBed = declare(Problem, {
 	constructor: function TestBed(spec) {
-		Problem.call(this, spec);
-		this.title = spec.title;
-		
 		var minimumValue = isNaN(spec.minimumValue) ? -1e6 : +spec.minimumValue,
 			maximumValue = isNaN(spec.maximumValue) ? +1e6 : +spec.maximumValue,
 			length = isNaN(spec.length) ? 2 : +spec.length;
-		this.__elementModel__ = Iterable.repeat({ min: minimumValue, max: maximumValue, discrete: !!spec.discreteDomain }, length).toArray();
-		
+		Problem.call(this, base.copy({
+			title: spec.title,
+			elementModel: Iterable.repeat({ n: 1e4 }, length).toArray()
+		}, spec));
 		this.evaluation = function evaluation(element) {
-			return spec.evaluation(element.values);
+			return spec.evaluation(element.rangeMapping([minimumValue, maximumValue]));
 		};
-		
+
 		/** If an optimum value is provided (`spec.optimumValue`) it is added to the termination
 		criteria.
 		*/
@@ -29,16 +28,16 @@ var TestBed = problems.TestBed = declare(Problem, {
 		}
 	}
 });
-	
-/** Testbed problems taken from the web (e.g. 
+
+/** Testbed problems taken from the web (e.g.
 [1](http://en.wikipedia.org/wiki/Test_functions_for_optimization),
-[2](http://www.sfu.ca/~ssurjano/optimization.html), 
+[2](http://www.sfu.ca/~ssurjano/optimization.html),
 [3](http://www-optima.amp.i.kyoto-u.ac.jp/member/student/hedar/Hedar_files/TestGO.htm)
 ).
 */
 problems.testbeds = {
 	/** The [Ackley's function](http://www.sfu.ca/~ssurjano/ackley.html) (in 2 dimensions) has an
-	global optimum surrounded by an outer region that is rather flat, yet with many local optima. 
+	global optimum surrounded by an outer region that is rather flat, yet with many local optima.
 	*/
 	Ackley: function Ackley(length, a, b, c) {
 		a = isNaN(a) ? 20 : +a;
@@ -48,11 +47,14 @@ problems.testbeds = {
 			title: "Ackley testbed",
 			length: length,
 			objectives: -Infinity,
-			minimumValue: -32.768, 
-			maximumValue: +32.768,			
-			optimumValue: 0,			
+			minimumValue: -32.768,
+			maximumValue: +32.768,
+			optimumValue: 0,
 			evaluation: function evaluation(vs) {
-				var term1 = 0, term2 = 0, d = vs.length, v;
+				var term1 = 0,
+					term2 = 0,
+					d = vs.length,
+					v;
 				for (var i = 0; i < d; ++i) {
 					v = vs[i];
 					term1 += v * v;
@@ -76,13 +78,12 @@ problems.testbeds = {
 			maximumValue: +10,
 			evaluation: function evaluation(vs) {
 				var x = vs[0], y = vs[1];
-				return -0.0001 * Math.pow(
-					Math.abs(Math.sin(x) * Math.sin(y) * Math.exp(Math.abs(100 - Math.sqrt(x*x + y*y) / Math.PI))) + 1,
-					0.1);
-			}			
+				return -0.0001 * Math.pow(Math.abs(Math.sin(x) * Math.sin(y) *
+					Math.exp(Math.abs(100 - Math.sqrt(x*x + y*y) / Math.PI))) + 1, 0.1);
+			}
 		});
 	},
-	
+
 	/** The [Griewank function](http://www.sfu.ca/~ssurjano/griewank.html) has many local optima
 	regularly distributed.
 	*/
@@ -101,11 +102,11 @@ problems.testbeds = {
 					prod *= Math.cos(v / Math.sqrt(i+1));
 				}
 				return sum - prod + 1;
-			}			
+			}
 		});
 	},
-	
-	/** The [Levy function](http://www.sfu.ca/~ssurjano/levy.html) is multimodal, with some 
+
+	/** The [Levy function](http://www.sfu.ca/~ssurjano/levy.html) is multimodal, with some
 	difficult local minima regions.
 	*/
 	Levy: function Levy(length) {
@@ -117,7 +118,7 @@ problems.testbeds = {
 			maximumValue: +10,
 			optimumValue: 0,
 			evaluation: function evaluation(vs) {
-				var sum = 0, d = vs.length, 
+				var sum = 0, d = vs.length,
 					w1 = 1 + (vs[0] - 1) / 4, wd = 1 + (vs[d-1] - 1) / 4, w;
 				for (var i = 1; i < d - 1; ++i) {
 					w = 1 + (vs[i] - 1) / 4;
@@ -128,9 +129,9 @@ problems.testbeds = {
 			}
 		});
 	},
-	
+
 	/** The [Michalewicz function](http://www.sfu.ca/~ssurjano/michal.html) is a multimodal function
-	with a number local minima equal to the factorial of the number of dimensions; and it has steep 
+	with a number local minima equal to the factorial of the number of dimensions; and it has steep
 	valleys and ridges.
 	*/
 	Michalewicz: function Michalewicz(length, m) {
@@ -142,7 +143,9 @@ problems.testbeds = {
 			minimumValue: 0,
 			maximumValue: Math.PI,
 			evaluation: function evaluation(vs) {
-				var sum = 0, d = vs.length, v;
+				var sum = 0,
+					d = vs.length,
+					v;
 				for (var i = 0; i < d; ++i) {
 					v = vs[i];
 					sum += Math.sin(v) * Math.pow(Math.sin((i+1) * v * v / Math.PI), 2 * m);
@@ -151,7 +154,7 @@ problems.testbeds = {
 			}
 		});
 	},
-	
+
 	/** [Perm(0,d,beta) function](http://www-optima.amp.i.kyoto-u.ac.jp/member/student/hedar/Hedar_files/TestGO_files/Page2545.htm).
 	*/
 	perm0: function perm0(d, beta) {
@@ -177,7 +180,7 @@ problems.testbeds = {
 			}
 		});
 	},
-	
+
 	/** The [Rastrigin function](http://www.sfu.ca/~ssurjano/rastr.html) is highly multimodal yet
 	local minima are regularly distributed.
 	*/
@@ -199,10 +202,10 @@ problems.testbeds = {
 			}
 		});
 	},
-	
-	/*** The [Rosenbrock function](http://en.wikipedia.org/wiki/Rosenbrock_function) is a function 
-	used as a performance test problem for optimization algorithms introduced by Howard H. 
-	Rosenbrock in 1960. The global minimum is inside a long, narrow, parabolic shaped flat valley. 
+
+	/*** The [Rosenbrock function](http://en.wikipedia.org/wiki/Rosenbrock_function) is a function
+	used as a performance test problem for optimization algorithms introduced by Howard H.
+	Rosenbrock in 1960. The global minimum is inside a long, narrow, parabolic shaped flat valley.
 	To find the valley is trivial, yet to converge to the global minimum (zero) is difficult.
 	*/
 	Rosenbrock: function Rosenbrock(length, a, b) {
@@ -222,7 +225,7 @@ problems.testbeds = {
 			}
 		});
 	},
-	
+
 	/** The [Schwefel function](http://www.sfu.ca/~ssurjano/schwef.html) is a complex test with many
 	local optima.
 	*/
@@ -235,7 +238,9 @@ problems.testbeds = {
 			maximumValue: +500,
 			optimumValue: 0,
 			evaluation: function evaluation(vs) {
-				var result = 0, d = vs.length, v;
+				var result = 0,
+					d = vs.length,
+					v;
 				for (var i = 0; i < d; ++i) {
 					v = vs[i];
 					result += v * Math.sin(Math.sqrt(Math.abs(v)));
@@ -244,10 +249,10 @@ problems.testbeds = {
 			}
 		});
 	},
-	
+
 	/** The [sphere function](http://www.sfu.ca/~ssurjano/spheref.html) minimizes the sum of the
 	squares for every value in the input vector. It has as many local minima as dimensions the
-	search space has, but still only one global minimum (zero). 
+	search space has, but still only one global minimum (zero).
 	*/
 	sphere: function sphere(length) {
 		return new TestBed({
@@ -264,8 +269,8 @@ problems.testbeds = {
 			}
 		});
 	},
-	
-	/** A very simple class of problems that deal with optimizing the sum of the elements' values. 
+
+	/** A very simple class of problems that deal with optimizing the sum of the elements' values.
 	Probably the simplest optimization problem that can be defined. It has no local optima, and it
 	draws a simple and gentle slope towards to global optimum.
 	*/
@@ -273,31 +278,31 @@ problems.testbeds = {
 		length = isNaN(length) ? 2 : Math.max(1, length|0);
 		target = isNaN(target) ? -Infinity : +target;
 		return new TestBed({
-			title: "sum optimization testbed",			
+			title: "sum optimization testbed",
 			length: length,
 			objectives: target,
 			minimumValue:  0,
 			maximumValue: +1,
 			optimumValue: target === -Infinity ? 0 : target === +Infinity ? length : target,
 			evaluation: function evaluation(vs) {
-				var result = 0, len = vs.length;
-				for (var i = 0; i < len; ++i) {
+				var result = 0;
+				for (var i = 0, len = vs.length; i < len; i++) {
 					result += vs[i];
 				}
 				return result;
 			}
 		});
 	},
-	
+
 	// ## Multi-objective ##########################################################################
-	
+
 	/** Multiobjective optimization problems taken from [_"Comparison of Multiobjective Evolutionary
 	Algorithms: Empirical Results"_ by Zitzler, Deb and Thiele (2000)](http://www.tik.ee.ethz.ch/sop/publicationListFiles/zdt2000a.pdf).
 	*/
 	ZDT1: function ZDT1(length) {
 		length = isNaN(length) ? 30 : Math.max(1, length|0);
 		return new TestBed({
-			title: "Zitzler-Deb-Thiele function 1",			
+			title: "Zitzler-Deb-Thiele function 1",
 			length: length,
 			objectives: [-Infinity, -Infinity],
 			minimumValue:  0,
@@ -310,11 +315,11 @@ problems.testbeds = {
 			}
 		});
 	},
-	
+
 	ZDT2: function ZDT2(length) {
 		length = isNaN(length) ? 30 : Math.max(1, length|0);
 		return new TestBed({
-			title: "Zitzler-Deb-Thiele function 2",			
+			title: "Zitzler-Deb-Thiele function 2",
 			length: length,
 			objectives: [-Infinity, -Infinity],
 			minimumValue:  0,
@@ -327,11 +332,11 @@ problems.testbeds = {
 			}
 		});
 	},
-	
+
 	ZDT3: function ZDT3(length) {
 		length = isNaN(length) ? 30 : Math.max(1, length|0);
 		return new TestBed({
-			title: "Zitzler-Deb-Thiele function 3",			
+			title: "Zitzler-Deb-Thiele function 3",
 			length: length,
 			objectives: [-Infinity, -Infinity],
 			minimumValue:  0,
