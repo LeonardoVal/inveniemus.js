@@ -1,4 +1,4 @@
-﻿define(['creatartis-base', 'inveniemus'], function (base, inveniemus) {
+﻿define(['creatartis-base', 'sermat', 'inveniemus'], function (base, Sermat, inveniemus) {
 	var iterable = base.iterable,
 		Future = base.Future;
 	iterable([['RandomSearch', inveniemus.Metaheuristic]])

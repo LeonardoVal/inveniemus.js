@@ -1,4 +1,4 @@
-﻿define(['creatartis-base', 'inveniemus'], function (base, inveniemus) {
+﻿define(['creatartis-base', 'sermat', 'inveniemus'], function (base, Sermat, inveniemus) {
 	var iterable = base.iterable,
 		Problem = inveniemus.Problem,
 		Metaheuristic = inveniemus.Metaheuristic;
@@ -9,7 +9,9 @@
 				mh = new Metaheuristic({ problem: problem }),
 				analyzer = mh.paretoAnalysis.bind(mh);
 			function buildElems(elems) {
-				return elems.map(problem.newElement.bind(problem, null));
+				return elems.map(function (v) {
+					return new problem.Element(null, v);
+				});
 			}				
 			function checkAnalysis(expectedCounts, elems) {
 				iterable(elems).zip(expectedCounts).forEachApply(function (elem, counts) {
@@ -29,7 +31,9 @@
 			var problem = new Problem({ objectives: [-Infinity, Infinity] }),
 				mh = new Metaheuristic({ problem: problem });
 			function checkSort(elems) {
-				elems = elems.map(problem.newElement.bind(problem, null));
+				elems = elems.map(function (v) {
+					return new problem.Element(null, v);
+				});
 				elems = mh.sort(elems);
 				var comp;
 				for (var i = 1; i < elems.length; i++) {

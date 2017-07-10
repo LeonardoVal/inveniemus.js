@@ -1,4 +1,4 @@
-﻿define(['creatartis-base', 'inveniemus'], function (base, inveniemus) {
+﻿define(['creatartis-base', 'sermat', 'inveniemus'], function (base, Sermat, inveniemus) {
 	var Element = inveniemus.Element,
 		Problem = inveniemus.Problem,
 		RANDOM = base.Randomness.DEFAULT,
@@ -56,7 +56,7 @@
 			var problem = new Problem(),
 				oldEvaluation = problem.evaluation,
 				elements = 	base.Iterable.repeat(0, 10).map(function () {
-					return problem.newElement();
+					return new problem.Element();
 				}).toArray();
 			problem.evaluation = function evaluation(element) {
 				var r = new Future();

@@ -1,4 +1,4 @@
-﻿define(['creatartis-base', 'inveniemus'], function (base, inveniemus) {
+﻿define(['creatartis-base', 'sermat', 'inveniemus'], function (base, Sermat, inveniemus) {
 	var Element = inveniemus.Element,
 		Problem = inveniemus.Problem;
 
