@@ -1,6 +1,6 @@
 ﻿/** # Evolution strategy.
 
-[Evolution strategy](https://en.wikipedia.org/wiki/Evolution_strategy) is maybe the simplest 
+[Evolution strategy](https://en.wikipedia.org/wiki/Evolution_strategy) is maybe the simplest
 evolutionary optimization method. At each step, one or more random deviations of each element are
 generated, replacing their parent if they prove to be better.
 */
@@ -17,21 +17,21 @@ var EvolutionStrategy = metaheuristics.EvolutionStrategy = declare(Metaheuristic
 			*/
 			.integer('size', { coerce: true, defaultValue: 1, minimum: 1 });
 	},
-	
-	/** A `mutant` is a new random variation of the given `element`. Although using a normal 
+
+	/** A `mutant` is a new random variation of the given `element`. Although using a normal
 	distribution is more common, here a more efficient tringular distribution is used.
 	*/
 	mutant: function mutant(element) {
 		var random = this.random,
-			model = this.problem.elementModel(),
+			model = element.model,
 			newValues = element.values.map(function (v, i) {
-				var range = model[i];
-				return v + (random.random() - random.random()) * (range.max - range.min);
+				var n = model[i].n;
+				return clamp(v + (random.random() - random.random()) * n, 0, n - 1);
 			});
-		return this.problem.newElement(newValues);
+		return new this.problem.Element(newValues);
 	},
-	
-	/** `mutants` calculates an array of `count` mutants, or `this.mutantCount` by default. 
+
+	/** `mutants` calculates an array of `count` mutants, or `this.mutantCount` by default.
 	*/
 	mutants: function mutants(element, count) {
 		count = isNaN(count) ? this.mutantCount : +count;
@@ -41,7 +41,7 @@ var EvolutionStrategy = metaheuristics.EvolutionStrategy = declare(Metaheuristic
 		}
 		return result;
 	},
-	
+
 	/** The expansion simply returns a set of `this.mutantCount` mutants for each element in the
 	current state.
 	*/
@@ -54,9 +54,9 @@ var EvolutionStrategy = metaheuristics.EvolutionStrategy = declare(Metaheuristic
 		this.onExpand();
 		return newElements;
 	},
-	
+
 	// ## Utilities ################################################################################
-	
+
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {

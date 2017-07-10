@@ -16,24 +16,24 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 		/** + `mutationRate=0.2` is the chance of a new element (resulting from crossover) mutating.
 		*/
 			.number('mutationRate', { defaultValue: 0.2, minimum: 0, maximum: 1, coerce: true })
-		/** + `selection(count)` is a function that selects count elements from the current 
+		/** + `selection(count)` is a function that selects count elements from the current
 		population. These will be the parents of the new elements in the next generation. By default
 		rank selection is used, a.k.a. fitness proportional to position in the state.
 		*/
 			.func('selection', { defaultValue: GeneticAlgorithm.selections.rankSelection })
-		/** + `crossover(parents)` is a function implementing the genetic operator that simulates 
+		/** + `crossover(parents)` is a function implementing the genetic operator that simulates
 		reproduction with inheritance. The parents argument must be an array of elements. The result
 		is an array of elements. By default the single point crossover is used.
 		*/
 			.func('crossover', { defaultValue: GeneticAlgorithm.crossovers.singlepointCrossover })
-		/** `mutation(element)` is a function implementing the genetic operator that simulates 
-		biological mutation, making a random change in the chromosome. By default a single point 
+		/** `mutation(element)` is a function implementing the genetic operator that simulates
+		biological mutation, making a random change in the chromosome. By default a single point
 		uniform mutation is used.
 		*/
 			.func('mutation', { defaultValue: GeneticAlgorithm.mutations.singlepointUniformMutation });
 	},
 
-	/** The population's (state) `expansion()` is the possibly mutated crossovers of selected 
+	/** The population's (state) `expansion()` is the possibly mutated crossovers of selected
 	elements. How many is determined by `expansionRate`.
 	*/
 	expansion: function expansion() {
@@ -52,15 +52,15 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 		this.onExpand();
 		return newElements;
 	},
-	
+
 	/** ## Selection methods #######################################################################
 
-	`GeneticAlgorithm.selections` is a bundle of standard selection methods. A selection function 
-	takes the amount of elements to be selected and returns an array of selected elements. The 
+	`GeneticAlgorithm.selections` is a bundle of standard selection methods. A selection function
+	takes the amount of elements to be selected and returns an array of selected elements. The
 	implemented methods are:
 	*/
 	'static selections': {
-		/** + `rankSelection(count=2)` makes a selection where each element's probability of being 
+		/** + `rankSelection(count=2)` makes a selection where each element's probability of being
 		selected is proportional to its position in the state.
 		*/
 		rankSelection: function rankSelection(count) {
@@ -68,8 +68,8 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 			var len = this.state.length,
 				randoms = this.random.randoms(count, 0, len * (len + 1) / 2 - 1),
 				selected = [];
-			randoms.sort(function (x, y) { 
-				return x - y; 
+			randoms.sort(function (x, y) {
+				return x - y;
 			});
 			this.state.forEach(function (element) {
 				for (var i = 0; i < count; i++) {
@@ -85,9 +85,9 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 			}
 			return selected;
 		},
-		
-		/** + `rouletteSelection(count=2)` makes a selection where each element's probability of being 
-		selected is proportional to its evaluation. Warning! This selection assumes the evaluation is 
+
+		/** + `rouletteSelection(count=2)` makes a selection where each element's probability of being
+		selected is proportional to its evaluation. Warning! This selection assumes the evaluation is
 		being maximized.
 		*/
 		rouletteSelection: function rouletteSelection(count) { //FIXME
@@ -113,7 +113,7 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 			}
 			return selected;
 		},
-		
+
 		/** + [`stochasticUniversalSamplingSelection(count)`](http://en.wikipedia.org/wiki/Stochastic_universal_sampling)
 		is a less biased version of the roulette selection method.
 		*/
@@ -122,8 +122,8 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 			var state = this.state,
 				totalFitness = iterable(state).select('evaluation').sum(),
 				p = totalFitness / count;
-			return base.Iterable.iterate(function (x) { 
-				return x + p; 
+			return base.Iterable.iterate(function (x) {
+				return x + p;
 			}, this.random.randomInt(p), count).map(function (pointer) {
 				var sum = 0;
 				for (var i = 0; i < state.length; ++i) {
@@ -134,12 +134,12 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 				}
 				return state[state.length - 1]; // Very improbable.
 			}).toArray();
-		},		
+		},
 	}, // GeneticAlgorithm.selections
 
 	/** ## Crossover methods #######################################################################
 
-	`GeneticAlgorithm.crossovers` is a bundle of standard crossover methods. A crossover function 
+	`GeneticAlgorithm.crossovers` is a bundle of standard crossover methods. A crossover function
 	takes an array of parent elements and returns an array of sibling elements. The implemented
 	methods are:
 	*/
@@ -150,30 +150,33 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 		singlepointCrossover: function singlepointCrossover(parents) {
 			raiseIf(!Array.isArray(parents) || parents.length < 2, "A two parent array is required.");
 			var cut = this.random.randomInt(this.length - 1) + 1,
-				values0 = parents[0].values,
-				values1 = parents[1].values;
-			return [ 
-				this.problem.newElement(values0.slice(0, cut).concat(values1.slice(cut))),
-				this.problem.newElement(values1.slice(0, cut).concat(values0.slice(cut)))
+				values0 = Array.prototype.slice.call(parents[0].values),
+				values1 = Array.prototype.slice.call(parents[1].values);
+			return [
+				new this.problem.Element(values0.slice(0, cut).concat(values1.slice(cut))),
+				new this.problem.Element(values1.slice(0, cut).concat(values0.slice(cut)))
 			];
 		},
-		
+
 		/** + `twopointCrossover(parents)` given two parents returns an array of two new elements:
-		the first one with two parts of the first parent and one part of the second parent, and the 
+		the first one with two parts of the first parent and one part of the second parent, and the
 		second one assembled viceversa. The two cutpoints are chosen randomly.
 		*/
 		twopointCrossover: function twopointCrossover(parents) {
-			raiseIf(!Array.isArray(parents) || parents.length < 2, "A two parent array is required.");
+			raiseIf(!Array.isArray(parents) || parents.length < 2,
+				"A two parent array is required.");
 			var cut1 = this.random.randomInt(this.length - 1) + 1,
 				cut2 = this.random.randomInt(this.length - 1) + 1,
-				values0 = parents[0].values,
-				values1 = parents[1].values;
-			return [ 
-				this.problem.newElement(values0.slice(0, cut1).concat(values1.slice(cut1, cut2)).concat(values0.slice(cut2))),
-				this.problem.newElement(values1.slice(0, cut1).concat(values0.slice(cut1, cut2)).concat(values1.slice(cut2)))
+				values0 = Array.prototype.slice.call(parents[0].values),
+				values1 = Array.prototype.slice.call(parents[1].values);
+			return [
+				new this.problem.Element(values0.slice(0, cut1)
+					.concat(values1.slice(cut1, cut2)).concat(values0.slice(cut2))),
+				new this.problem.Element(values1.slice(0, cut1)
+					.concat(values0.slice(cut1, cut2)).concat(values1.slice(cut2)))
 			];
 		},
-		
+
 		/** + `uniformCrossover(parents)` creates as many children as the given parents, with each
 		value taken randomly from any of the parents.
 		*/
@@ -188,15 +191,15 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 				for (var j = 0; j < length; ++j) {
 					values.push(random.choice(parents).values[j]);
 				}
-				result.push(this.problem.newElement(values));
+				result.push(new this.problem.Element(values));
 			}
 			return result;
 		}
 	}, // GeneticAlgorithm.crossovers
-	
+
 	/** ## Mutation methods ########################################################################
 
-	`GeneticAlgorithm.mutations` is a bundle of standard mutation methods. A mutation function takes 
+	`GeneticAlgorithm.mutations` is a bundle of standard mutation methods. A mutation function takes
 	an element and returns a new element which is a variation of the former. The implemented methods
 	are:
 	*/
@@ -208,8 +211,8 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 			var i = this.random.randomInt(element.values.length);
 			return element.modification(i, element.randomValue(i));
 		},
-			
-		/** + `uniformMutation(maxPoints=Infinity)` builds a mutation function that makes at least 
+
+		/** + `uniformMutation(maxPoints=Infinity)` builds a mutation function that makes at least
 		one and up to `maxPoints` mutations, changing a randomly selected gene to a uniform random
 		value.
 		*/
@@ -218,7 +221,7 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 			var model = this.problem.elementModel();
 			return function mutation(element) {
 				var times = maxPoints, i, range;
-				element = this.problem.newElement(element.values); // Copy element.
+				element = new this.problem.Element(element.values); // Copy element.
 				do {
 					i = this.random.randomInt(model.length);
 					element.values[i] = this.random.random(model[i].min, model[i].max);
@@ -226,7 +229,7 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 				return element;
 			};
 		},
-		
+
 		/** + `singlepointBiasedMutation(element)` sets a randomly selected gene to random deviation
 		of its value, with a triangular distribution.
 		*/
@@ -234,10 +237,10 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 			var random = this.random,
 				model = this.problem.elementModel(),
 				i = random.randomInt(element.length);
-			return element.modification(i, element.values[i] + 
+			return element.modification(i, element.values[i] +
 				(random.random() - random.random()) * (model[i].max - model[i].min));
 		},
-		
+
 		/** + `recombinationMutation(element)` swaps two values of the element at random.
 		*/
 		recombinationMutation: function recombinationMutation(element) {
@@ -250,12 +253,12 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 			}
 			values[i1] = values[i2];
 			values[i2] = v1;
-			return this.problem.newElement(values);
+			return new this.problem.Element(values);
 		}
 	}, // GeneticAlgorithm.mutations
-	
+
 	// ## Utilities ################################################################################
-	
+
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {

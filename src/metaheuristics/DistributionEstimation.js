@@ -1,13 +1,13 @@
 ﻿/** # Distribution estimation
 
 This is a simple implementation of a [estimation of distributionalgorithm]
-(http://en.wikipedia.org/wiki/Estimation_of_distribution_algorithm). This stochastic optimization 
-methods try to estimate a probabilistic model for the characteristics of the better candidate 
+(http://en.wikipedia.org/wiki/Estimation_of_distribution_algorithm). This stochastic optimization
+methods try to estimate a probabilistic model for the characteristics of the better candidate
 solutions. At each step many individual are randomly generated based on the current model. After all
 have been evaluated, the model is adjusted.
 
 The statistical model in this implementation is an histogram for each dimension (i.e. value of the
-element representing the candidate solution). Dimensions are assumed to be independent of each 
+element representing the candidate solution). Dimensions are assumed to be independent of each
 other.
 */
 var DistributionEstimation = metaheuristics.DistributionEstimation = declare(Metaheuristic, {
@@ -21,7 +21,7 @@ var DistributionEstimation = metaheuristics.DistributionEstimation = declare(Met
 			*/
 			.integer('histogramWidth', { coerce: true, defaultValue: 10, minimum: 2 });
 	},
-	
+
 	/** New elements to add to the state in the `expansion` are build from the `histograms`
 	calculated from said state.
 	*/
@@ -34,14 +34,14 @@ var DistributionEstimation = metaheuristics.DistributionEstimation = declare(Met
 			return mh.elementFromHistograms(histograms);
 		}).toArray();
 	},
-	
+
 	/** The `histograms` have the frequencies of value ranges in the current state.
 	*/
 	histograms: function histograms() {
-		return DistributionEstimation.histograms(this.state, this.histogramWidth, 
-			this.problem.elementModel().length);
+		return DistributionEstimation.histograms(this.state, this.histogramWidth,
+			this.problem.Element.prototype.model.length);
 	},
-	
+
 	'static histograms': function histograms(state, histogramWidth, histogramCount) {
 		var size = state.length,
 			counts = Iterable.iterate(function (v) { // Builds a matrix of zeroes.
@@ -56,16 +56,16 @@ var DistributionEstimation = metaheuristics.DistributionEstimation = declare(Met
 		return counts.map(function (v) { // Turn counts into frequencies.
 			return v.map(function (v) {
 				return v / size;
-			}); 
+			});
 		});
 	},
-	
+
 	/** The method `elementFromHistogram` is used to make these new random elements.
 	*/
 	elementFromHistograms: function elementFromHistogram(histograms) {
 		return DistributionEstimation.elementFromHistograms(histograms, this.problem, this.random);
 	},
-	
+
 	'static elementFromHistograms': function elementFromHistogram(histograms, problem, random) {
 		var length = histograms.length,
 			values = new Array(length),
@@ -80,11 +80,11 @@ var DistributionEstimation = metaheuristics.DistributionEstimation = declare(Met
 				}
 			}
 		}
-		return problem.newElement(values);
+		return new problem.Element(values);
 	},
-	
+
 	// ## Estimation of distribution as a problem. #################################################
-	
+
 	/** A `histogramProblem` is the problem of finding histograms that would generate good candidate
 	solutions for a given `problem`.
 	*/
@@ -100,8 +100,8 @@ var DistributionEstimation = metaheuristics.DistributionEstimation = declare(Met
 				elementLength: function elementLength() {
 					return elementLength * histogramWidth;
 				},
-				
-				/** The evaluation of the elements is the average evaluation of `size` elements 
+
+				/** The evaluation of the elements is the average evaluation of `size` elements
 				generated from the histogram that this element represents.
 				*/
 				evaluation: function evaluation(element) {
@@ -115,7 +115,7 @@ var DistributionEstimation = metaheuristics.DistributionEstimation = declare(Met
 						return iterable(evaluations).sum() / evaluations.length;
 					});
 				},
-				
+
 				/** The `mapping` simply assembles the histograms and normalizes its frequencies.
 				*/
 				mapping: function mapping(element) {
@@ -130,16 +130,16 @@ var DistributionEstimation = metaheuristics.DistributionEstimation = declare(Met
 					}
 					return histograms;
 				},
-				
+
 				/** The comparison function is the same as the original problem's.
 				*/
 				compare: problem.compare
 			});
 		return new HistogramProblem({ random: problem.random });
 	},
-	
+
 	// ## Other ####################################################################################
-	
+
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {

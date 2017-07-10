@@ -1,6 +1,6 @@
 ﻿/** # Simulated annealing
 
-[Simulated annealing](http://en.wikipedia.org/wiki/Simulated_annealing) is a stochastic global 
+[Simulated annealing](http://en.wikipedia.org/wiki/Simulated_annealing) is a stochastic global
 optimization technique.
 */
 var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheuristic, {
@@ -15,7 +15,7 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 		/** + `minimumTemperature=0` is the temperature at the end of the run.
 		*/
 			.number('minimumTemperature', { defaultValue: 0, coerce: true })
-		/** + `delta=1` is the radius of the elements surroundings in every dimension, that is 
+		/** + `delta=1` is the radius of the elements surroundings in every dimension, that is
 		checked by this algorithm.
 		*/
 			.number('delta', { defaultValue: 1, coerce: true })
@@ -26,19 +26,18 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 		*/
 			.func('temperature', { defaultValue: this.coolingSchedule.linear });
 	},
-	
-	/** `randomNeighbour(element, radius=this.delta)` returns one neighbour of the given element 
+
+	/** `randomNeighbour(element, radius=this.delta)` returns one neighbour of the given element
 	chosen at random.
 	*/
 	randomNeighbour: function randomNeighbour(element, radius) {
 		radius = isNaN(radius) ? this.delta : +radius;
-		var i = this.random.randomInt(element.values.length), 
-			v = element.values[i];
-		return element.modification(i, this.random.randomBool() ? v + radius : v - radius);
+		var i = this.random.randomInt(element.values.length);
+		return element.modification(i, this.random.randomBool() ? +radius : -radius);
 	},
-	
-	/** The `acceptance(current, neighbour, temp=this.temperature())` is the probability of 
-	accepting the new element. Uses the original definitions from 
+
+	/** The `acceptance(current, neighbour, temp=this.temperature())` is the probability of
+	accepting the new element. Uses the original definitions from
 	[Kirkpatrick's paper](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.123.7607).
 	*/
 	acceptance: function acceptance(current, neighbour, temp) {
@@ -50,20 +49,20 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 			return clamp(Math.exp(d / temp), 0, 1);
 		}
 	},
-	
-	/** The annealings temperature is a metaphore for the amount of randomness the process applies. 
+
+	/** The annealings temperature is a metaphore for the amount of randomness the process applies.
 	The cooling schedule is a function that calculates the temperature for any given step in the
 	optimization.
 	*/
 	coolingSchedule: {
 		linear: function temperature() {
-			return (1 - Math.max(0, this.step) / this.steps) * 
+			return (1 - Math.max(0, this.step) / this.steps) *
 				(this.maximumTemperature - this.minimumTemperature) + this.minimumTemperature;
 		}
 	},
-	
-	/** At every iteration, for each element in the state one of its neighbours is chosen randomly. 
-	If the neighbour is better, it replaces the corresponding element. Else it may still do so, but 
+
+	/** At every iteration, for each element in the state one of its neighbours is chosen randomly.
+	If the neighbour is better, it replaces the corresponding element. Else it may still do so, but
 	with a probability calculated by `acceptance()`.
 	*/
 	update: function update() {
@@ -88,7 +87,7 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 	},
 
 	// ## Utilities ################################################################################
-	
+
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
