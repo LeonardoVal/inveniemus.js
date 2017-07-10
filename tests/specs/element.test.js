@@ -6,16 +6,16 @@
 	describe('Element', function () {
 		it("constructor", function () {
 			var problem = new Problem(),
-				elem = new Element(problem),
-				model = problem.elementModel();
-			expect(Array.isArray(elem.values)).toBe(true);
+				elem = new problem.Element(),
+				model = elem.model;
+			expect(elem.values instanceof Uint32Array).toBe(true);
 			expect(elem.values.length).toBe(model.length);
 			elem.values.forEach(function (value, i) {
-				expect(value).not.toBeLessThan(model[i].min);
-				expect(value).toBeLessThan(model[i].max);
+				expect(value).not.toBeLessThan(0);
+				expect(value).toBeLessThan(model[i].n);
 			});
 		}); // it "constructor"
-	
+
 		it("hamming distance", function () {
 			var hammingDistance = Element.prototype.hammingDistance;
 			expect(hammingDistance).toBeOfType('function');
@@ -38,7 +38,7 @@
 				expect(hammingDistance(elem.join(''), changed.join(''))).toBe(changeCount);
 			}
 		}); // it "hamming distance"
-	
+
 		it("manhattan distance", function () {
 			var manhattanDistance = Element.prototype.manhattanDistance;
 			expect(manhattanDistance).toBeOfType('function');
@@ -46,7 +46,7 @@
 			expect(manhattanDistance([0,1,2], [])).toBe(0);
 			expect(manhattanDistance([], [0,1,2])).toBe(0);
 			expect(manhattanDistance([], [])).toBe(0);
-			
+
 			expect(manhattanDistance([0,1], [0,2])).toBe(1);
 			expect(manhattanDistance([1,0], [2,0])).toBe(1);
 			expect(manhattanDistance([0,1], [0,-1])).toBe(2);
@@ -54,7 +54,7 @@
 			expect(manhattanDistance([0,1,0], [1,1,1])).toBe(2);
 			expect(manhattanDistance([0,0,0], [1,1,1])).toBe(3);
 		}); // it "manhattan distance"
-	
+
 		it("euclidean distance", function () {
 			var euclideanDistance = Element.prototype.euclideanDistance;
 			expect(euclideanDistance).toBeOfType('function');
@@ -62,13 +62,13 @@
 			expect(euclideanDistance([0,1,2], [])).toBe(0);
 			expect(euclideanDistance([], [0,1,2])).toBe(0);
 			expect(euclideanDistance([], [])).toBe(0);
-			
+
 			expect(euclideanDistance([0,0], [1,1])).toBe(Math.sqrt(2));
 			expect(euclideanDistance([0,0], [0,1])).toBe(1);
 			expect(euclideanDistance([0,0], [1,0])).toBe(1);
 			expect(euclideanDistance([-1,-1], [1,1])).toBe(Math.sqrt(8));
 		}); // it "euclidean distance"
-		
+
 		it("root mean squared error", function () {
 			var rootMeanSquaredError = Element.prototype.rootMeanSquaredError;
 			expect(rootMeanSquaredError).toBeOfType('function');
