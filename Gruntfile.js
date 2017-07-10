@@ -57,8 +57,10 @@ module.exports = function(grunt) {
 			test: {
 				files: [
 					'node_modules/requirejs/require.js',
-					'node_modules/creatartis-base/build/creatartis-base.js', 'node_modules/creatartis-base/build/creatartis-base.js.map',
-					'node_modules/sermat/build/sermat-umd.js', 'node_modules/sermat/build/sermat-umd.js.map',
+					'node_modules/creatartis-base/build/creatartis-base.js',
+						'node_modules/creatartis-base/build/creatartis-base.js.map',
+					'node_modules/sermat/build/sermat-umd.js',
+						'node_modules/sermat/build/sermat-umd.js.map',
 					'build/<%= pkg.name %>.js', 'build/<%= pkg.name %>.js.map'
 					].map(function (f) {
 						return { nonull: true, src: f, dest: 'tests/lib/'+ path.basename(f) };

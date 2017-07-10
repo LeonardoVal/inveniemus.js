@@ -1,9 +1,12 @@
 ﻿// See __prologue__.js
-	base.Iterable.chain(exports, metaheuristics, problems).forEachApply(function (id, def) {
-		if (typeof def === 'function' && def.__SERMAT__ && def.__SERMAT__.identifier) {
-			def.__SERMAT__.identifier = exports.__package__ +'.'+ def.__SERMAT__.identifier;
-			exports.__SERMAT__.include.push(def);
-		}
+	[Element, Problem, Metaheuristic,
+	// metaheuristics.
+	// problems.
+	].forEach(function (type) {
+		type.__SERMAT__.identifier = exports.__package__ +'.'+ type.__SERMAT__.identifier;
+		exports.__SERMAT__.include.push(type);
 	});
+	Sermat.include(exports); // Inveniemus uses Sermat internally.
+
 	return exports;
 });
