@@ -32,8 +32,11 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 	*/
 	randomNeighbour: function randomNeighbour(element, radius) {
 		radius = isNaN(radius) ? this.delta : +radius;
-		var i = this.random.randomInt(element.values.length);
-		return element.modification(i, this.random.randomBool() ? +radius : -radius);
+		var i = this.random.randomInt(element.values.length),
+			v = element.values[i];
+		return element.modification(i, 
+			clamp(this.random.randomBool() ? v + radius : v - radius, 0, element.model[i].n - 1)
+		);
 	},
 
 	/** The `acceptance(current, neighbour, temp=this.temperature())` is the probability of

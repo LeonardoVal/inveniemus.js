@@ -86,7 +86,7 @@ var Element = exports.Element = declare({
 		var elem = this;
 		return Future.then(this.problem.evaluation(this), function (e) {
 			elem.evaluation = Array.isArray(e) ? e : isNaN(e) ? null : [+e];
-			raiseIf(elem.evaluation === null, 'The evaluation of element ', elem, ' is null!');
+			raiseIf(elem.evaluation === null, 'The evaluation of ', elem, ' is null!');
 			return elem.evaluation;
 		});
 	},
@@ -183,7 +183,7 @@ var Element = exports.Element = declare({
 			pos;
 		for (var i = 0; i < arguments.length; i += 2) {
 			pos = arguments[i] |0;
-			newValues[pos] = clamp(newValues[pos] + arguments[i + 1], 0, this.model[i].n - 1);
+			newValues[pos] = clamp(arguments[i + 1], 0, this.model[i].n - 1);
 		}
 		return new this.constructor(newValues);
 	},
