@@ -150,8 +150,8 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 		singlepointCrossover: function singlepointCrossover(parents) {
 			raiseIf(!Array.isArray(parents) || parents.length < 2, "A two parent array is required.");
 			var cut = this.random.randomInt(this.length - 1) + 1,
-				values0 = Array.prototype.slice.call(parents[0].values),
-				values1 = Array.prototype.slice.call(parents[1].values);
+				values0 = parents[0].values(),
+				values1 = parents[1].values();
 			return [
 				new this.problem.Element(values0.slice(0, cut).concat(values1.slice(cut))),
 				new this.problem.Element(values1.slice(0, cut).concat(values0.slice(cut)))
@@ -167,8 +167,8 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 				"A two parent array is required.");
 			var cut1 = this.random.randomInt(this.length - 1) + 1,
 				cut2 = this.random.randomInt(this.length - 1) + 1,
-				values0 = Array.prototype.slice.call(parents[0].values),
-				values1 = Array.prototype.slice.call(parents[1].values);
+				values0 = parents[0].values(),
+				values1 = parents[1].values();
 			return [
 				new this.problem.Element(values0.slice(0, cut1)
 					.concat(values1.slice(cut1, cut2)).concat(values0.slice(cut2))),
@@ -208,7 +208,7 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 		random value.
 		*/
 		singlepointUniformMutation: function singlepointUniformMutation(element) {
-			var i = this.random.randomInt(element.values.length);
+			var i = this.random.randomInt(element.__values__.length);
 			return element.modification(i, element.randomValue(i));
 		},
 
@@ -221,10 +221,10 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 			var model = this.problem.elementModel();
 			return function mutation(element) {
 				var times = maxPoints, i, range;
-				element = new this.problem.Element(element.values); // Copy element.
+				element = new this.problem.Element(element.__values__); // Copy element.
 				do {
 					i = this.random.randomInt(model.length);
-					element.values[i] = this.random.random(model[i].min, model[i].max);
+					element.values[i] = this.random.randomInt(0, model[i].n);
 				} while (this.random.randomBool(this.mutationRate) && --times > 0);
 				return element;
 			};
@@ -237,14 +237,14 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 			var random = this.random,
 				model = this.problem.elementModel(),
 				i = random.randomInt(element.length);
-			return element.modification(i, element.values[i] +
-				(random.random() - random.random()) * (model[i].max - model[i].min));
+			return element.modification(i, element.__values__[i] +
+				(random.random() - random.random()) * model[i].n);
 		},
 
 		/** + `recombinationMutation(element)` swaps two values of the element at random.
 		*/
 		recombinationMutation: function recombinationMutation(element) {
-			var values = element.values.slice(),
+			var values = element.__values__.slice(),
 				i1 = this.random.randomInt(values.length),
 				v1 = values[i1],
 				i2 = this.random.randomInt(values.length), v2;

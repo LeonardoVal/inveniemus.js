@@ -44,7 +44,7 @@ var AssociationRuleLearning = problems.AssociationRuleLearning = declare(Problem
 		var problem = this,
 			antecedent = [],
 			consequent = [];
-		element.values.forEach(function (v, i) {
+		element.__values__.forEach(function (v, i) {
 			switch (v) {
 				case 1: antecedent.push(problem.keys[i]); break;
 				case 2: consequent.push(problem.keys[i]); break;

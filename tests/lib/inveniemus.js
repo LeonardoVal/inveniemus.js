@@ -65,11 +65,18 @@ var Element = exports.Element = declare({
 	solution. It guides almost all of the metaheuristics.
 	*/
 	constructor: function Element(values, evaluation) {
-		this.values = !values ? this.randomValues() : this.checkValues(values, false);
+		this.__values__ = !values ? this.randomValues() : this.checkValues(values, false);
 		this.evaluation = Array.isArray(evaluation) ? evaluation :
 			isNaN(evaluation) ? null : [+evaluation];
 	},
 
+	/** It is usually more convenient to have the ´values´ in an instance of ´Array´ than an 
+	instance of ´Uint32Array´.	
+	*/
+	values: function values() {
+		return Array.prototype.slice.call(this.__values__);
+	},
+	
 	/** The default element `model` defines 10 dimensions with 2^32 values. Please override.
 	*/
 	model: Iterable.repeat({ n: Math.pow(2,32) }, 10).toArray(),
@@ -201,7 +208,7 @@ var Element = exports.Element = declare({
 	neighbourhood: function neighbourhood(radius) {
 		var neighbours = [],
 			model = this.model,
-			values = this.values,
+			values = this.__values__,
 			d = Math.abs(Array.isArray(radius) ? radius[i] : radius),
 			n, value;
 		if (isNaN(d)) {
@@ -225,7 +232,7 @@ var Element = exports.Element = declare({
 	model.
 	*/
 	modification: function modification() {
-		var newValues = this.values.slice(),
+		var newValues = this.__values__.slice(),
 			pos;
 		for (var i = 0; i < arguments.length; i += 2) {
 			pos = arguments[i] |0;
@@ -250,7 +257,7 @@ var Element = exports.Element = declare({
 			model = this.model,
 			lastRange = args[args.length - 1];
 		raiseIf(args.length < 1, "Element.rangeMapping() expects at least one argument!");
-		return Array.prototype.map.call(this.values, function (v, i) {
+		return Array.prototype.map.call(this.__values__, function (v, i) {
 			var n = model[i].n,
 				rangeTo = args.length > i ? args[i] : lastRange;
 			v = v / n * (rangeTo[1] - rangeTo[0]) + rangeTo[0];
@@ -273,7 +280,7 @@ var Element = exports.Element = declare({
 			lastItems = args[args.length - 1],
 			model = this.model;
 		raiseIf(args.length < 1, "Element.arrayMapping() expects at least one argument!");
-		return Array.prototype.map.call(this.values, function (v, i) {
+		return Array.prototype.map.call(this.__values__, function (v, i) {
 			var items = args.length > i ? args[i] : lastItems,
 				n = model[i].n,
 				index = Math.floor(v / n * items.length);
@@ -304,16 +311,17 @@ var Element = exports.Element = declare({
 	/** A `clone` is a copy of this element.
 	*/
 	clone: function clone() {
-		return new this.constructor(this.values, this.evaluation);
+		return new this.constructor(this.__values__, this.evaluation);
 	},
 
 	/** Two elements can be compared with `equals(other)`. It checks if the other element has the
 	same values and constructor than this one.
 	*/
 	equals: function equals(other) {
-		if (this.constructor === other.constructor && this.values.length === other.values.length) {
-			for (var i = 0, len = this.values.length; i < len; i++) {
-				if (this.values[i] !== other.values[i]) {
+		if (this.constructor === other.constructor &&
+				this.__values__.length === other.__values__.length) {
+			for (var i = 0, len = this.__values__.length; i < len; i++) {
+				if (this.__values__[i] !== other.__values__[i]) {
 					return false;
 				}
 			}
@@ -333,7 +341,7 @@ var Element = exports.Element = declare({
 	'static __SERMAT__': {
 		identifier: 'Element',
 		serializer: function serialize_Element(obj) {
-			return [obj.problem, Array.prototype.slice.call(obj.values), obj.evaluation];
+			return [obj.problem, obj.values(), obj.evaluation];
 		},
 		materializer: function materialize_Element(obj, args) {
 			return !args ? null : new args[0].Element(args[1], arg[2]);
@@ -404,7 +412,7 @@ var Problem = exports.Problem = declare({
 	if the evaluation has to be done asynchronously.
 	*/
 	evaluation: function evaluation(element) {
-		return iterable(Array.prototype.slice.call(element.values)).sum(); //FIXME Array conversion.
+		return iterable(element.values()).sum();
 	},
 
 	/** The `evaluate` method is used to assign an evaluation to all the given `elements`. By
@@ -803,12 +811,12 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	is an expensive operation. Returns the size of the resulting state.
 	*/
 	nub: function nub(precision) {
-		precision = isNaN(precision) ? 1e-15 : +precision;
+		precision = +precision || 0;
 		this.state = iterable(this.state).nub(function (e1, e2) {
-			var values1 = e1.values,
-				values2 = e2.values,
+			var values1 = e1.__values__,
+				values2 = e2.__values__,
 				len = values1.length;
-			if (len !== e2.values.length) {
+			if (len !== values2.length) {
 				return false;
 			} else for (var i = 0; i < len; ++i) {
 				if (Math.abs(values1[i] - values2[i]) > precision) {
@@ -1242,8 +1250,8 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 		singlepointCrossover: function singlepointCrossover(parents) {
 			raiseIf(!Array.isArray(parents) || parents.length < 2, "A two parent array is required.");
 			var cut = this.random.randomInt(this.length - 1) + 1,
-				values0 = Array.prototype.slice.call(parents[0].values),
-				values1 = Array.prototype.slice.call(parents[1].values);
+				values0 = parents[0].values(),
+				values1 = parents[1].values();
 			return [
 				new this.problem.Element(values0.slice(0, cut).concat(values1.slice(cut))),
 				new this.problem.Element(values1.slice(0, cut).concat(values0.slice(cut)))
@@ -1259,8 +1267,8 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 				"A two parent array is required.");
 			var cut1 = this.random.randomInt(this.length - 1) + 1,
 				cut2 = this.random.randomInt(this.length - 1) + 1,
-				values0 = Array.prototype.slice.call(parents[0].values),
-				values1 = Array.prototype.slice.call(parents[1].values);
+				values0 = parents[0].values(),
+				values1 = parents[1].values();
 			return [
 				new this.problem.Element(values0.slice(0, cut1)
 					.concat(values1.slice(cut1, cut2)).concat(values0.slice(cut2))),
@@ -1300,7 +1308,7 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 		random value.
 		*/
 		singlepointUniformMutation: function singlepointUniformMutation(element) {
-			var i = this.random.randomInt(element.values.length);
+			var i = this.random.randomInt(element.__values__.length);
 			return element.modification(i, element.randomValue(i));
 		},
 
@@ -1313,10 +1321,10 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 			var model = this.problem.elementModel();
 			return function mutation(element) {
 				var times = maxPoints, i, range;
-				element = new this.problem.Element(element.values); // Copy element.
+				element = new this.problem.Element(element.__values__); // Copy element.
 				do {
 					i = this.random.randomInt(model.length);
-					element.values[i] = this.random.random(model[i].min, model[i].max);
+					element.values[i] = this.random.randomInt(0, model[i].n);
 				} while (this.random.randomBool(this.mutationRate) && --times > 0);
 				return element;
 			};
@@ -1329,14 +1337,14 @@ var GeneticAlgorithm = metaheuristics.GeneticAlgorithm = declare(Metaheuristic, 
 			var random = this.random,
 				model = this.problem.elementModel(),
 				i = random.randomInt(element.length);
-			return element.modification(i, element.values[i] +
-				(random.random() - random.random()) * (model[i].max - model[i].min));
+			return element.modification(i, element.__values__[i] +
+				(random.random() - random.random()) * model[i].n);
 		},
 
 		/** + `recombinationMutation(element)` swaps two values of the element at random.
 		*/
 		recombinationMutation: function recombinationMutation(element) {
-			var values = element.values.slice(),
+			var values = element.__values__.slice(),
 				i1 = this.random.randomInt(values.length),
 				v1 = values[i1],
 				i2 = this.random.randomInt(values.length), v2;
@@ -1447,8 +1455,8 @@ var SimulatedAnnealing = metaheuristics.SimulatedAnnealing = declare(Metaheurist
 	*/
 	randomNeighbour: function randomNeighbour(element, radius) {
 		radius = isNaN(radius) ? this.delta : +radius;
-		var i = this.random.randomInt(element.values.length),
-			v = element.values[i];
+		var i = this.random.randomInt(element.model.length),
+			v = element.__values__[i];
 		return element.modification(i, 
 			clamp(this.random.randomBool() ? v + radius : v - radius, 0, element.model[i].n - 1)
 		);
@@ -1556,7 +1564,7 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 		var mh = this,
 			result = this.state.forEach(function (element) {
 				var model = element.model;
-				element.__velocity__ = mh.random.randoms(element.values.length, -1, +1).map(function (v, i) {
+				element.__velocity__ = mh.random.randoms(model.length, -1, +1).map(function (v, i) {
 					return v * model[i].n;
 				});
 				element.__localBest__ = element;
@@ -1573,10 +1581,10 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 			localBest = element.__localBest__,
 			localCoef = this.random.random(this.localAcceleration),
 			globalCoef = this.random.random(this.globalAcceleration),
-			result = Array.prototype.map.call(element.values, function (v, i) {
+			result = element.values().map(function (v, i) {
 				return velocity[i] * mh.inertia +
-					localCoef * (localBest.values[i] - v) +
-					globalCoef * (globalBest.values[i] - v);
+					localCoef * (localBest.__values__[i] - v) +
+					globalCoef * (globalBest.__values__[i] - v);
 			});
 		return result;
 	},
@@ -1588,7 +1596,7 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 		var mh = this,
 			model = element.model,
 			nextVelocity = this.nextVelocity(element, globalBest),
-			nextValues = Array.prototype.map.call(element.values, function (v, i) {
+			nextValues = element.values().map(function (v, i) {
 				return clamp(v + nextVelocity[i], 0, model[i].n - 1);
 			}),
 			result = new this.problem.Element(nextValues);
@@ -1676,15 +1684,15 @@ var DifferentialEvolution = metaheuristics.DifferentialEvolution = declare(Metah
 					stateCopy = mh.state.slice();
 				stateCopy.splice(elementIndex, 1);
 				var crossover = mh.random.choices(3, stateCopy),
-					a = crossover[0].values,
-					b = crossover[1].values,
-					c = crossover[2].values,
-					len = element.values.length,
+					a = crossover[0].__values__,
+					b = crossover[1].__values__,
+					c = crossover[2].__values__,
+					len = element.__values__.length,
 					randomIndex = mh.random.randomInt(len),
-					newValues = element.values.map(function (value, i) {
+					newValues = element.values().map(function (value, i) {
 						if (i === randomIndex || mh.random.randomBool(mh.crossoverProbability)) {
-							return clamp(a[i] + mh.differentialWeight * (b[i] - c[i],
-								0, model[i].n - 1));
+							return clamp(a[i] + mh.differentialWeight * (b[i] - c[i]),
+								0, model[i].n - 1);
 						} else {
 							return value;
 						}
@@ -1734,7 +1742,7 @@ var EvolutionStrategy = metaheuristics.EvolutionStrategy = declare(Metaheuristic
 	mutant: function mutant(element) {
 		var random = this.random,
 			model = element.model,
-			newValues = element.values.map(function (v, i) {
+			newValues = element.values().map(function (v, i) {
 				var n = model[i].n;
 				return clamp(v + (random.random() - random.random()) * n, 0, n - 1);
 			});
@@ -1818,7 +1826,7 @@ var HarmonySearch = metaheuristics.HarmonySearch = declare(Metaheuristic, {
 			model = this.problem.Element.prototype.model,
 			values = model.map(function (range, i) {
 				if (random.randomBool(mh.harmonyProbability)) {
-					var value = random.choice(mh.state).values[i];
+					var value = random.choice(mh.state).__values__[i];
 					if (random.randomBool(mh.adjustProbability)) {
 						value += random.randomBool(0.5) ? -mh.delta : mh.delta;
 						/*FIXME case for continuous variables
@@ -1898,8 +1906,8 @@ var DistributionEstimation = metaheuristics.DistributionEstimation = declare(Met
 				return v.slice();
 			}, Iterable.repeat(0, histogramWidth).toArray(), histogramCount).toArray();
 		state.forEach(function (element) {
-			element.values.forEach(function (value, i) {
-				var bar = Math.min(histogramWidth - 1, Math.floor(element.values[i] * histogramWidth)); //FIXME Normalize.
+			element.__values__.forEach(function (value, i) {
+				var bar = Math.min(histogramWidth - 1, Math.floor(value * histogramWidth)); //FIXME Normalize.
 				counts[i][bar]++;
 			});
 		});
@@ -1972,7 +1980,7 @@ var DistributionEstimation = metaheuristics.DistributionEstimation = declare(Met
 					var histograms = [],
 						histogram, sum;
 					for (var i = 0; i < element.length; ++i) {
-						histogram = element.values.slice(i * histogramWidth, (i+1) * histogramWidth);
+						histogram = element.values().slice(i * histogramWidth, (i+1) * histogramWidth);
 						sum = iterable(histogram).sum();
 						histograms[i] = histogram.map(function (f) { // Normalization
 							return f / sum;
@@ -2064,7 +2072,7 @@ var GradientDescent = metaheuristics.GradientDescent = declare(Metaheuristic, {
 			var model = elem.model;
 			return Future.then(mh.gradient(elem), function (gradient) {
 				var newValues = gradient.map(function (gradientValue, i) {
-					return clamp(elem.values[i] - gradientValue * rate, 0, model[i].n - 1);
+					return clamp(elem.__values__[i] - gradientValue * rate, 0, model[i].n - 1);
 				});
 				return new mh.problem.Element(newValues);
 			});
@@ -2084,7 +2092,7 @@ var GradientDescent = metaheuristics.GradientDescent = declare(Metaheuristic, {
 	gradientFiniteDifferences: function gradientFiniteDifferences(element, width) {
 		width = isNaN(width) ? this.estimatorWidth() : +width;
 		var mh = this,
-			values = Array.prototype.slice.call(element.values);
+			values = element.values();
 		return Future.all(values.map(function (value, i) {
 			var left = element.modification(i, value - width),
 				right = element.modification(i, value + width);
@@ -2154,7 +2162,7 @@ problems.HelloWorld = declare(Problem, {
 	number to its corresponding Unicode character.
 	*/
 	mapping: function mapping(element) {
-		return element.values.map(function (v) {
+		return element.values().map(function (v) {
 			return String.fromCharCode(v + 32);
 		}).join('');
 	},
@@ -2162,7 +2170,7 @@ problems.HelloWorld = declare(Problem, {
 	/** An element evaluation is equal to its distance from target string.
 	*/
 	evaluation: function evaluation(element) {
-		return element.manhattanDistance(this.__target__, element.values);
+		return element.manhattanDistance(this.__target__, element.rangeMapping([32, 127]));
 	},
 
 	/** An element is sufficient when its equal to the target string.
@@ -2666,7 +2674,7 @@ problems.KnapsackProblem = declare(Problem, {
 	/** All elements are mapped to an object with the selected amount associated to each item.
 	*/
 	mapping: function mapping(element) {
-		return iterable(this.__elementItems__).zip(Math.floor(element.values)).toObject();
+		return iterable(this.__elementItems__).zip(element.values()).toObject();
 	},
 
 	/** All elements are evaluated by calculating the worth of all included items. If their cost is
@@ -2744,7 +2752,7 @@ var AssociationRuleLearning = problems.AssociationRuleLearning = declare(Problem
 		var problem = this,
 			antecedent = [],
 			consequent = [];
-		element.values.forEach(function (v, i) {
+		element.__values__.forEach(function (v, i) {
 			switch (v) {
 				case 1: antecedent.push(problem.keys[i]); break;
 				case 2: consequent.push(problem.keys[i]); break;

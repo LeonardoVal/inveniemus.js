@@ -38,7 +38,7 @@ var HarmonySearch = metaheuristics.HarmonySearch = declare(Metaheuristic, {
 			model = this.problem.Element.prototype.model,
 			values = model.map(function (range, i) {
 				if (random.randomBool(mh.harmonyProbability)) {
-					var value = random.choice(mh.state).values[i];
+					var value = random.choice(mh.state).__values__[i];
 					if (random.randomBool(mh.adjustProbability)) {
 						value += random.randomBool(0.5) ? -mh.delta : mh.delta;
 						/*FIXME case for continuous variables

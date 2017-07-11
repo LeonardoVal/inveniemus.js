@@ -60,7 +60,7 @@ var Problem = exports.Problem = declare({
 	if the evaluation has to be done asynchronously.
 	*/
 	evaluation: function evaluation(element) {
-		return iterable(Array.prototype.slice.call(element.values)).sum(); //FIXME Array conversion.
+		return iterable(element.values()).sum();
 	},
 
 	/** The `evaluate` method is used to assign an evaluation to all the given `elements`. By

@@ -238,12 +238,12 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	is an expensive operation. Returns the size of the resulting state.
 	*/
 	nub: function nub(precision) {
-		precision = isNaN(precision) ? 1e-15 : +precision;
+		precision = +precision || 0;
 		this.state = iterable(this.state).nub(function (e1, e2) {
-			var values1 = e1.values,
-				values2 = e2.values,
+			var values1 = e1.__values__,
+				values2 = e2.__values__,
 				len = values1.length;
-			if (len !== e2.values.length) {
+			if (len !== values2.length) {
 				return false;
 			} else for (var i = 0; i < len; ++i) {
 				if (Math.abs(values1[i] - values2[i]) > precision) {

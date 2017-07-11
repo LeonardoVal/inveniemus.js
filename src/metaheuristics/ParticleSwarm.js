@@ -36,7 +36,7 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 		var mh = this,
 			result = this.state.forEach(function (element) {
 				var model = element.model;
-				element.__velocity__ = mh.random.randoms(element.values.length, -1, +1).map(function (v, i) {
+				element.__velocity__ = mh.random.randoms(model.length, -1, +1).map(function (v, i) {
 					return v * model[i].n;
 				});
 				element.__localBest__ = element;
@@ -53,10 +53,10 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 			localBest = element.__localBest__,
 			localCoef = this.random.random(this.localAcceleration),
 			globalCoef = this.random.random(this.globalAcceleration),
-			result = Array.prototype.map.call(element.values, function (v, i) {
+			result = element.values().map(function (v, i) {
 				return velocity[i] * mh.inertia +
-					localCoef * (localBest.values[i] - v) +
-					globalCoef * (globalBest.values[i] - v);
+					localCoef * (localBest.__values__[i] - v) +
+					globalCoef * (globalBest.__values__[i] - v);
 			});
 		return result;
 	},
@@ -68,7 +68,7 @@ var ParticleSwarm = metaheuristics.ParticleSwarm = declare(Metaheuristic, {
 		var mh = this,
 			model = element.model,
 			nextVelocity = this.nextVelocity(element, globalBest),
-			nextValues = Array.prototype.map.call(element.values, function (v, i) {
+			nextValues = element.values().map(function (v, i) {
 				return clamp(v + nextVelocity[i], 0, model[i].n - 1);
 			}),
 			result = new this.problem.Element(nextValues);

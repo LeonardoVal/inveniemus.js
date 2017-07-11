@@ -38,15 +38,15 @@ var DifferentialEvolution = metaheuristics.DifferentialEvolution = declare(Metah
 					stateCopy = mh.state.slice();
 				stateCopy.splice(elementIndex, 1);
 				var crossover = mh.random.choices(3, stateCopy),
-					a = crossover[0].values,
-					b = crossover[1].values,
-					c = crossover[2].values,
-					len = element.values.length,
+					a = crossover[0].__values__,
+					b = crossover[1].__values__,
+					c = crossover[2].__values__,
+					len = element.__values__.length,
 					randomIndex = mh.random.randomInt(len),
-					newValues = element.values.map(function (value, i) {
+					newValues = element.values().map(function (value, i) {
 						if (i === randomIndex || mh.random.randomBool(mh.crossoverProbability)) {
-							return clamp(a[i] + mh.differentialWeight * (b[i] - c[i],
-								0, model[i].n - 1));
+							return clamp(a[i] + mh.differentialWeight * (b[i] - c[i]),
+								0, model[i].n - 1);
 						} else {
 							return value;
 						}

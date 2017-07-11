@@ -58,7 +58,7 @@ problems.KnapsackProblem = declare(Problem, {
 	/** All elements are mapped to an object with the selected amount associated to each item.
 	*/
 	mapping: function mapping(element) {
-		return iterable(this.__elementItems__).zip(Math.floor(element.values)).toObject();
+		return iterable(this.__elementItems__).zip(element.values()).toObject();
 	},
 
 	/** All elements are evaluated by calculating the worth of all included items. If their cost is

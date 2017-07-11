@@ -48,8 +48,8 @@ var DistributionEstimation = metaheuristics.DistributionEstimation = declare(Met
 				return v.slice();
 			}, Iterable.repeat(0, histogramWidth).toArray(), histogramCount).toArray();
 		state.forEach(function (element) {
-			element.values.forEach(function (value, i) {
-				var bar = Math.min(histogramWidth - 1, Math.floor(element.values[i] * histogramWidth)); //FIXME Normalize.
+			element.__values__.forEach(function (value, i) {
+				var bar = Math.min(histogramWidth - 1, Math.floor(value * histogramWidth)); //FIXME Normalize.
 				counts[i][bar]++;
 			});
 		});
@@ -122,7 +122,7 @@ var DistributionEstimation = metaheuristics.DistributionEstimation = declare(Met
 					var histograms = [],
 						histogram, sum;
 					for (var i = 0; i < element.length; ++i) {
-						histogram = element.values.slice(i * histogramWidth, (i+1) * histogramWidth);
+						histogram = element.values().slice(i * histogramWidth, (i+1) * histogramWidth);
 						sum = iterable(histogram).sum();
 						histograms[i] = histogram.map(function (f) { // Normalization
 							return f / sum;

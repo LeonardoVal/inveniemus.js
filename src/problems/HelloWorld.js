@@ -33,7 +33,7 @@ problems.HelloWorld = declare(Problem, {
 	number to its corresponding Unicode character.
 	*/
 	mapping: function mapping(element) {
-		return element.values.map(function (v) {
+		return element.values().map(function (v) {
 			return String.fromCharCode(v + 32);
 		}).join('');
 	},
@@ -41,7 +41,7 @@ problems.HelloWorld = declare(Problem, {
 	/** An element evaluation is equal to its distance from target string.
 	*/
 	evaluation: function evaluation(element) {
-		return element.manhattanDistance(this.__target__, element.values);
+		return element.manhattanDistance(this.__target__, element.rangeMapping([32, 127]));
 	},
 
 	/** An element is sufficient when its equal to the target string.

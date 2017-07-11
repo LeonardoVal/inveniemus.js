@@ -7,12 +7,17 @@
 		it("constructor", function () {
 			var problem = new Problem(),
 				elem = new problem.Element(),
-				model = elem.model;
-			expect(elem.values instanceof Uint32Array).toBe(true);
-			expect(elem.values.length).toBe(model.length);
-			elem.values.forEach(function (value, i) {
+				model = elem.model,
+				valuesArray;
+			expect(elem.__values__ instanceof Uint32Array).toBe(true);
+			expect(elem.__values__.length).toBe(model.length);
+			valuesArray = elem.values();
+			expect(valuesArray instanceof Array).toBe(true);
+			expect(valuesArray.length).toBe(model.length);
+			elem.__values__.forEach(function (value, i) {
 				expect(value).not.toBeLessThan(0);
 				expect(value).toBeLessThan(model[i].n);
+				expect(valuesArray[i]).toBe(value);
 			});
 		}); // it "constructor"
 

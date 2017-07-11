@@ -61,7 +61,7 @@ var GradientDescent = metaheuristics.GradientDescent = declare(Metaheuristic, {
 			var model = elem.model;
 			return Future.then(mh.gradient(elem), function (gradient) {
 				var newValues = gradient.map(function (gradientValue, i) {
-					return clamp(elem.values[i] - gradientValue * rate, 0, model[i].n - 1);
+					return clamp(elem.__values__[i] - gradientValue * rate, 0, model[i].n - 1);
 				});
 				return new mh.problem.Element(newValues);
 			});
@@ -81,7 +81,7 @@ var GradientDescent = metaheuristics.GradientDescent = declare(Metaheuristic, {
 	gradientFiniteDifferences: function gradientFiniteDifferences(element, width) {
 		width = isNaN(width) ? this.estimatorWidth() : +width;
 		var mh = this,
-			values = Array.prototype.slice.call(element.values);
+			values = element.values();
 		return Future.all(values.map(function (value, i) {
 			var left = element.modification(i, value - width),
 				right = element.modification(i, value + width);
