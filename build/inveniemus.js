@@ -2206,7 +2206,7 @@ var TestBed = problems.TestBed = declare(Problem, {
 			length = isNaN(spec.length) ? 2 : +spec.length;
 		Problem.call(this, base.copy({
 			title: spec.title,
-			elementModel: Iterable.repeat({ n: 1e4 }, length).toArray()
+			elementModel: Iterable.repeat({ n: 2e6 }, length).toArray()
 		}, spec));
 		this.evaluation = function evaluation(element) {
 			return spec.evaluation(element.rangeMapping([minimumValue, maximumValue]));
@@ -2479,11 +2479,7 @@ problems.testbeds = {
 			maximumValue: +1,
 			optimumValue: target === -Infinity ? 0 : target === +Infinity ? length : target,
 			evaluation: function evaluation(vs) {
-				var result = 0;
-				for (var i = 0, len = vs.length; i < len; i++) {
-					result += vs[i];
-				}
-				return result;
+				return iterable(vs).sum();
 			}
 		});
 	},
