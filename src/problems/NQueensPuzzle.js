@@ -12,19 +12,21 @@ problems.NQueensPuzzle = declare(Problem, {
 	/** The constructor takes only one particular parameter:
 	*/
 	constructor: function NQueensPuzzle(params) {
+		/** Since the evaluation is defined as the number of shared diagonals, it must be
+		minimized.
+		*/
+		params = Object.assign({ N: 8 }, params);
+		Problem.call(this, params = Object.assign(params, {
+			objective: -Infinity,
+			/** The representation is an array of `N` positions, indicating the row of the
+			queen for each column.
+			*/
+			elementModel: Iterable.repeat({ n: params.N }, params.N - 1).toArray()
+		}));
 		initialize(this, params)
 			/** + `N=8`: the number of queens and both dimensions of the board.
 			*/
 			.integer('N', { coerce: true, defaultValue: 8 });
-		/** Since the evaluation is defined as the number of shared diagonals, it must be minimized.
-		*/
-		Problem.call(this, base.copy({
-				objective: -Infinity,
-				/** The representation is an array of `N` positions, indicating the row of the
-				queen for each column.
-				*/
-				elementModel: Iterable.repeat({ n: this.N }, this.N - 1).toArray()
-			}, params));
 		this.__rowRange__ = Iterable.range(this.N).toArray();
 	},
 

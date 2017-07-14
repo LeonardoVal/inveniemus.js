@@ -12,21 +12,20 @@ problems.HelloWorld = declare(Problem, {
 	default). Since elements' evaluation is a distance, this value must be minimized to guide the
 	search towards the target string.
 	*/
-	constructor: function HelloWorld(params){
+	constructor: function HelloWorld(params) {
+		/** The elements' length is equal to the length of the target string. Every value is
+		between 32 (inclusive) and 127 (exclusive), which is the range of visible characters in
+		ASCII.
+		*/
+		Problem.call(this, params = Object.assign(params || {}, {
+			objective: -Infinity,
+			elementModel: Iterable.repeat({ n: 127 - 32 }, this.target.length).toArray()
+		}));
 		initialize(this, params)
 			.string('target', { coerce: true, defaultValue: 'Hello world!' });
 		this.__target__ = iterable(this.target).map(function (c) {
 			return c.charCodeAt(0);
 		}).toArray();
-		/** The elements' length is equal to the length of the target string. Every value is
-		between 32 (inclusive) and 127 (exclusive), which is the range of visible characters in
-		ASCII.
-		*/
-		Problem.call(this, base.copy({
-				objective: -Infinity,
-				elementModel: Iterable.repeat({ n: 127 - 32 }, this.target.length).toArray()
-			}, params)
-		);
 	},
 
 	/** An element's values are always numbers. These are converted to a string by converting each
