@@ -27,6 +27,23 @@ problems.KnapsackProblem = declare(Problem, {
 	The parameters specific for this problem are:
 	*/
 	constructor: function KnapsackProblem(params) {
+		/** The problem's representation is an array with a number for each item, in alphabetical
+		order. Each number holds the selected amount for each item (from 0 up to the item's
+		amount).
+		*/
+		params = params || {};
+		var items = this.items;
+		this.__elementItems__ = Object.keys(items);
+		this.__elementItems__.sort();
+		Problem.call(this, params = Object.assign(params, {
+			/** The best selection of items is the one that maximizes worth, without
+			exceeding the cost limit.
+			*/
+			objective: +Infinity,
+			elementModel: this.__elementItems__.map(function (name) {
+				return { n: +(items[name].amount || 1) + 1 };
+			})
+		}));
 		initialize(this, params)
 			/** + `limit=15` is the cost limit that candidate solution should not exceed.
 			*/
@@ -37,22 +54,6 @@ problems.KnapsackProblem = declare(Problem, {
 			/** + `items` is the set of items.
 			*/
 			.object('items', { ignore: true });
-		/** The problem's representation is an array with a number for each item, in alphabetical
-		order. Each number holds the selected amount for each item (from 0 up to the item's
-		amount).
-		*/
-		var items = this.items;
-		this.__elementItems__ = Object.keys(items);
-		this.__elementItems__.sort();
-		Problem.call(this, base.copy({
-				/** The best selection of items is the one that maximizes worth, without
-				exceeding the cost limit.
-				*/
-				objective: +Infinity,
-				elementModel: this.__elementItems__.map(function (name) {
-					return { n: +items[name].amount || 1 };
-				})
-			}, params));
 	},
 
 	/** All elements are mapped to an object with the selected amount associated to each item.

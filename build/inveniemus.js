@@ -11,8 +11,8 @@
 })(this, function __init__(base, Sermat){ "use strict";
 // Import synonyms. ////////////////////////////////////////////////////////////////////////////////
 	var declare = base.declare,
-		initialize = base.initialize,
 		iterable = base.iterable,
+		initialize = base.initialize,
 		raiseIf = base.raiseIf,
 		Events = base.Events,
 		Future = base.Future,
@@ -20,7 +20,7 @@
 		Logger = base.Logger,
 		Randomness = base.Randomness,
 		Statistics = base.Statistics;
-	
+
 // Library layout. /////////////////////////////////////////////////////////////////////////////////
 	var exports = {
 		__package__: 'inveniemus',
@@ -29,7 +29,7 @@
 		__dependencies__: [base],
 		__SERMAT__: { include: [] },
 	/** `metaheuristics` is a bundle of available metaheuristics.
-	*/	
+	*/
 		metaheuristics: {},
 	/** `problems` is a bundle of classic and reference problems.
 	*/
@@ -43,6 +43,7 @@
 function clamp(value, min, max) {
 	return Math.max(min, Math.min(max, value));
 }
+
 
 /**	# Element
 
@@ -2141,21 +2142,20 @@ problems.HelloWorld = declare(Problem, {
 	default). Since elements' evaluation is a distance, this value must be minimized to guide the
 	search towards the target string.
 	*/
-	constructor: function HelloWorld(params){
+	constructor: function HelloWorld(params) {
+		/** The elements' length is equal to the length of the target string. Every value is
+		between 32 (inclusive) and 127 (exclusive), which is the range of visible characters in
+		ASCII.
+		*/
+		Problem.call(this, params = Object.assign(params || {}, {
+			objective: -Infinity,
+			elementModel: Iterable.repeat({ n: 127 - 32 }, this.target.length).toArray()
+		}));
 		initialize(this, params)
 			.string('target', { coerce: true, defaultValue: 'Hello world!' });
 		this.__target__ = iterable(this.target).map(function (c) {
 			return c.charCodeAt(0);
 		}).toArray();
-		/** The elements' length is equal to the length of the target string. Every value is
-		between 32 (inclusive) and 127 (exclusive), which is the range of visible characters in
-		ASCII.
-		*/
-		Problem.call(this, base.copy({
-				objective: -Infinity,
-				elementModel: Iterable.repeat({ n: 127 - 32 }, this.target.length).toArray()
-			}, params)
-		);
 	},
 
 	/** An element's values are always numbers. These are converted to a string by converting each
@@ -2556,19 +2556,21 @@ problems.NQueensPuzzle = declare(Problem, {
 	/** The constructor takes only one particular parameter:
 	*/
 	constructor: function NQueensPuzzle(params) {
+		/** Since the evaluation is defined as the number of shared diagonals, it must be
+		minimized.
+		*/
+		params = Object.assign({ N: 8 }, params);
+		Problem.call(this, params = Object.assign(params, {
+			objective: -Infinity,
+			/** The representation is an array of `N` positions, indicating the row of the
+			queen for each column.
+			*/
+			elementModel: Iterable.repeat({ n: params.N }, params.N - 1).toArray()
+		}));
 		initialize(this, params)
 			/** + `N=8`: the number of queens and both dimensions of the board.
 			*/
 			.integer('N', { coerce: true, defaultValue: 8 });
-		/** Since the evaluation is defined as the number of shared diagonals, it must be minimized.
-		*/
-		Problem.call(this, base.copy({
-				objective: -Infinity,
-				/** The representation is an array of `N` positions, indicating the row of the
-				queen for each column.
-				*/
-				elementModel: Iterable.repeat({ n: this.N }, this.N - 1).toArray()
-			}, params));
 		this.__rowRange__ = Iterable.range(this.N).toArray();
 	},
 
@@ -2639,6 +2641,23 @@ problems.KnapsackProblem = declare(Problem, {
 	The parameters specific for this problem are:
 	*/
 	constructor: function KnapsackProblem(params) {
+		/** The problem's representation is an array with a number for each item, in alphabetical
+		order. Each number holds the selected amount for each item (from 0 up to the item's
+		amount).
+		*/
+		params = params || {};
+		var items = this.items;
+		this.__elementItems__ = Object.keys(items);
+		this.__elementItems__.sort();
+		Problem.call(this, params = Object.assign(params, {
+			/** The best selection of items is the one that maximizes worth, without
+			exceeding the cost limit.
+			*/
+			objective: +Infinity,
+			elementModel: this.__elementItems__.map(function (name) {
+				return { n: +(items[name].amount || 1) + 1 };
+			})
+		}));
 		initialize(this, params)
 			/** + `limit=15` is the cost limit that candidate solution should not exceed.
 			*/
@@ -2649,22 +2668,6 @@ problems.KnapsackProblem = declare(Problem, {
 			/** + `items` is the set of items.
 			*/
 			.object('items', { ignore: true });
-		/** The problem's representation is an array with a number for each item, in alphabetical
-		order. Each number holds the selected amount for each item (from 0 up to the item's
-		amount).
-		*/
-		var items = this.items;
-		this.__elementItems__ = Object.keys(items);
-		this.__elementItems__.sort();
-		Problem.call(this, base.copy({
-				/** The best selection of items is the one that maximizes worth, without
-				exceeding the cost limit.
-				*/
-				objective: +Infinity,
-				elementModel: this.__elementItems__.map(function (name) {
-					return { n: +items[name].amount || 1 };
-				})
-			}, params));
 	},
 
 	/** All elements are mapped to an object with the selected amount associated to each item.

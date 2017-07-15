@@ -11,8 +11,8 @@
 })(this, function __init__(base, Sermat){ "use strict";
 // Import synonyms. ////////////////////////////////////////////////////////////////////////////////
 	var declare = base.declare,
-		initialize = base.initialize,
 		iterable = base.iterable,
+		initialize = base.initialize,
 		raiseIf = base.raiseIf,
 		Events = base.Events,
 		Future = base.Future,
@@ -20,7 +20,7 @@
 		Logger = base.Logger,
 		Randomness = base.Randomness,
 		Statistics = base.Statistics;
-	
+
 // Library layout. /////////////////////////////////////////////////////////////////////////////////
 	var exports = {
 		__package__: 'inveniemus',
@@ -29,7 +29,7 @@
 		__dependencies__: [base],
 		__SERMAT__: { include: [] },
 	/** `metaheuristics` is a bundle of available metaheuristics.
-	*/	
+	*/
 		metaheuristics: {},
 	/** `problems` is a bundle of classic and reference problems.
 	*/
