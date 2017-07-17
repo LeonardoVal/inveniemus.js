@@ -100,7 +100,7 @@ var Problem = exports.Problem = declare({
 		return false;
 	},
 
-	/** When a set of elements is sufficient, the search/optimization ends. The method
+	/** When a set of elements is sufficient, the search/optimization may end. The method
 	`suffices(elements)` returns `true` if inside the elements array there are enough actual
 	solutions to this problem. It holds the implementation of the goal test in search problems. By
 	default calls the `suffice` method of the first element (assumed to be the best one).

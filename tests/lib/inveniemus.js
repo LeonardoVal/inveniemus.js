@@ -454,7 +454,7 @@ var Problem = exports.Problem = declare({
 		return false;
 	},
 
-	/** When a set of elements is sufficient, the search/optimization ends. The method
+	/** When a set of elements is sufficient, the search/optimization may end. The method
 	`suffices(elements)` returns `true` if inside the elements array there are enough actual
 	solutions to this problem. It holds the implementation of the goal test in search problems. By
 	default calls the `suffice` method of the first element (assumed to be the best one).
@@ -2150,12 +2150,13 @@ problems.HelloWorld = declare(Problem, {
 		between 32 (inclusive) and 127 (exclusive), which is the range of visible characters in
 		ASCII.
 		*/
-		Problem.call(this, params = Object.assign(params || {}, {
+		params = params || {};
+		initialize(this, params)
+			.string('target', { coerce: true, defaultValue: 'Hello world!' });
+		Problem.call(this, Object.assign(params, {
 			objective: -Infinity,
 			elementModel: Iterable.repeat({ n: 127 - 32 }, this.target.length).toArray()
 		}));
-		initialize(this, params)
-			.string('target', { coerce: true, defaultValue: 'Hello world!' });
 		this.__target__ = iterable(this.target).map(function (c) {
 			return c.charCodeAt(0);
 		}).toArray();

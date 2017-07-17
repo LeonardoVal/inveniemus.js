@@ -17,12 +17,13 @@ problems.HelloWorld = declare(Problem, {
 		between 32 (inclusive) and 127 (exclusive), which is the range of visible characters in
 		ASCII.
 		*/
-		Problem.call(this, params = Object.assign(params || {}, {
+		params = params || {};
+		initialize(this, params)
+			.string('target', { coerce: true, defaultValue: 'Hello world!' });
+		Problem.call(this, Object.assign(params, {
 			objective: -Infinity,
 			elementModel: Iterable.repeat({ n: 127 - 32 }, this.target.length).toArray()
 		}));
-		initialize(this, params)
-			.string('target', { coerce: true, defaultValue: 'Hello world!' });
 		this.__target__ = iterable(this.target).map(function (c) {
 			return c.charCodeAt(0);
 		}).toArray();
