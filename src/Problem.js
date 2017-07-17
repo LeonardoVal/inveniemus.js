@@ -3,39 +3,34 @@
 The Problem type represents a search or optimization problem in Inveniemus.
 */
 var Problem = exports.Problem = declare({
-	title: "Problem.title?",
-	description: "Problem.description?",
-	random: Randomness.DEFAULT,
-	/** A single minimization objective is the default for `objectives`.
-	*/
-	objectives: [-Infinity],
-
-	/** The problem constructor takes many parameters.
+	/** The problem constructor takes many parameters:
 	*/
 	constructor: function Problem(params) {
 		params = params || {};
 		initialize(this, params)
-			/**TODO
+			/** + The `title` and `description` are meant to be displayed to the user in UIs and
+			logs.
 			*/
 			.string('title', { ignore: true, coerce: true })
-			/** The `description` of the problem to be displayed to the user may also be appreciated.
-			*/
 			.string('description', { ignore: true, coerce: true })
 			/** + A `random` number generator, required by many operations. By default
-				`base.Randomness.DEFAULT` is used.
+			`base.Randomness.DEFAULT` is used, which uses the standard `Math.random()`
+			function.
 			*/
 			.object('random', { ignore: true })
-			/** + The `objetives` define the mode of the optimization. Minimization has
-			`-Infinity` as an objective, hence maximization has `+Infinity`. A number makes the
-			optimization approximate it. An array defines a multi-objetive optimization.
+			/** + The `objetives` define the mode of the optimization. This is an array of at
+			least one number. More than one implies a multi-objetive optimization. Minimization
+			has `-Infinity` as an objective, hence maximization has `+Infinity`. A number makes
+			the optimization approximate it.
 			*/
 			.array('objectives', { ignore: true })
-			/** + The `elementModel` defines the elements' dimensions, each with a `minimum` and
-			a `maximum` value (0 and 1 by default) as well as a `precision` (1/(2^32-1) by
-			default).
+			/** + The `elementModel` defines the elements' dimensions, each with a number `n` of
+			possible values (from 0 to `n`).
 			*/
 			.array('elementModel', { ignore: true })
-			/** + The `Element` parameter can be used to specify a particular element type.
+			/** + The `Element` parameter can be used to specify a particular element type. The
+			actual element class used is derived from this, or the base `Element` class if none
+			is given.
 			*/
 			.func('Element', { ignore: true })
 		;
@@ -53,6 +48,13 @@ var Problem = exports.Problem = declare({
 			this.Element.prototype.model = params.elementModel;
 		}
 	},
+
+	/** The defaults for some of the parameters are placed in the `Problem`'s prototype.
+	*/
+	title: "Problem.title?",
+	description: "Problem.description?",
+	random: Randomness.DEFAULT,
+	objectives: [-Infinity],
 
 	/** The problem's elements must be evaluated somehow. This can be interpreted as the solution's
 	cost in a search problem or the target function of an optimization problem. The default
@@ -91,8 +93,8 @@ var Problem = exports.Problem = declare({
 		return element.normalizedValues();
 	},
 
-	/** An element is `sufficient` when it can be considered a solution of a search or a good enough
-	solution of an optimization. By default it returns false.
+	/** An element is `sufficient` when it can be considered a solution of a search or a good
+	enough solution of an optimization. By default it returns false.
 	*/
 	sufficientElement: function sufficientElement(element) {
 		return false;

@@ -71,18 +71,18 @@ var Element = exports.Element = declare({
 			isNaN(evaluation) ? null : [+evaluation];
 	},
 
-	/** It is usually more convenient to have the ´values´ in an instance of ´Array´ than an 
-	instance of ´Uint32Array´.	
+	/** It is usually more convenient to have the `values` in an instance of `Array` than an
+	instance of `Uint32Array` (e.g. when using ).
 	*/
 	values: function values() {
 		return Array.prototype.slice.call(this.__values__);
 	},
-	
+
 	/** The default element `model` defines 10 dimensions with 2^32 values. Please override.
 	*/
 	model: Iterable.repeat({ n: Math.pow(2,32) }, 10).toArray(),
 
-	/**FIXME Returns a random value array of values corresponding the element's model.
+	/** Random values are integers within the range defined by the element's model.
 	*/
 	randomValue: function randomValue(i) {
 		return this.problem.random.randomInt(0, this.model[i].n) |0;
@@ -91,12 +91,13 @@ var Element = exports.Element = declare({
 	randomValues: function randomValues() {
 		var random = this.problem.random;
 		return new Uint32Array(this.model.map(function (model) {
-			return random.randomInt(0, model.n);
+			return random.randomInt(0, model.n) |0;
 		}));
 	},
 
-	/** Checks all given `values`. If `coerce` is false any invalid values raises an error. Else
-	values are coerced to fit the element's model.
+	/** Checks if all given `values` are within the range defined by this element's model. If
+	`coerce` is false any invalid values raises an error. Else values are coerced to fit the
+	element's model.
 	*/
 	checkValues: function checkValues(values, coerce) {
 		return new Uint32Array(this.model.map(function (model, i) {
@@ -114,9 +115,8 @@ var Element = exports.Element = declare({
 		}));
 	},
 
-	/** Whether this element is an actual solution or not is decided by `suffices()`. It holds the
-	implementation of the goal test in search problems. More complex criteria may be implemented in
-	`Problem.suffices`. By default it returns false.
+	/** Whether this element is an actual solution or not is decided by `suffices()`, which is
+	delegated to `Problem.sufficientElement` by default.
 	*/
 	suffices: function suffices() {
 		return this.problem.sufficientElement(this);
@@ -132,9 +132,10 @@ var Element = exports.Element = declare({
 	// ## Evaluations ##############################################################################
 
 	/** The element's `evaluation` is calculated by `evaluate()`, which assigns and returns this
-	number. It may return a promise if the evaluation has to be done asynchronously. This can be
-	interpreted as the solution's cost in a search problem or the target function of an optimization
-	problem. The default behaviour is adding up this element's values, useful only for testing.
+	array of numbers. It may return a promise if the evaluation has to be done asynchronously. This
+	can be interpreted as the solution's cost in a search problem or the target function of an
+	optimization problem. The default behaviour is adding up this element's values, useful only for
+	testing.
 	*/
 	evaluate: function evaluate() {
 		var elem = this;
@@ -159,8 +160,8 @@ var Element = exports.Element = declare({
 		return count;
 	},
 
-	/** The [Manhattan distance](http://en.wikipedia.org/wiki/Manhattan_distance) between two arrays
-	is the sum of the absolute differences of corresponding positions.
+	/** The [Manhattan distance](http://en.wikipedia.org/wiki/Manhattan_distance) between two
+	arrays is the sum of the absolute differences of corresponding positions.
 	*/
 	manhattanDistance: function manhattanDistance(array1, array2) {
 		var sum = 0;
@@ -170,8 +171,8 @@ var Element = exports.Element = declare({
 		return sum;
 	},
 
-	/** The [euclidean distance](http://en.wikipedia.org/wiki/Euclidean_distance) between two arrays
-	is another option for evaluation.
+	/** The [euclidean distance](http://en.wikipedia.org/wiki/Euclidean_distance) between two
+	arrays is another option for evaluation.
 	*/
 	euclideanDistance: function euclideanDistance(array1, array2) {
 		var sum = 0;
@@ -204,7 +205,7 @@ var Element = exports.Element = declare({
 	// ## Expansions ###############################################################################
 
 	/** An element's `neighbourhood` is a set of new elements, with values belonging to the n
-	dimensional ball around this element's values with the given `radius` (1% by default).
+	dimensional ball around this element's values with the given `radius` (1 by default).
 	*/
 	neighbourhood: function neighbourhood(radius) {
 		var neighbours = [],
@@ -289,8 +290,8 @@ var Element = exports.Element = declare({
 		});
 	},
 
-	/** A set mapping builds an array of equal length of this element's `values`. Each value is used
-	to select one item. Items are not selected more than once.
+	/** A set mapping builds an array of equal length of this element's `values`. Each value is
+	used to select one item. Items are not selected more than once.
 	*/
 	setMapping: function setMapping(items, full) {
 		raiseIf(!Array.isArray(items), "Element.setMapping() expects an array argument!");
@@ -356,39 +357,34 @@ var Element = exports.Element = declare({
 The Problem type represents a search or optimization problem in Inveniemus.
 */
 var Problem = exports.Problem = declare({
-	title: "Problem.title?",
-	description: "Problem.description?",
-	random: Randomness.DEFAULT,
-	/** A single minimization objective is the default for `objectives`.
-	*/
-	objectives: [-Infinity],
-
-	/** The problem constructor takes many parameters.
+	/** The problem constructor takes many parameters:
 	*/
 	constructor: function Problem(params) {
 		params = params || {};
 		initialize(this, params)
-			/**TODO
+			/** + The `title` and `description` are meant to be displayed to the user in UIs and
+			logs.
 			*/
 			.string('title', { ignore: true, coerce: true })
-			/** The `description` of the problem to be displayed to the user may also be appreciated.
-			*/
 			.string('description', { ignore: true, coerce: true })
 			/** + A `random` number generator, required by many operations. By default
-				`base.Randomness.DEFAULT` is used.
+			`base.Randomness.DEFAULT` is used, which uses the standard `Math.random()`
+			function.
 			*/
 			.object('random', { ignore: true })
-			/** + The `objetives` define the mode of the optimization. Minimization has
-			`-Infinity` as an objective, hence maximization has `+Infinity`. A number makes the
-			optimization approximate it. An array defines a multi-objetive optimization.
+			/** + The `objetives` define the mode of the optimization. This is an array of at
+			least one number. More than one implies a multi-objetive optimization. Minimization
+			has `-Infinity` as an objective, hence maximization has `+Infinity`. A number makes
+			the optimization approximate it.
 			*/
 			.array('objectives', { ignore: true })
-			/** + The `elementModel` defines the elements' dimensions, each with a `minimum` and
-			a `maximum` value (0 and 1 by default) as well as a `precision` (1/(2^32-1) by
-			default).
+			/** + The `elementModel` defines the elements' dimensions, each with a number `n` of
+			possible values (from 0 to `n`).
 			*/
 			.array('elementModel', { ignore: true })
-			/** + The `Element` parameter can be used to specify a particular element type.
+			/** + The `Element` parameter can be used to specify a particular element type. The
+			actual element class used is derived from this, or the base `Element` class if none
+			is given.
 			*/
 			.func('Element', { ignore: true })
 		;
@@ -406,6 +402,13 @@ var Problem = exports.Problem = declare({
 			this.Element.prototype.model = params.elementModel;
 		}
 	},
+
+	/** The defaults for some of the parameters are placed in the `Problem`'s prototype.
+	*/
+	title: "Problem.title?",
+	description: "Problem.description?",
+	random: Randomness.DEFAULT,
+	objectives: [-Infinity],
 
 	/** The problem's elements must be evaluated somehow. This can be interpreted as the solution's
 	cost in a search problem or the target function of an optimization problem. The default
@@ -444,8 +447,8 @@ var Problem = exports.Problem = declare({
 		return element.normalizedValues();
 	},
 
-	/** An element is `sufficient` when it can be considered a solution of a search or a good enough
-	solution of an optimization. By default it returns false.
+	/** An element is `sufficient` when it can be considered a solution of a search or a good
+	enough solution of an optimization. By default it returns false.
 	*/
 	sufficientElement: function sufficientElement(element) {
 		return false;
