@@ -9,4 +9,4 @@
 	Sermat.include(exports); // Inveniemus uses Sermat internally.
 
 	return exports;
-});
+}

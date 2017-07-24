@@ -1,14 +1,6 @@
 ﻿/** Package wrapper and layout.
 */
-(function (global, init) { "use strict"; // Universal Module Definition.
-	if (typeof define === 'function' && define.amd) {
-		define(['creatartis-base', 'sermat'], init); // AMD module.
-	} else if (typeof module === 'object' && module.exports) {
-		module.exports = init(require('creatartis-base'), require('sermat')); // CommonJS module.
-	} else { // Browser or web worker (probably).
-		global.inveniemus = init(global.base, global.Sermat);
-	}
-})(this, function __init__(base, Sermat){ "use strict";
+function __init__(base, Sermat){ "use strict";
 // Import synonyms. ////////////////////////////////////////////////////////////////////////////////
 	var declare = base.declare,
 		iterable = base.iterable,
