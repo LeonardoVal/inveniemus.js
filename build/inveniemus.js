@@ -68,7 +68,7 @@ var Element = exports.Element = declare({
 	constructor: function Element(values, evaluation) {
 		this.__values__ = !values ? this.randomValues() : this.checkValues(values, false);
 		this.evaluation = Array.isArray(evaluation) ? evaluation :
-			isNaN(evaluation) ? null : [+evaluation];
+			isNaN(evaluation) || evaluation === null ? null : [+evaluation];
 	},
 
 	/** It is usually more convenient to have the `values` in an instance of `Array` than an
@@ -346,7 +346,7 @@ var Element = exports.Element = declare({
 			return [obj.problem, obj.values(), obj.evaluation];
 		},
 		materializer: function materialize_Element(obj, args) {
-			return !args ? null : new args[0].Element(args[1], arg[2]);
+			return !args ? null : new args[0].Element(args[1], args[2]);
 		}
 	}
 }); // declare Element.
@@ -546,15 +546,13 @@ var Problem = exports.Problem = declare({
 	__params__: function __params__() { //FIXME
 		var params = {},
 			self = this,
-			ids = ['title', 'description'].concat(Array.prototype.slice.call(arguments));
+			ids = arguments.length > 0 ? Array.prototype.slice.call(arguments) :
+				['title', 'description', 'random', 'objectives', 'elementModel'];
 		ids.forEach(function (id) {
-			if (self.hasOwnProperty(id)) {
+			if (typeof self[id] !== 'undefined') {
 				params[id] = self[id];
 			}
 		});
-		if (this.random !== Randomness.DEFAULT) {
-			params.random = this.random;
-		}
 		return params;
 	},
 
