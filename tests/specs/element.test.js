@@ -89,5 +89,23 @@
 			expect(rootMeanSquaredError(plus1, [[3,0],[4,1]])).toBe(2);
 			expect(rootMeanSquaredError(plus1, [[1,2],[2,2]])).toBe(Math.sqrt(5/2));
 		}); // it "root mean squared error"
+
+		it("serialization", function () {
+			var sermat = new Sermat({ mode: Sermat.CIRCULAR_MODE }),
+				problem = new Problem(),
+				elem = new problem.Element();
+				elem2 = new problem.Element();
+				elems = sermat.sermat([elem, elem, elem2]);
+			expect(elems[0]).not.toBe(elem);
+			expect(elems[0].constructor).not.toBe(elem.constructor);
+			expect(elems[0].problem).not.toBe(elem.problem);
+			expect(elems[0].values).toBe(elem.values);
+			expect(elems[0].evaluation).toBe(elem.evaluation);
+
+			expect(elems[1]).toBe(elems[0]);
+			expect(elems[2]).not.toBe(elems[0]);
+			expect(elems[2].constructor).toBe(elems[0].constructor);
+			expect(elems[2].problem).toBe(elems[0].problem);
+		}); // it "serialization"
 	}); //// describe "Element"
 }); //// define.
