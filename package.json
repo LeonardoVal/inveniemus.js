@@ -8,7 +8,8 @@
 	"version": "0.1.5",
 	"author": {
 		"name": "Leonardo Val",
-		"email": "leonardo.val@creatartis.com>"
+		"email": "leonardo.val@creatartis.com>",
+		"url": "http://github.com/LeonardoVal"
 	},
 	"homepage": "http://creatartis.com",
 	"contributors": [
@@ -36,7 +37,7 @@
 	},
 	"devDependencies": {
 		"requirejs": "~2.2.0",
-		"creatartis-grunt": "~0.0.1"
+		"creatartis-grunt": "~0.0.2"
 	},
 	"scripts": {}
 }

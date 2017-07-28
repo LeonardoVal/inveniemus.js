@@ -31,11 +31,11 @@ module.exports = function(grunt) {
 		deps: [
 			{	name: 'creatartis-base',
 				path: 'node_modules/creatartis-base/build/creatartis-base.js',
-				global: 'base'
+				id: 'base'
 			},
 			{	name: 'sermat',
 				path: 'node_modules/sermat/build/sermat-umd.js',
-				global: 'Sermat'
+				id: 'Sermat'
 			}
 		]
 	});
