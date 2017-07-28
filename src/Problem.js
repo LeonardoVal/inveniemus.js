@@ -192,15 +192,13 @@ var Problem = exports.Problem = declare({
 	__params__: function __params__() { //FIXME
 		var params = {},
 			self = this,
-			ids = ['title', 'description'].concat(Array.prototype.slice.call(arguments));
+			ids = arguments.length > 0 ? Array.prototype.slice.call(arguments) :
+				['title', 'description', 'random', 'objectives', 'elementModel'];
 		ids.forEach(function (id) {
-			if (self.hasOwnProperty(id)) {
+			if (typeof self[id] !== 'undefined') {
 				params[id] = self[id];
 			}
 		});
-		if (this.random !== Randomness.DEFAULT) {
-			params.random = this.random;
-		}
 		return params;
 	},
 
