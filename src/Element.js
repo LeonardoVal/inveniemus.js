@@ -21,7 +21,7 @@ var Element = exports.Element = declare({
 	constructor: function Element(values, evaluation) {
 		this.__values__ = !values ? this.randomValues() : this.checkValues(values, false);
 		this.evaluation = Array.isArray(evaluation) ? evaluation :
-			isNaN(evaluation) ? null : [+evaluation];
+			isNaN(evaluation) || evaluation === null ? null : [+evaluation];
 	},
 
 	/** It is usually more convenient to have the `values` in an instance of `Array` than an
@@ -299,7 +299,7 @@ var Element = exports.Element = declare({
 			return [obj.problem, obj.values(), obj.evaluation];
 		},
 		materializer: function materialize_Element(obj, args) {
-			return !args ? null : new args[0].Element(args[1], arg[2]);
+			return !args ? null : new args[0].Element(args[1], args[2]);
 		}
 	}
 }); // declare Element.
