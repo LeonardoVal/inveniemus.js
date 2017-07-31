@@ -6,7 +6,7 @@ module.exports = function(grunt) {
 	});
 
 	require('creatartis-grunt').config(grunt, {
-		src: ['__prologue__',
+		sourceNames: ['__prologue__',
 			'Element', ///////////////////////////////////////////////////////////////////// Core
 			'Problem',
 			'Metaheuristic',
@@ -25,9 +25,7 @@ module.exports = function(grunt) {
 			'problems/NQueensPuzzle',
 			'problems/KnapsackProblem',
 			'problems/associationRules',
-			'__epilogue__'].map(function (n) { ////////////////////////////////////////////// Fin
-				return 'src/'+ n +'.js';
-			}),
+			'__epilogue__'],
 		deps: [
 			{	name: 'creatartis-base',
 				path: 'node_modules/creatartis-base/build/creatartis-base.js',
@@ -37,6 +35,10 @@ module.exports = function(grunt) {
 				path: 'node_modules/sermat/build/sermat-umd.js',
 				id: 'Sermat'
 			}
+		],
+		testLibFiles: [
+			'node_modules/dygraphs/dist/dygraph.min.js',
+				'node_modules/dygraphs/dist/dygraph.min.js.map',
 		]
 	});
 

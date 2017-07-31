@@ -9,7 +9,6 @@ sup { font-size: 60%; }
 #chart { height:320px; width:100%; margin-bottom:10px; }
 	</style>
 	<script type="text/javascript" src="lib/require.js"></script>
-	<script type="text/javascript" src="lib/dygraph-combined.js"></script>
 </head><body onload="main();">
 	<header style="text-align:center; width:100%;"><h1><a href="http://github.com/LeonardoVal/inveniemus.js" target="_blank">Inveniemus</a> tester</h1></header>
 	<p>Inveniemus (<a href="javascript:console.info('inveniemus');console.dir(inveniemus);"><code>inveniemus</code></a>) is a search and optimization library, focusing on <a href="http://en.wikipedia.org/wiki/Metaheuristic" target="_blank">metaheuristics</a>. This library includes implementations of some toy <a href="javascript:console.dir(inveniemus.problems.testbeds);"><code>problems</code></a> for testing purposes (<a href="javascript:console.dir(inveniemus.problems.testbeds);"><code>problems.testbeds</code></a>) and as exemplars. Among the most simple ones there are:
@@ -40,13 +39,15 @@ function main() {
 		paths: {
 			"creatartis-base": "lib/creatartis-base",
 			"sermat": "lib/sermat-umd",
-			"inveniemus": "lib/inveniemus"
+			"inveniemus": "lib/inveniemus",
+			"dygraph": "lib/dygraph.min"
 		},
 	});
-	require(['creatartis-base', 'sermat', 'inveniemus'], function (base, Sermat, inveniemus) {
+	require(['creatartis-base', 'sermat', 'inveniemus', 'dygraph'], function (base, Sermat, inveniemus, Dygraph) {
 		window.base = base;
 		window.Sermat = Sermat;
 		window.inveniemus = inveniemus;
+		window.Dygraph = Dygraph;
 		window.problem = new inveniemus.problems.testbeds.sumOptimization(10);
 		window.RUNNER = {
 			graph: new Dygraph(document.getElementById("chart"), [], {
