@@ -123,10 +123,16 @@ var Element = exports.Element = declare({
 	},
 
 	/** The `emblem` of an element is a string that represents it and can be displayed to the user.
-	By default returns the string conversion of the element.
+	By default returns a custom string representation.
 	*/
 	emblem: function emblem() {
-		return this +'';
+		var values = this.values().map(function (v) {
+				return v.toString(16);
+			}).join('|'),
+			evaluation = this.evaluation ? this.evaluation.map(function (v) {
+				return v.toString(16);
+			}).join('|') : '!';
+		return '[Element '+ values +' '+ evaluation +']';
 	},
 
 	// ## Evaluations ##############################################################################
