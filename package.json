@@ -1,9 +1,13 @@
-﻿{
+{
 	"name": "inveniemus",
 	"description": "A search and optimization library, focusing on metaheuristics.",
 	"keywords": [
-		"search", "optimization", "metaheuristic", "hill climbing",
-		"evolutionary computing", "genetic algorithm"
+		"search",
+		"optimization",
+		"metaheuristic",
+		"hill climbing",
+		"evolutionary computing",
+		"genetic algorithm"
 	],
 	"version": "0.1.5",
 	"author": {
@@ -13,13 +17,18 @@
 	},
 	"homepage": "http://creatartis.com",
 	"contributors": [
-		{ "name": "Andrés Zeballos Juanicó", "email": "andreszeballosjuanico@gmail.com" },
-		{ "name": "Gonzalo Martínez", "email": "gonzalo.martinez@live.com" },
-		{ "name": "Mathías Lepratte", "email": "mlepratte3108@hotmail.com" }
-	],
-	"keywords": [
-		"search", "optimization", "metaheuristic", "hill climbing",
-		"evolutionary computing", "genetic algorithm"
+		{
+			"name": "Andrés Zeballos Juanicó",
+			"email": "andreszeballosjuanico@gmail.com"
+		},
+		{
+			"name": "Gonzalo Martínez",
+			"email": "gonzalo.martinez@live.com"
+		},
+		{
+			"name": "Mathías Lepratte",
+			"email": "mlepratte3108@hotmail.com"
+		}
 	],
 	"license": "MIT",
 	"repository": {
