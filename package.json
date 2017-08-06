@@ -33,7 +33,7 @@
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "http://github.com/LeonardoVal/inveniemus"
+		"url": "http://github.com/LeonardoVal/inveniemus.js"
 	},
 	"main": "build/inveniemus.min.js",
 	"files": [
