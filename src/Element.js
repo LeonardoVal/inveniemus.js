@@ -20,12 +20,31 @@ var Element = exports.Element = declare({
 	*/
 	constructor: function Element(values, evaluation) {
 		this.__values__ = !values ? this.randomValues() : this.checkValues(values, false);
-		this.evaluation = Array.isArray(evaluation) ? evaluation :
-			isNaN(evaluation) || evaluation === null ? null : [+evaluation];
+		this.evaluation = evaluation;
 	},
 
+	'property evaluation': {
+		get: function getEvaluation() {
+			return this.__evaluation__;
+		},
+		set: function setEvaluation(e) {
+			if (Array.isArray(e) || !isNaN(e) && e !== null) {
+				this.__evaluation__ = (Array.isArray(e) ? e : [e]).map(function (v) {
+					return +v;
+				});
+			} else {
+				this.__evaluation__ = null;
+			}
+		}
+	},
+
+	/** The `ArrayType` is the internal representation of the elements' `values`. It is
+	`Uint32Array` by default.
+	*/
+	ArrayType: Uint32Array,
+
 	/** It is usually more convenient to have the `values` in an instance of `Array` than an
-	instance of `Uint32Array` (e.g. when using ).
+	instance of a typed array.
 	*/
 	values: function values() {
 		return Array.prototype.slice.call(this.__values__);
@@ -33,7 +52,7 @@ var Element = exports.Element = declare({
 
 	/** The default element `model` defines 10 dimensions with 2^32 values. Please override.
 	*/
-	model: Iterable.repeat({ n: Math.pow(2,32) }, 10).toArray(),
+	model: Iterable.repeat({ n: 128 }, 10).toArray(),
 
 	/** Random values are integers within the range defined by the element's model.
 	*/
@@ -43,7 +62,7 @@ var Element = exports.Element = declare({
 
 	randomValues: function randomValues() {
 		var random = this.problem.random;
-		return new Uint32Array(this.model.map(function (model) {
+		return new this.ArrayType(this.model.map(function (model) {
 			return random.randomInt(0, model.n) |0;
 		}));
 	},
@@ -53,7 +72,7 @@ var Element = exports.Element = declare({
 	element's model.
 	*/
 	checkValues: function checkValues(values, coerce) {
-		return new Uint32Array(this.model.map(function (model, i) {
+		return new this.ArrayType(this.model.map(function (model, i) {
 			var v = values[i],
 				n = model.n;
 			if (isNaN(v)) {
@@ -79,13 +98,7 @@ var Element = exports.Element = declare({
 	By default returns a custom string representation.
 	*/
 	emblem: function emblem() {
-		var values = this.values().map(function (v) {
-				return v.toString(16);
-			}).join('|'),
-			evaluation = this.evaluation ? this.evaluation.map(function (v) {
-				return v.toString(16);
-			}).join('|') : '!';
-		return '[Element '+ values +' '+ evaluation +']';
+		return '[Element '+ this.evaluation +' '+ this.values().join(',') +']';
 	},
 
 	// ## Evaluations ##############################################################################
@@ -93,13 +106,12 @@ var Element = exports.Element = declare({
 	/** The element's `evaluation` is calculated by `evaluate()`, which assigns and returns this
 	array of numbers. It may return a promise if the evaluation has to be done asynchronously. This
 	can be interpreted as the solution's cost in a search problem or the target function of an
-	optimization problem. The default behaviour is adding up this element's values, useful only for
-	testing.
+	optimization problem.
 	*/
 	evaluate: function evaluate() {
 		var elem = this;
 		return Future.then(this.problem.evaluation(this), function (e) {
-			elem.evaluation = Array.isArray(e) ? e : isNaN(e) ? null : [+e];
+			elem.evaluation = e;
 			raiseIf(elem.evaluation === null, 'The evaluation of ', elem, ' is null!');
 			return elem.evaluation;
 		});

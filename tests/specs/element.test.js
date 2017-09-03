@@ -5,21 +5,52 @@
 // Evaluation utilities. ///////////////////////////////////////////////////////
 	describe('Element', function () {
 		it("constructor", function () {
-			var problem = new Problem(),
-				elem = new problem.Element(),
-				model = elem.model,
-				valuesArray;
-			expect(elem.__values__ instanceof Uint32Array).toBe(true);
-			expect(elem.__values__.length).toBe(model.length);
-			valuesArray = elem.values();
-			expect(valuesArray instanceof Array).toBe(true);
-			expect(valuesArray.length).toBe(model.length);
-			elem.__values__.forEach(function (value, i) {
-				expect(value).not.toBeLessThan(0);
-				expect(value).toBeLessThan(model[i].n);
-				expect(valuesArray[i]).toBe(value);
-			});
+			var problem = new Problem();
+			expect(typeof problem.Element).toBe('function');
+			var elem = new problem.Element();
+			expect(elem instanceof problem.Element).toBe(true);
+			expect(elem instanceof Element).toBe(true);
+			expect(typeof elem.ArrayType).toBe('function');
 		}); // it "constructor"
+
+		it("type of values", function () {
+			function checkValues(elem, ArrayType) {
+				var model = elem.model;
+				expect(elem.__values__ instanceof ArrayType).toBe(true);
+				expect(elem.__values__.length).toBe(model.length);
+				var values = elem.values();
+				expect(values instanceof Array).toBe(true);
+				expect(values.length).toBe(model.length);
+				elem.__values__.forEach(function (value, i) {
+					expect(value).not.toBeLessThan(0);
+					expect(value).toBeLessThan(model[i].n);
+					expect(values[i]).toBe(value);
+				});
+			}
+
+			var problem = new Problem();
+			expect(problem.Element.prototype.ArrayType).toBe(Uint32Array);
+			checkValues(new problem.Element(), Uint32Array);
+			[Int8Array, Uint8Array, Uint8ClampedArray, Int16Array, Uint16Array, Int32Array,
+				Float32Array, Float64Array].forEach(function (ArrayType) {
+					problem.Element.prototype.ArrayType = ArrayType;
+					checkValues(new problem.Element(), ArrayType);
+				});
+		}); // it "values"
+
+		it("evaluation", function () {
+			var problem = new Problem(),
+				elem = new problem.Element();
+			expect(elem.evaluation).toBe(null);
+			elem.evaluation = 77;
+			expect(JSON.stringify(elem.evaluation)).toBe('[77]');
+			elem.evaluation = [1,2];
+			expect(JSON.stringify(elem.evaluation)).toBe('[1,2]');
+			elem.evaluation = 'abc';
+			expect(elem.evaluation).toBe(null);
+			elem.evaluation = undefined;
+			expect(elem.evaluation).toBe(null);
+		}); // it "evaluation"
 
 		it("hamming distance", function () {
 			var hammingDistance = Element.prototype.hammingDistance;
