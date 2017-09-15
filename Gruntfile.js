@@ -27,18 +27,8 @@ module.exports = function(grunt) {
 			'problems/associationRules',
 			'__epilogue__'],
 		deps: [
-			{	name: 'creatartis-base',
-				path: 'node_modules/creatartis-base/build/creatartis-base.js',
-				id: 'base'
-			},
-			{	name: 'sermat',
-				path: 'node_modules/sermat/build/sermat-umd.js',
-				id: 'Sermat'
-			}
-		],
-		testLibFiles: [
-			'node_modules/dygraphs/dist/dygraph.min.js',
-				'node_modules/dygraphs/dist/dygraph.min.js.map',
+			{ id: 'creatartis-base', name: 'base' },
+			{ id: 'sermat', name: 'Sermat', path: 'node_modules/sermat/build/sermat-umd.js' }
 		]
 	});
 
