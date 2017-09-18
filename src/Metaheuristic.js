@@ -57,7 +57,7 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	cursors. The elements are build using the `initial()` function.
 	*/
 	initiate: function initiate(size) {
-		size = isNaN(size) ? this.size : +size >> 0;
+		size = isNaN(size) ? this.size : +size || 0;
 		this.state = new Array(size);
 		for (var i = 0; i < size; i++) {
 			this.state[i] = new this.problem.Element(); // Element with random values.
@@ -97,7 +97,7 @@ var Metaheuristic = exports.Metaheuristic = declare({
 	implementation generates new random elements.
 	*/
 	expansion: function expansion(size) {
-		var expansionRate = isNaN(this.expansionRate) ? 0.5 : +this.expansionRate;
+		var expansionRate = isNaN(this.expansionRate) ? 1 : +this.expansionRate;
 		size = isNaN(size) ? Math.floor(expansionRate * this.size) : +size;
 		var elems = new Array(size), i;
 		for (i = 0; i < size; i++){
@@ -163,7 +163,9 @@ var Metaheuristic = exports.Metaheuristic = declare({
 			if (this.state[0].evaluation.length === 1) { // Single-objective optimization.
 				var stat_evaluation = statistics.stat({ key:'evaluation', step: step });
 				this.state.forEach(function (element) {
-					stat_evaluation.add(element.evaluation[0], element);
+					if (element.evaluation) {
+						stat_evaluation.add(element.evaluation[0], element);
+					}
 				});
 			} else { // Multi-objective optimization.
 				var stats_evaluation = this.state[0].evaluation.map(function (_, i) {
