@@ -5,6 +5,7 @@ function __init__(base, Sermat){ "use strict";
 	var declare = base.declare,
 		iterable = base.iterable,
 		initialize = base.initialize,
+		raise = base.raise,
 		raiseIf = base.raiseIf,
 		Events = base.Events,
 		Future = base.Future,
@@ -15,23 +16,19 @@ function __init__(base, Sermat){ "use strict";
 
 // Library layout. /////////////////////////////////////////////////////////////////////////////////
 	var exports = {
-		__package__: 'inveniemus',
-		__name__: 'inveniemus',
-		__init__: __init__,
-		__dependencies__: [base],
-		__SERMAT__: { include: [] },
+			__package__: 'inveniemus',
+			__name__: 'inveniemus',
+			__init__: __init__,
+			__dependencies__: [base],
+			__SERMAT__: { include: [] }
+		},
 	/** `metaheuristics` is a bundle of available metaheuristics.
 	*/
-		metaheuristics: {},
+		metaheuristics = exports.metaheuristics = {},
 	/** `problems` is a bundle of classic and reference problems.
 	*/
-		problems: {}
-	};
-	var metaheuristics = exports.metaheuristics,
-		problems = exports.problems;
-
-// Utility functions. //////////////////////////////////////////////////////////////////////////////
-
-function clamp(value, min, max) {
-	return Math.max(min, Math.min(max, value));
-}
+		problems = exports.problems = {},
+	/** `utilities` is the namespace for miscelaneous utility functions and definitions.
+	*/
+		utilities = exports.utilities = {}
+	;

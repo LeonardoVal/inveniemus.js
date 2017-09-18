@@ -7,6 +7,7 @@ module.exports = function(grunt) {
 
 	require('creatartis-grunt').config(grunt, {
 		sourceNames: ['__prologue__',
+			'utilities',
 			'Element', ///////////////////////////////////////////////////////////////////// Core
 			'Problem',
 			'Metaheuristic',
