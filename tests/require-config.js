@@ -1,10 +1,11 @@
+// Generated code, please do NOT modify.
 (function () { "use strict";
 	var config = {
-		paths: {
+		"paths": {
 			"inveniemus": "../build/inveniemus",
 			"creatartis-base": "../node_modules/creatartis-base/build/creatartis-base.min",
-			"sermat": "../node_modules/sermat/build/sermat-umd-min",
-			"dygraph": "../node_modules/dygraphs/dist/dygraph.min"
+			"sermat": "../node_modules/sermat/build/sermat-umd",
+			"dygraphs": "../node_modules/dygraphs/dist/dygraph.min"
 		}
 	};
 	require.config(config);
