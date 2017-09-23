@@ -29,7 +29,9 @@ module.exports = function(grunt) {
 			'__epilogue__'],
 		deps: [
 			{ id: 'creatartis-base', name: 'base' },
-			{ id: 'sermat', name: 'Sermat', path: 'node_modules/sermat/build/sermat-umd.js' }
+			{ id: 'sermat', name: 'Sermat', path: 'node_modules/sermat/build/sermat-umd.js' },
+			{ id: 'dygraphs', path: 'node_modules/dygraphs/dist/dygraph.min.js',
+		 		dev: true, module: false }
 		]
 	});
 
