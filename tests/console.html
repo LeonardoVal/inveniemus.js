@@ -83,8 +83,8 @@ function main() { "use strict";
 			}
 		};
 		console.log("Ready.");
-	}, function (error) {
-		throw error;
+	}, function (err) {
+		console.error(err);
 	});
 	Array.prototype.slice.call(document.querySelectorAll('a')).forEach(function (jsLink) {
 		var label, code;
