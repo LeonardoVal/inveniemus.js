@@ -8,7 +8,7 @@ a { color:inherit; text-decoration:none; }
 sup { font-size: 60%; }
 #chart { height:320px; width:100%; margin-bottom:10px; }
 	</style>
-	<script src="../node_modules/requirejs/require.js" data-main="require-config"></script>
+	<script src="../node_modules/requirejs/require.js"></script>
 </head><body onload="main();">
 	<header style="text-align:center; width:100%;"><h1><a href="http://github.com/LeonardoVal/inveniemus.js" target="_blank">Inveniemus</a> tester</h1></header>
 	<p>Inveniemus (<a href="javascript:console.info('inveniemus');console.dir(inveniemus);"><code>inveniemus</code></a>) is a search and optimization library, focusing on <a href="http://en.wikipedia.org/wiki/Metaheuristic" target="_blank">metaheuristics</a>. This library includes implementations of some toy <a href="javascript:console.dir(inveniemus.problems.testbeds);"><code>problems</code></a> for testing purposes (<a href="javascript:console.dir(inveniemus.problems.testbeds);"><code>problems.testbeds</code></a>) and as exemplars. Among the most simple ones there are:
@@ -36,56 +36,50 @@ sup { font-size: 60%; }
 	<script type="text/javascript">
 function main() { "use strict";
 	console.log("Initializing...");
-	require(['creatartis-base', 'sermat', 'inveniemus', 'dygraphs'], function (base, Sermat, inveniemus, Dygraph) {
-		console.log("Loaded libraries: creatartis-base, sermat, inveniemus & dygraph.");
-		window.base = base;
-		window.Sermat = Sermat;
-		window.inveniemus = inveniemus;
-		window.Dygraph = Dygraph;
-		window.problem = new inveniemus.problems.testbeds.sumOptimization(10);
-		window.RUNNER = {
-			graph: new Dygraph(document.getElementById("chart"), [], {
-				labels: ['step', 'minimum', 'average', 'maximum'],
-				colors: ['red', 'black', 'blue'],
-				//width: document.body.offsetWidth,
-				drawPoints: false, customBars: true,
-				showRoller: false,	showRangeSelector: false,
-				legend: "always", labelsDivWidth: 350
-			}),
-			run: function run(mh) {
-				var graphData = [],
-					runMinimum = Infinity,
-					runMaximum = -Infinity,
-					graph = this.graph;
-				this.mh = mh = mh || window.mh;
-				mh.events.on('advanced', function () { // Update evaluationGraph data with the run statistics.
-					var graphStat = mh.problem.objectives.length > 1
-						? mh.statistics.stat({ key:'dominators', step: mh.step })
-						: mh.statistics.stat({ key:'evaluation', step: mh.step }),
-						minimum = graphStat.minimum(),
-						maximum = graphStat.maximum();
-					graphData.push([ mh.step,
-						[null, minimum, null],
-						[minimum, graphStat.average(), maximum],
-						[null, maximum, null]
-					]);
-					runMinimum = Math.min(runMinimum, minimum - Math.abs(minimum) * 0.1);
-					runMaximum = Math.max(runMaximum, maximum + Math.abs(maximum) * 0.1);
-					graph.updateOptions({
-						file: graphData,
-						valueRange: [runMinimum, runMaximum]
+	require(['require-config'], function (init) {
+		init(['creatartis-base', 'sermat', 'inveniemus', 'dygraphs'], function (base, Sermat, inveniemus, Dygraph) {
+			window.problem = new inveniemus.problems.testbeds.sumOptimization(10);
+			window.RUNNER = {
+				graph: new Dygraph(document.getElementById("chart"), [], {
+					labels: ['step', 'minimum', 'average', 'maximum'],
+					colors: ['red', 'black', 'blue'],
+					//width: document.body.offsetWidth,
+					drawPoints: false, customBars: true,
+					showRoller: false,	showRangeSelector: false,
+					legend: "always", labelsDivWidth: 350
+				}),
+				run: function run(mh) {
+					var graphData = [],
+						runMinimum = Infinity,
+						runMaximum = -Infinity,
+						graph = this.graph;
+					this.mh = mh = mh || window.mh;
+					mh.events.on('advanced', function () { // Update evaluationGraph data with the run statistics.
+						var graphStat = mh.problem.objectives.length > 1
+							? mh.statistics.stat({ key:'dominators', step: mh.step })
+							: mh.statistics.stat({ key:'evaluation', step: mh.step }),
+							minimum = graphStat.minimum(),
+							maximum = graphStat.maximum();
+						graphData.push([ mh.step,
+							[null, minimum, null],
+							[minimum, graphStat.average(), maximum],
+							[null, maximum, null]
+						]);
+						runMinimum = Math.min(runMinimum, minimum - Math.abs(minimum) * 0.1);
+						runMaximum = Math.max(runMaximum, maximum + Math.abs(maximum) * 0.1);
+						graph.updateOptions({
+							file: graphData,
+							valueRange: [runMinimum, runMaximum]
+						});
+						console.log(mh.state[0]);
 					});
-					console.log(mh.state[0]);
-				});
-				return mh.run().then(function (best) {
-					return console.log(best);
-				});
-			}
-		};
-		console.log("Ready.");
-	}, function (err) {
-		console.error(err);
-	});
+					return mh.run().then(function (best) {
+						return console.log(best);
+					});
+				}
+			};
+		});
+	}); // require 'require-config'
 	Array.prototype.slice.call(document.querySelectorAll('a')).forEach(function (jsLink) {
 		var label, code;
 		if (jsLink.href === "javascript:") {
