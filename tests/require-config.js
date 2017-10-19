@@ -1,14 +1,6 @@
 // Generated code, please do NOT modify.
-(function () { "use strict";
+(function (config) { "use strict";
 	define([], function () {
-		var config = {
-			"paths": {
-				"inveniemus": "../build/inveniemus",
-				"creatartis-base": "../node_modules/creatartis-base/build/creatartis-base.min",
-				"sermat": "../node_modules/sermat/build/sermat-umd",
-				"dygraphs": "../node_modules/dygraphs/dist/dygraph.min"
-			}
-		};
 		if (window.__karma__) {
 			config.baseUrl = '/base';
 			for (var p in config.paths) {
@@ -24,7 +16,7 @@
 		}
 		require.config(config);
 		console.log("RequireJS configuration: "+ JSON.stringify(config, null, '  '));
-		
+
 		return function (deps, main) {
 			require(deps, function () {
 				var args = Array.prototype.slice.call(arguments);
@@ -34,7 +26,7 @@
 						console.error("Global `"+ name +"` already defined!");
 					} else {
 						window[name] = module;
-						console.log("Loaded library `"+ deps[i] +"` is available at `window."+ 
+						console.log("Library `"+ deps[i] +"` is available at `window."+
 							name +"`.");
 					}
 				});
@@ -45,4 +37,11 @@
 			});
 		}
 	});
-})();
+})({
+	"paths": {
+		"inveniemus": "../build/inveniemus",
+		"creatartis-base": "../node_modules/creatartis-base/build/creatartis-base.min",
+		"sermat": "../node_modules/sermat/build/sermat-umd",
+		"dygraphs": "../node_modules/dygraphs/dist/dygraph.min"
+	}
+});
