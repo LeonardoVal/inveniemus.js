@@ -46,7 +46,7 @@
 	},
 	"devDependencies": {
 		"requirejs": "~2.2.0",
-		"creatartis-grunt": "~0.0.9",
+		"creatartis-grunt": "~0.0.10",
 		"dygraphs": "~2.0.0"
 	},
 	"scripts": {}

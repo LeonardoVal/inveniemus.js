@@ -26,7 +26,7 @@
 						console.error("Global `"+ name +"` already defined!");
 					} else {
 						window[name] = module;
-						console.log("Library `"+ deps[i] +"` is available at `window."+
+						console.log("Loaded library `"+ deps[i] +"` is available as `window."+
 							name +"`.");
 					}
 				});
@@ -35,7 +35,7 @@
 			}, function (err) {
 				console.error(err);
 			});
-		}
+		};
 	});
 })({
 	"paths": {
