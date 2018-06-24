@@ -32,8 +32,12 @@ module.exports = function(grunt) {
 			{ id: 'sermat', name: 'Sermat', path: 'node_modules/sermat/build/sermat-umd.js' },
 			{ id: 'dygraphs', path: 'node_modules/dygraphs/dist/dygraph.min.js',
 		 		dev: true, module: false }
-		]
+		],
+		connect: {
+			console: 'tests/console.html'
+		}
 	});
 
 	grunt.registerTask('default', ['build']);
+	grunt.registerTask('console', ['compile', 'connect:console']);
 };
