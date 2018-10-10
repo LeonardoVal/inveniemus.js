@@ -45,8 +45,8 @@
 		"sermat": "~0.0.9"
 	},
 	"devDependencies": {
-		"creatartis-grunt": "~0.0.15",
-		"dygraphs": "~2.0.0"
+		"@creatartis/creatartis-grunt": "~0.0.16-alpha",
+		"dygraphs": "~2.1.0"
 	},
 	"scripts": {}
 }
