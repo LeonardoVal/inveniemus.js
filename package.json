@@ -12,22 +12,19 @@
 	"version": "0.2.0",
 	"author": {
 		"name": "Leonardo Val",
-		"email": "leonardo.val@creatartis.com>",
+		"email": "leonardo.val@creatartis.com",
 		"url": "http://github.com/LeonardoVal"
 	},
 	"homepage": "http://creatartis.com",
 	"contributors": [
 		{
-			"name": "Andrés Zeballos Juanicó",
-			"email": "andreszeballosjuanico@gmail.com"
+			"name": "Andrés Zeballos Juanicó"
 		},
 		{
-			"name": "Gonzalo Martínez",
-			"email": "gonzalo.martinez@live.com"
+			"name": "Gonzalo Martínez"
 		},
 		{
-			"name": "Mathías Lepratte",
-			"email": "mlepratte3108@hotmail.com"
+			"name": "Mathías Lepratte"
 		}
 	],
 	"license": "MIT",
@@ -45,7 +42,7 @@
 		"sermat": "~0.0.9"
 	},
 	"devDependencies": {
-		"@creatartis/creatartis-grunt": "~0.0.16-alpha",
+		"@creatartis/creatartis-grunt": "~0.0.16-beta",
 		"dygraphs": "~2.1.0"
 	},
 	"scripts": {}
