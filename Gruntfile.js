@@ -8,10 +8,12 @@ module.exports = function(grunt) {
 	require('@creatartis/creatartis-grunt').config(grunt, {
 		sourceNames: ['__prologue__',
 			'utilities',
-			'Element', ///////////////////////////////////////////////////////////////////// Core
+			// Core /////////////////////////////////////////////////////////
+			'Element', 
 			'Problem',
 			'Metaheuristic',
-			'metaheuristics/HillClimbing', /////////////////////////////////////// Metaheuristics
+			// Metaheuristics ///////////////////////////////////////////////
+			'metaheuristics/HillClimbing',
 			'metaheuristics/GeneticAlgorithm',
 			'metaheuristics/BeamSearch',
 			'metaheuristics/SimulatedAnnealing',
@@ -21,12 +23,14 @@ module.exports = function(grunt) {
 			'metaheuristics/HarmonySearch',
 			'metaheuristics/DistributionEstimation',
 			'metaheuristics/GradientDescent',
-			'problems/HelloWorld', ///////////////////////////////////////////////////// Problems
+			// Test problems ////////////////////////////////////////////////
+			'problems/HelloWorld',
 			'problems/testbeds',
 			'problems/NQueensPuzzle',
 			'problems/KnapsackProblem',
 			'problems/associationRules',
 			'__epilogue__'],
+		sourceMap: false, //FIXME
 		deps: [
 			{ id: 'creatartis-base', name: 'base' },
 			{ id: 'sermat', name: 'Sermat', path: 'node_modules/sermat/build/sermat-umd.js' },
